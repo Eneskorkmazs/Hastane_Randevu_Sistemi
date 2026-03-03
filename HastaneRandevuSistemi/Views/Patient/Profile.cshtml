@@ -1,0 +1,101 @@
+@model HastaneRandevuSistemi.ViewModels.PatientProfileViewModel
+
+@{
+    ViewData["Title"] = "Profilim";
+}
+
+<div class="container py-4">
+    <div class="page-heading mb-4">
+        <span class="eyebrow text-primary">Profil Yönetimi</span>
+        <h1 class="h3 fw-bold mb-2">Kişisel Bilgiler</h1>
+        <p class="text-muted mb-0">Hasta panelinde görünen bilgileriniz ve randevu iletişim bilgileriniz buradan güncellenir.</p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <form asp-action="Profile" method="post" class="row g-3">
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-0"></div>
+
+                <div class="col-md-6">
+                    <label asp-for="Name" class="form-label fw-semibold"></label>
+                    <input asp-for="Name" class="form-control form-control-lg" />
+                    <span asp-validation-for="Name" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Surname" class="form-label fw-semibold"></label>
+                    <input asp-for="Surname" class="form-control form-control-lg" />
+                    <span asp-validation-for="Surname" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="TC" class="form-label fw-semibold"></label>
+                    <input asp-for="TC" class="form-control form-control-lg" maxlength="11" />
+                    <span asp-validation-for="TC" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Telefon" class="form-label fw-semibold"></label>
+                    <input asp-for="Telefon" class="form-control form-control-lg" />
+                    <span asp-validation-for="Telefon" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="DogumTarihi" class="form-label fw-semibold"></label>
+                    <input asp-for="DogumTarihi" type="date" class="form-control form-control-lg" />
+                    <span asp-validation-for="DogumTarihi" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Cinsiyet" class="form-label fw-semibold"></label>
+                    <select asp-for="Cinsiyet" class="form-select form-select-lg">
+                        <option value="">Seçiniz</option>
+                        <option>Kadın</option>
+                        <option>Erkek</option>
+                        <option>Belirtmek İstemiyorum</option>
+                    </select>
+                    <span asp-validation-for="Cinsiyet" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Email" class="form-label fw-semibold"></label>
+                    <input asp-for="Email" class="form-control form-control-lg" readonly />
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Adres" class="form-label fw-semibold"></label>
+                    <textarea asp-for="Adres" class="form-control" rows="4"></textarea>
+                    <span asp-validation-for="Adres" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 d-flex justify-content-end gap-2 pt-2">
+                    <a asp-action="Dashboard" class="btn btn-light rounded-pill px-4">Panele Dön</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .eyebrow {
+        display: inline-block;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .page-heading {
+        max-width: 48rem;
+    }
+</style>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

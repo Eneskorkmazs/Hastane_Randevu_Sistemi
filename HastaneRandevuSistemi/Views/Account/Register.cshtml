@@ -1,0 +1,211 @@
+@model HastaneRandevuSistemi.ViewModels.RegisterViewModel
+
+@{
+    ViewData["Title"] = "Kayıt Ol";
+}
+
+<div class="auth-shell py-5">
+    <div class="row justify-content-center align-items-center g-4">
+        <div class="col-lg-5 d-none d-lg-block">
+            <div class="hero-panel h-100">
+                <span class="eyebrow">Hasta Hesabı</span>
+                <h1>Sağlık geçmişinizi ve randevularınızı tek panelden yönetin.</h1>
+                <p>Kayıt olduğunuz anda hasta paneliniz, profil alanınız ve bildirim kutunuz hazır olur.</p>
+                <div class="hero-metrics">
+                    <div>
+                        <strong>1</strong>
+                        <span>Profil kartı</span>
+                    </div>
+                    <div>
+                        <strong>2</strong>
+                        <span>Randevu takibi</span>
+                    </div>
+                    <div>
+                        <strong>3</strong>
+                        <span>Anlık bildirim</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7 col-xl-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                <div class="card-header auth-header text-white p-4 p-md-5">
+                    <div class="d-flex justify-content-between align-items-start gap-3">
+                        <div>
+                            <span class="eyebrow text-white-50">Yeni Hesap</span>
+                            <h2 class="fw-bold mb-2">Aramıza Katılın</h2>
+                            <p class="mb-0 text-white-50">Kayıt sonrası hasta paneliniz otomatik olarak açılır.</p>
+                        </div>
+                        <div class="auth-icon">
+                            <i class="fa-solid fa-user-plus"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="Register" method="post" class="row g-3">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-0"></div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Name" class="form-label fw-semibold"></label>
+                            <input asp-for="Name" class="form-control form-control-lg" placeholder="Adınız" />
+                            <span asp-validation-for="Name" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Surname" class="form-label fw-semibold"></label>
+                            <input asp-for="Surname" class="form-control form-control-lg" placeholder="Soyadınız" />
+                            <span asp-validation-for="Surname" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="TC" class="form-label fw-semibold"></label>
+                            <input asp-for="TC" class="form-control form-control-lg" maxlength="11" placeholder="11 haneli TC" />
+                            <span asp-validation-for="TC" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Telefon" class="form-label fw-semibold"></label>
+                            <input asp-for="Telefon" class="form-control form-control-lg" placeholder="05xx xxx xx xx" />
+                            <span asp-validation-for="Telefon" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="DogumTarihi" class="form-label fw-semibold"></label>
+                            <input asp-for="DogumTarihi" type="date" class="form-control form-control-lg" />
+                            <span asp-validation-for="DogumTarihi" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Cinsiyet" class="form-label fw-semibold"></label>
+                            <select asp-for="Cinsiyet" class="form-select form-select-lg">
+                                <option value="">Seçiniz</option>
+                                <option>Kadın</option>
+                                <option>Erkek</option>
+                                <option>Belirtmek İstemiyorum</option>
+                            </select>
+                            <span asp-validation-for="Cinsiyet" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Adres" class="form-label fw-semibold"></label>
+                            <textarea asp-for="Adres" class="form-control" rows="3" placeholder="Adres bilginizi giriniz"></textarea>
+                            <span asp-validation-for="Adres" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <input asp-for="Email" class="form-control form-control-lg" placeholder="ornek@mail.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <input asp-for="Password" type="password" class="form-control form-control-lg" placeholder="Şifreniz" />
+                            <span asp-validation-for="Password" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                            <input asp-for="ConfirmPassword" type="password" class="form-control form-control-lg" placeholder="Şifre tekrar" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12 d-grid pt-2">
+                            <button type="submit" class="btn btn-primary btn-lg auth-submit">
+                                <i class="fa-solid fa-circle-check me-2"></i>Kayıdı Tamamla
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card-footer bg-light text-center py-3 border-0">
+                    <span class="text-muted small">Zaten hesabınız var mı?</span>
+                    <a asp-action="Login" class="fw-bold text-decoration-none ms-1">Giriş Yap</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-shell {
+        position: relative;
+    }
+
+    .hero-panel {
+        background: radial-gradient(circle at top, rgba(120, 208, 255, 0.18), transparent 35%), linear-gradient(160deg, #0b2f54 0%, #02131f 100%);
+        color: #fff;
+        border-radius: 28px;
+        padding: 2.5rem;
+        min-height: 100%;
+        box-shadow: 0 24px 60px rgba(3, 28, 51, 0.22);
+    }
+
+    .hero-panel h1 {
+        font-size: clamp(2rem, 3vw, 3rem);
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .hero-panel p {
+        color: rgba(255, 255, 255, 0.82);
+    }
+
+    .eyebrow {
+        display: inline-block;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .hero-metrics {
+        display: grid;
+        gap: 1rem;
+        margin-top: 2rem;
+    }
+
+    .hero-metrics div {
+        display: flex;
+        align-items: baseline;
+        gap: 0.75rem;
+        padding: 0.85rem 1rem;
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .hero-metrics strong {
+        font-size: 1.6rem;
+    }
+
+    .auth-header {
+        background: linear-gradient(135deg, #0b3b66 0%, #031c33 100%);
+    }
+
+    .auth-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        display: grid;
+        place-items: center;
+        font-size: 1.4rem;
+        background: rgba(255, 255, 255, 0.12);
+    }
+
+    .auth-submit {
+        border: none;
+        border-radius: 999px;
+        padding: 0.95rem 1.5rem;
+        background: linear-gradient(90deg, #0b5cad 0%, #082847 100%);
+        box-shadow: 0 16px 35px rgba(11, 92, 173, 0.24);
+    }
+</style>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

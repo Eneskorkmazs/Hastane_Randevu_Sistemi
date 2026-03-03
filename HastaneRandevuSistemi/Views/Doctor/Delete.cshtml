@@ -1,0 +1,65 @@
+﻿@model HastaneRandevuSistemi.Models.Doctor
+
+@{
+    ViewData["Title"] = "Doktor Sil";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+
+                <div class="card-header text-white text-center py-4" style="background: linear-gradient(90deg, #cb2d3e 0%, #ef473a 100%);">
+                    <div class="mb-2">
+                        <i class="fa-solid fa-user-xmark fa-3x"></i>
+                    </div>
+                    <h4 class="fw-bold mb-0">Doktoru Sil</h4>
+                    <small class="text-white-50">Bu işlem geri alınamaz!</small>
+                </div>
+
+                <div class="card-body p-4 text-center">
+
+                    <h5 class="fw-bold text-dark mb-3">Bu doktor kaydını silmek istediğinize emin misiniz?</h5>
+
+                    <div class="bg-light rounded-3 p-3 text-start border mb-4">
+                        <div class="row mb-2">
+                            <div class="col-4 text-muted small fw-bold text-uppercase">Ünvan:</div>
+                            <div class="col-8 fw-bold text-dark">@Html.DisplayFor(model => model.Title)</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-4 text-muted small fw-bold text-uppercase">Ad Soyad:</div>
+                            <div class="col-8 fw-bold text-primary">
+                                @Html.DisplayFor(model => model.Name) @Html.DisplayFor(model => model.Surname)
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-4 text-muted small fw-bold text-uppercase">Poliklinik:</div>
+                            <div class="col-8">
+                                <span class="badge bg-secondary">
+                                    @Html.DisplayFor(model => model.Department.Name)
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form asp-action="Delete">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-danger btn-lg rounded-pill fw-bold shadow-sm">
+                                <i class="fa-solid fa-trash-can me-2"></i> Evet, Sil
+                            </button>
+
+                            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill fw-bold border-0">
+                                <i class="fa-solid fa-xmark me-2"></i> İptal Et
+                            </a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

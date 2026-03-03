@@ -1,0 +1,129 @@
+﻿@{
+    ViewData["Title"] = "Ana Sayfa";
+}
+
+<div class="full-width-hero position-relative overflow-hidden mb-5 shadow-lg"
+     style="background: linear-gradient(135deg, #004e92 0%, #000428 100%); margin-top: -3rem;">
+
+    <div class="position-absolute top-0 start-0 w-100 h-100 opacity-25"
+         style="background-image: url('https://www.transparenttextures.com/patterns/cubes.png');"></div>
+
+    <div class="container py-5 position-relative">
+        <div class="row align-items-center text-center text-md-start py-5">
+            <div class="col-lg-7 py-5">
+                <span class="badge bg-info text-dark mb-3 px-3 py-2 rounded-pill fw-bold">7/24 Sağlık Hizmeti</span>
+                <h1 class="display-3 fw-bold text-white mb-3 mt-2">Sağlığınız Bizim İçin <span class="text-info">Değerli</span></h1>
+                <p class="fs-4 text-white mb-5 opacity-75">Uzman doktor kadromuz ve modern teknolojimizle hizmetinizdeyiz. Sıra beklemeden online randevunuzu saniyeler içinde oluşturun.</p>
+                <div class="d-grid d-md-flex justify-content-md-start gap-3">
+                    <a asp-controller="Appointment" asp-action="Create" class="btn btn-info btn-lg px-5 py-3 rounded-pill fw-bold shadow hover-grow text-dark">
+                        <i class="fa-solid fa-calendar-check me-2"></i> Hemen Randevu Al
+                    </a>
+                    <a href="#features" class="btn btn-outline-light btn-lg px-5 py-3 rounded-pill fw-bold hover-grow text-white">
+                        Daha Fazla Bilgi
+                    </a>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-lg-block text-center">
+                <i class="fa-solid fa-house-medical-circle-check fa-10x text-white opacity-25"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="features" class="container py-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold display-6">Neden HRS Hastanesi?</h2>
+        <div class="mx-auto bg-primary rounded-pill" style="width: 80px; height: 5px;"></div>
+    </div>
+
+    <div class="row g-4 text-center">
+        <div class="col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 hover-shadow transition">
+                <div class="rounded-circle bg-primary bg-opacity-10 text-primary d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 100px; height: 100px;">
+                    <i class="fa-solid fa-user-doctor fa-3x"></i>
+                </div>
+                <h3 class="fw-bold">Uzman Kadro</h3>
+                <p class="text-muted">Alanında uzman profesör ve operatör doktorlarımızla en doğru teşhis ve tedavi süreçleri.</p>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 hover-shadow transition">
+                <div class="rounded-circle bg-success bg-opacity-10 text-success d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 100px; height: 100px;">
+                    <i class="fa-solid fa-clock-rotate-left fa-3x"></i>
+                </div>
+                <h3 class="fw-bold">Hızlı Randevu</h3>
+                <p class="text-muted">Gelişmiş otomasyon sistemimizle sıra beklemeden dilediğiniz doktordan anında randevu alın.</p>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card h-100 border-0 shadow-sm rounded-4 p-4 hover-shadow transition">
+                <div class="rounded-circle bg-info bg-opacity-10 text-info d-flex align-items-center justify-content-center mx-auto mb-4" style="width: 100px; height: 100px;">
+                    <i class="fa-solid fa-laptop-medical fa-3x"></i>
+                </div>
+                <h3 class="fw-bold">Dijital Sağlık</h3>
+                <p class="text-muted">Sonuçlarınızı online görüntüleyin, randevularınızı takip edin ve geçmişinizi tek tıkla inceleyin.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container mt-5 mb-5">
+    <div class="card border-0 shadow-lg rounded-5 overflow-hidden">
+        <div class="row g-0 align-items-center">
+            <div class="col-md-8 p-5">
+                <h2 class="fw-bold display-6 mb-3">Bir sorunuz mu var?</h2>
+                <p class="lead text-muted mb-4">Çağrı merkezimiz randevu ve bilgi desteği için haftanın her günü hattın diğer ucunda sizi bekliyor.</p>
+                <div class="d-flex align-items-center">
+                    <div class="bg-primary text-white rounded-circle p-3 me-3">
+                        <i class="fa-solid fa-phone-volume fa-2x"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted mb-0">7/24 Çağrı Hattı</h6>
+                        <h2 class="text-primary fw-bold mb-0">543 870 96 57</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 bg-light p-5 text-center d-flex align-items-center justify-content-center border-start">
+                <div class="text-center">
+                    <i class="fa-solid fa-headset text-primary opacity-25 mb-3" style="font-size: 6rem;"></i>
+                    <p class="fw-bold text-uppercase tracking-wider">Müşteri Hizmetleri</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* LAYOUT CONTAINER'INI BU SAYFA İÇİN KIRAN SİHİRLİ CSS */
+    .full-width-hero {
+        width: 100vw;
+        position: relative;
+        left: 50%;
+        right: 50%;
+        margin-left: -50vw;
+        margin-right: -50vw;
+    }
+
+    .hover-grow {
+        transition: transform 0.3s ease;
+    }
+
+        .hover-grow:hover {
+            transform: scale(1.05);
+        }
+
+    .hover-shadow:hover {
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
+        transform: translateY(-5px);
+    }
+
+    .transition {
+        transition: all 0.3s ease;
+    }
+
+    .tracking-wider {
+        letter-spacing: 2px;
+    }
+</style>

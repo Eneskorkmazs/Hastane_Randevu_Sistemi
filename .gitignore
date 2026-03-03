@@ -1,0 +1,23 @@
+# Build
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Logs
+*.log
+
+# Publish
+publish/
+artifacts/
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Local config
+appsettings.Local.json

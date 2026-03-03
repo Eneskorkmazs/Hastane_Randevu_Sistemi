@@ -1,0 +1,59 @@
+﻿@model HastaneRandevuSistemi.Models.Department
+
+@{
+    ViewData["Title"] = "Poliklinik Düzenle";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+
+                <div class="card-header text-white text-center py-4" style="background: linear-gradient(90deg, #004e92 0%, #000428 100%);">
+                    <div class="mb-2">
+                        <i class="fa-solid fa-hospital-user fa-3x"></i>
+                    </div>
+                    <h4 class="fw-bold mb-0">Poliklinik Düzenle</h4>
+                </div>
+
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="Edit">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-3"></div>
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="Name" class="form-control rounded-pill px-4" placeholder="Poliklinik Adı" />
+                            <label asp-for="Name" class="px-4"><i class="fa-solid fa-hospital me-2 text-primary"></i>Poliklinik Adı</label>
+                            <span asp-validation-for="Name" class="text-danger small ms-3"></span>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <input asp-for="Description" class="form-control rounded-pill px-4" placeholder="Açıklama" />
+                            <label asp-for="Description" class="px-4"><i class="fa-solid fa-file-lines me-2 text-primary"></i>Açıklama</label>
+                            <span asp-validation-for="Description" class="text-danger small ms-3"></span>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm"
+                                    style="background: linear-gradient(90deg, #004e92 0%, #000428 100%); border:none;">
+                                <i class="fa-solid fa-floppy-disk me-2"></i> Bilgileri Güncelle
+                            </button>
+
+                            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill fw-bold border-0">
+                                <i class="fa-solid fa-xmark me-2"></i> Vazgeç
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

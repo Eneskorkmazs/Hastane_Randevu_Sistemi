@@ -1,0 +1,88 @@
+﻿@model HastaneRandevuSistemi.Models.Doctor
+
+@{
+    ViewData["Title"] = "Yeni Doktor Ekle";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+
+            <div class="card shadow-lg border-0 rounded-5 overflow-hidden">
+
+                <div class="card-header text-white text-center py-5" style="background: linear-gradient(135deg, #004e92 0%, #000428 100%);">
+                    <div class="position-relative mb-3">
+                        <div class="bg-white bg-opacity-10 rounded-circle d-inline-flex align-items-center justify-content-center shadow-sm" style="width: 80px; height: 80px;">
+                            <i class="fa-solid fa-user-plus fa-3x text-info"></i>
+                        </div>
+                    </div>
+                    <h3 class="fw-bold mb-0">Yeni Doktor Tanımla</h3>
+                    <p class="text-white-50 small mt-2 mb-0">Doktor ismini ünvanıyla birlikte (Örn: Prof. Dr. Ahmet) giriniz.</p>
+                </div>
+
+                <div class="card-body p-4 p-md-5 bg-white">
+                    <form asp-action="Create">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-4 small mb-4 shadow-sm border-0"></div>
+
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input asp-for="Name" class="form-control rounded-pill px-4 border-light bg-light focus-white" placeholder="Ad" required />
+                                    <label asp-for="Name" class="px-4 text-muted"><i class="fa-solid fa-user me-2 text-primary"></i>Ad (Ünvan Dahil)</label>
+                                    <span asp-validation-for="Name" class="text-danger small ms-3"></span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-floating mb-3">
+                                    <input asp-for="Surname" class="form-control rounded-pill px-4 border-light bg-light focus-white" placeholder="Soyad" required />
+                                    <label asp-for="Surname" class="px-4 text-muted"><i class="fa-solid fa-signature me-2 text-primary"></i>Soyad</label>
+                                    <span asp-validation-for="Surname" class="text-danger small ms-3"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4 opacity-25">
+
+                        <h6 class="text-primary fw-bold mb-3 ms-2"><i class="fa-solid fa-key me-2"></i>Giriş Bilgileri</h6>
+
+                        <div class="form-floating mb-3">
+                            <input type="email" name="Email" class="form-control rounded-pill px-4 border-light bg-light focus-white" placeholder="E-Posta" required />
+                            <label class="px-4 text-muted"><i class="fa-solid fa-envelope me-2 text-primary"></i>Doktor E-Posta</label>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <input type="password" name="Password" class="form-control rounded-pill px-4 border-light bg-light focus-white" placeholder="Şifre" required />
+                            <label class="px-4 text-muted"><i class="fa-solid fa-lock me-2 text-primary"></i>Giriş Şifresi</label>
+                        </div>
+
+                        <div class="form-floating mb-4">
+                            <select asp-for="DepartmentId" class="form-select rounded-pill px-4 border-light bg-light focus-white" asp-items="ViewBag.DepartmentId">
+                                <option value="" disabled selected>Poliklinik Seçiniz</option>
+                            </select>
+                            <label asp-for="DepartmentId" class="px-4 text-muted"><i class="fa-solid fa-hospital me-2 text-primary"></i>Poliklinik / Branş</label>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow hover-grow py-3"
+                                    style="background: linear-gradient(90deg, #004e92 0%, #000428 100%); border:none;">
+                                <i class="fa-solid fa-plus-circle me-2"></i> Doktoru Kaydet
+                            </button>
+                            <a asp-action="Index" class="btn btn-link text-secondary text-decoration-none fw-semibold">
+                                <i class="fa-solid fa-arrow-left me-2"></i> Listeye Dön
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

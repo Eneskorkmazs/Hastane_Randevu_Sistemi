@@ -1,0 +1,120 @@
+﻿@{
+    ViewData["Title"] = "Gizlilik Politikası";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+
+                <div class="card-header border-0 text-center py-5" style="background: linear-gradient(135deg, #004e92 0%, #000428 100%);">
+                    <div class="mb-3">
+                        <i class="fa-solid fa-user-shield fa-4x text-white-50"></i>
+                    </div>
+                    <h2 class="fw-bold text-white mb-2">Gizlilik Politikası</h2>
+                    <p class="text-white-50 mb-0 px-5">
+                        Kişisel verilerinizin güvenliği ve gizliliği HRS Hastanesi için en önemli önceliktir.
+                    </p>
+                </div>
+
+                <div class="card-body p-4 p-md-5 bg-white">
+
+                    <div class="accordion accordion-flush" id="privacyAccordion">
+
+                        <div class="accordion-item mb-3 border rounded-3 overflow-hidden shadow-sm">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button fw-bold text-primary bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true">
+                                    <i class="fa-solid fa-file-signature me-3"></i> 1. Veri Toplama ve Kullanım Amacı
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#privacyAccordion">
+                                <div class="accordion-body text-secondary">
+                                    <p>HRS Hastanesi olarak, randevu oluşturma ve sağlık hizmetlerimizden faydalanmanız amacıyla aşağıdaki verileri işliyoruz:</p>
+                                    <ul>
+                                        <li>Ad, Soyad ve İletişim Bilgileri</li>
+                                        <li>T.C. Kimlik Numarası (Yasal zorunluluk gereği)</li>
+                                        <li>Randevu Geçmişi ve Poliklinik Tercihleri</li>
+                                    </ul>
+                                    <p class="mb-0">Bu bilgiler sadece size daha iyi hizmet verebilmek ve randevu takibini sağlamak amacıyla kullanılır.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item mb-3 border rounded-3 overflow-hidden shadow-sm">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed fw-bold text-primary bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                    <i class="fa-solid fa-lock me-3"></i> 2. Veri Güvenliği ve Şifreleme
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#privacyAccordion">
+                                <div class="accordion-body text-secondary">
+                                    <p>Verilerinizin güvenliği için endüstri standardı güvenlik önlemleri almaktayız:</p>
+                                    <ul>
+                                        <li>Tüm veri transferleri <strong>256-bit SSL sertifikası</strong> ile şifrelenmektedir.</li>
+                                        <li>Parolalarınız veritabanımızda "Hash" (geri döndürülemez şifreleme) formatında saklanır.</li>
+                                        <li>Sistem yöneticileri dahil kimse şifrenizi göremez.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item mb-3 border rounded-3 overflow-hidden shadow-sm">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed fw-bold text-primary bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                    <i class="fa-solid fa-cookie-bite me-3"></i> 3. Çerezler (Cookies)
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#privacyAccordion">
+                                <div class="accordion-body text-secondary">
+                                    Kullanıcı deneyiminizi iyileştirmek ve oturumunuzun devamlılığını sağlamak amacıyla çerezler kullanmaktayız.
+                                    Tarayıcı ayarlarınızdan çerezleri dilediğiniz zaman silebilirsiniz, ancak bu durumda beni hatırla gibi bazı özellikler çalışmayabilir.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item mb-3 border rounded-3 overflow-hidden shadow-sm">
+                            <h2 class="accordion-header" id="headingFour">
+                                <button class="accordion-button collapsed fw-bold text-primary bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour">
+                                    <i class="fa-solid fa-scale-balanced me-3"></i> 4. Yasal Haklarınız (KVKK)
+                                </button>
+                            </h2>
+                            <div id="collapseFour" class="accordion-collapse collapse" data-bs-parent="#privacyAccordion">
+                                <div class="accordion-body text-secondary">
+                                    6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) uyarınca haklarınız şunlardır:
+                                    <ul class="mt-2">
+                                        <li>Verilerinizin işlenip işlenmediğini öğrenme,</li>
+                                        <li>Yanlış veya eksik verilerin düzeltilmesini isteme,</li>
+                                        <li>Verilerinizin silinmesini veya anonim hale getirilmesini talep etme hakkına sahipsiniz.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-3 shadow-sm d-flex align-items-center mt-4" role="alert">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x me-3 text-warning"></i>
+                        <div>
+                            <h5 class="alert-heading fw-bold mb-1">Önemli Hatırlatma</h5>
+                            <p class="mb-0 small text-muted">
+                                Bu proje bir yazılım geliştirme örneğidir. Gerçek bir hastane sistemi değildir.
+
+                                Lütfen gerçek T.C. Kimlik numaranızı, kredi kartı bilgilerinizi veya hassas sağlık verilerinizi bu sisteme girmeyiniz.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="card-footer bg-light border-0 py-3 text-center">
+                    <a href="/" class="btn btn-outline-secondary rounded-pill px-4 fw-bold hover-shadow transition">
+                        <i class="fa-solid fa-arrow-left me-2"></i> Ana Sayfaya Dön
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+

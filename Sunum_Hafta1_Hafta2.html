@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hastane Randevu Sistemi - Hafta 1-2 Sunum Özeti</title>
+    <style>
+        :root {
+            --bg: #f4f7fb;
+            --surface: #ffffff;
+            --text: #18212b;
+            --muted: #5f6b7a;
+            --primary: #0b5cad;
+            --primary-dark: #0b2f54;
+            --accent: #d9ecff;
+            --success: #dff6e8;
+            --border: #dde6ef;
+            --shadow: 0 18px 45px rgba(16, 35, 56, 0.10);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", Arial, sans-serif;
+            background:
+                radial-gradient(circle at top left, #dcecff 0, transparent 28%),
+                linear-gradient(180deg, #f6f9fc 0%, #eef3f8 100%);
+            color: var(--text);
+        }
+
+        .page {
+            width: min(1100px, calc(100% - 32px));
+            margin: 32px auto 56px;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, #031c33 100%);
+            color: #fff;
+            border-radius: 28px;
+            padding: 40px;
+            box-shadow: var(--shadow);
+        }
+
+        .hero h1 {
+            margin: 0 0 12px;
+            font-size: 40px;
+            line-height: 1.08;
+        }
+
+        .hero p {
+            margin: 0;
+            max-width: 760px;
+            color: rgba(255, 255, 255, 0.84);
+            font-size: 18px;
+            line-height: 1.6;
+        }
+
+        .chip-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .chip {
+            padding: 10px 14px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.10);
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .section {
+            margin-top: 22px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: var(--shadow);
+        }
+
+        .section h2 {
+            margin: 0 0 14px;
+            font-size: 28px;
+        }
+
+        .section h3 {
+            margin: 0 0 10px;
+            font-size: 20px;
+        }
+
+        .section p {
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        .grid {
+            display: grid;
+            gap: 18px;
+        }
+
+        .grid.two {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 20px;
+        }
+
+        .card.highlight {
+            background: linear-gradient(180deg, #f8fbff 0%, #eef6ff 100%);
+        }
+
+        .tag {
+            display: inline-block;
+            margin-bottom: 10px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: var(--accent);
+            color: var(--primary-dark);
+        }
+
+        ul {
+            margin: 10px 0 0;
+            padding-left: 20px;
+            color: var(--muted);
+            line-height: 1.7;
+        }
+
+        li + li {
+            margin-top: 6px;
+        }
+
+        .timeline {
+            display: grid;
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .timeline-item {
+            display: grid;
+            grid-template-columns: 92px 1fr;
+            gap: 16px;
+            align-items: start;
+        }
+
+        .timeline-label {
+            padding: 10px 12px;
+            border-radius: 16px;
+            background: #eff5fb;
+            text-align: center;
+            font-weight: 700;
+            color: var(--primary-dark);
+        }
+
+        .file-list {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px 18px;
+            margin-top: 14px;
+        }
+
+        .file {
+            padding: 12px 14px;
+            border-radius: 14px;
+            background: #f7faff;
+            border: 1px solid var(--border);
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13px;
+            color: #294058;
+            word-break: break-word;
+        }
+
+        .demo-box {
+            background: linear-gradient(180deg, #fcfefe 0%, #f3faf7 100%);
+            border: 1px solid #d6ece0;
+            border-radius: 20px;
+            padding: 22px;
+        }
+
+        .note {
+            margin-top: 16px;
+            padding: 16px 18px;
+            border-radius: 16px;
+            background: var(--success);
+            color: #1d4e36;
+            font-weight: 600;
+        }
+
+        .footer {
+            margin-top: 20px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 14px;
+        }
+
+        @media print {
+            body {
+                background: #fff;
+            }
+
+            .page {
+                width: 100%;
+                margin: 0;
+            }
+
+            .section,
+            .hero {
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .grid.two,
+            .file-list {
+                grid-template-columns: 1fr;
+            }
+
+            .timeline-item {
+                grid-template-columns: 1fr;
+            }
+
+            .hero {
+                padding: 28px;
+            }
+
+            .hero h1 {
+                font-size: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <section class="hero">
+            <h1>Hastane Randevu Sistemi<br />Hafta 1-2 Geliştirme Sunumu</h1>
+            <p>
+                Bu doküman, projede ilk 2 haftalık plan kapsamında yaptığım geliştirmeleri,
+                neden yaptığımı ve nasıl uyguladığımı sunum diliyle özetlemek için hazırlandı.
+            </p>
+            <div class="chip-row">
+                <div class="chip">Hafta 1: Model + Kayıt + Dokümantasyon</div>
+                <div class="chip">Hafta 2: Hasta Paneli + Profil + Bildirim</div>
+                <div class="chip">ASP.NET Core MVC + Identity + EF Core</div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>1. Amaç</h2>
+            <p>
+                İlk 2 haftadaki hedef, sistemi sadece randevu oluşturan basit bir uygulama olmaktan çıkarıp,
+                kimliği net tanımlanmış bir hasta hesabı ve hasta odaklı bir panel yapısına taşımaktı.
+                Bu yüzden önce kullanıcı modelini genişlettim, sonra bu kullanıcıya ait randevu ve bildirim
+                akışını kurdum.
+            </p>
+        </section>
+
+        <section class="section">
+            <h2>2. Hafta 1'de Ne Değişti?</h2>
+            <div class="grid two">
+                <div class="card highlight">
+                    <span class="tag">Model Genişletme</span>
+                    <h3>AppUser alanları artırıldı</h3>
+                    <ul>
+                        <li>TC</li>
+                        <li>Telefon</li>
+                        <li>Doğum Tarihi</li>
+                        <li>Cinsiyet</li>
+                        <li>Adres</li>
+                    </ul>
+                    <p>
+                        Böylece kullanıcı sadece e-posta ve şifre ile değil, gerçek hasta bilgileriyle kayıt olabilir hale geldi.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <span class="tag">Kayıt Akışı</span>
+                    <h3>Register ekranı ve backend yenilendi</h3>
+                    <ul>
+                        <li>RegisterViewModel güncellendi</li>
+                        <li>Form alanları eklendi</li>
+                        <li>Validasyon kuralları güçlendirildi</li>
+                        <li>Kayıt sonrası kullanıcı doğrudan hasta paneline yönlendirildi</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="grid two" style="margin-top: 18px;">
+                <div class="card">
+                    <span class="tag">UI</span>
+                    <h3>Kayıt ekranı sunuma uygun hale getirildi</h3>
+                    <p>
+                        Standart form görünümü yerine daha modern, kart tabanlı ve PDF’e uygun bir kayıt ekranı tasarlandı.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <span class="tag">Dokümantasyon</span>
+                    <h3>README ve .gitignore eklendi</h3>
+                    <p>
+                        Projenin ilk 2 haftalık kapsamı, teknoloji seti ve başlatma adımları ayrıca dokümante edildi.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>3. Hafta 2'de Ne Değişti?</h2>
+            <div class="grid two">
+                <div class="card highlight">
+                    <span class="tag">Hasta Paneli</span>
+                    <h3>PatientController ve yeni sayfalar eklendi</h3>
+                    <ul>
+                        <li>Dashboard</li>
+                        <li>Profil yönetimi</li>
+                        <li>Bildirim merkezi</li>
+                    </ul>
+                    <p>
+                        Kullanıcı artık giriş yaptıktan sonra kendi panelini görüp randevu ve profil verisini tek yerden yönetebiliyor.
+                    </p>
+                </div>
+
+                <div class="card">
+                    <span class="tag">Randevu İlişkisi</span>
+                    <h3>Randevular hasta hesabına bağlandı</h3>
+                    <ul>
+                        <li>Appointment modeline PatientUserId eklendi</li>
+                        <li>Hasta kendi randevularını listeleyebiliyor</li>
+                        <li>Uygun şartlarda randevu iptal edebiliyor</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="grid two" style="margin-top: 18px;">
+                <div class="card">
+                    <span class="tag">Bildirim Sistemi</span>
+                    <h3>Notification modeli eklendi</h3>
+                    <ul>
+                        <li>Kayıt sonrası bildirim</li>
+                        <li>Randevu oluşturulunca bildirim</li>
+                        <li>Onay, iptal ve tamamlanma bildirimleri</li>
+                        <li>Bildirimleri okundu işaretleme</li>
+                    </ul>
+                </div>
+
+                <div class="card">
+                    <span class="tag">Geçmiş ve Durum Takibi</span>
+                    <h3>Hasta geçmişi daha görünür hale geldi</h3>
+                    <p>
+                        Randevu listesi hasta ve doktor rollerine göre ayrıştırıldı. Hasta için geçmiş, yaklaşan randevular ve iptal akışı sadeleştirildi.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>4. Nasıl Yaptım?</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <div class="timeline-label">Adım 1</div>
+                    <div class="card">
+                        <h3>Mevcut yapıyı analiz ettim</h3>
+                        <p>
+                            Önce proje içindeki model, controller ve view dosyalarını okuyarak mevcut Identity yapısını,
+                            rol isimlerini ve randevu akışını çıkardım.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-label">Adım 2</div>
+                    <div class="card">
+                        <h3>Kullanıcı modelini genişlettim</h3>
+                        <p>
+                            Hasta için gerekli alanları AppUser tarafına ekledim ve kayıt ekranını bu yeni alanlarla uyumlu hale getirdim.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-label">Adım 3</div>
+                    <div class="card">
+                        <h3>Randevu ile kullanıcı arasında ilişki kurdum</h3>
+                        <p>
+                            Sadece ad-soyad eşleşmesi yerine, mümkün olduğunda hasta hesabını doğrudan randevuya bağlayan bir yapı kurdum.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-label">Adım 4</div>
+                    <div class="card">
+                        <h3>Hasta paneli ekranlarını ekledim</h3>
+                        <p>
+                            Dashboard, profil ve bildirim ekranlarını ekleyerek hafta 2 kapsamını görünür hale getirdim.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-label">Adım 5</div>
+                    <div class="card">
+                        <h3>Veritabanı tarafını migration ile hazırladım</h3>
+                        <p>
+                            Yeni alanlar ve yeni Notification tablosu için migration dosyası oluşturdum.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="timeline-item">
+                    <div class="timeline-label">Adım 6</div>
+                    <div class="card">
+                        <h3>Derleme ile doğruladım</h3>
+                        <p>
+                            Son durumda proje derlendi ve değişikliklerin derleme seviyesinde çalıştığı kontrol edildi.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>5. Değişen / Eklenen Ana Dosyalar</h2>
+            <div class="file-list">
+                <div class="file">HastaneRandevuSistemi/Models/AppUser.cs</div>
+                <div class="file">HastaneRandevuSistemi/Models/Appointment.cs</div>
+                <div class="file">HastaneRandevuSistemi/Models/Notification.cs</div>
+                <div class="file">HastaneRandevuSistemi/ViewModels/RegisterViewModel.cs</div>
+                <div class="file">HastaneRandevuSistemi/ViewModels/PatientDashboardViewModel.cs</div>
+                <div class="file">HastaneRandevuSistemi/ViewModels/PatientProfileViewModel.cs</div>
+                <div class="file">HastaneRandevuSistemi/Controllers/AccountController.cs</div>
+                <div class="file">HastaneRandevuSistemi/Controllers/AppointmentController.cs</div>
+                <div class="file">HastaneRandevuSistemi/Controllers/PatientController.cs</div>
+                <div class="file">HastaneRandevuSistemi/Views/Account/Register.cshtml</div>
+                <div class="file">HastaneRandevuSistemi/Views/Appointment/Create.cshtml</div>
+                <div class="file">HastaneRandevuSistemi/Views/Appointment/Index.cshtml</div>
+                <div class="file">HastaneRandevuSistemi/Views/Patient/Dashboard.cshtml</div>
+                <div class="file">HastaneRandevuSistemi/Views/Patient/Profile.cshtml</div>
+                <div class="file">HastaneRandevuSistemi/Views/Patient/Notifications.cshtml</div>
+                <div class="file">HastaneRandevuSistemi/Migrations/20260303120000_AddPatientPortalAndIdentityFields.cs</div>
+                <div class="file">README.md</div>
+                <div class="file">.gitignore</div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>6. Sunumda Nasıl Anlatılabilir?</h2>
+            <div class="demo-box">
+                <h3>Önerilen kısa demo akışı</h3>
+                <ul>
+                    <li>Kayıt ekranını açıp yeni alanları gösterin.</li>
+                    <li>Kayıt sonrası kullanıcının hasta paneline düştüğünü gösterin.</li>
+                    <li>Dashboard üzerinde yaklaşan randevu, geçmiş ve bildirim kartlarını gösterin.</li>
+                    <li>Profil sayfasında hasta bilgilerinin güncellenebildiğini gösterin.</li>
+                    <li>Randevu oluşturup bunun hasta hesabına bağlandığını ve bildirim ürettiğini anlatın.</li>
+                    <li>Randevu geçmişinde uygun randevunun iptal edilebildiğini gösterin.</li>
+                </ul>
+            </div>
+
+            <div class="note">
+                Kısa anlatım cümlesi: “İlk 2 haftada sistemi hasta odaklı hale getirdim; kullanıcı modelini genişlettim,
+                kayıt akışını güçlendirdim ve bunun üstüne çalışan bir hasta paneli, profil yönetimi ve bildirim altyapısı kurdum.”
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>7. Teknik Sonuç</h2>
+            <p>
+                Bu geliştirmelerden sonra proje, kullanıcıyı tanıyan, randevuyu hasta hesabına bağlayan ve hastaya
+                kendi işlemlerini takip edebileceği bir panel sunan daha gerçekçi bir mimariye geçti.
+                Bu da 3. hafta için doktor paneline geçişi daha sağlam hale getirdi.
+            </p>
+        </section>
+
+        <div class="footer">
+            Hazırlanan dosya: <strong>Sunum_Hafta1_Hafta2.html</strong>
+        </div>
+    </div>
+</body>
+</html>

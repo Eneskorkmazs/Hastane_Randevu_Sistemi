@@ -1,0 +1,238 @@
+/* =========================================
+   1. GENEL AYARLAR & YAPI (LAYOUT)
+   ========================================= */
+html, body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7f9;
+    color: #333;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+/* Tipografi & Responsive Font */
+html {
+    font-size: 14px;
+}
+
+@media (min-width: 768px) {
+    html {
+        font-size: 16px;
+    }
+}
+
+/* =========================================
+   2. NAVBAR & FOOTER ÖZELLEÞTÝRMELERÝ
+   ========================================= */
+.navbar-custom {
+    background: linear-gradient(90deg, #004e92 0%, #000428 100%);
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+}
+
+.footer-custom {
+    flex-shrink: 0;
+    background-color: #212529;
+    color: #adb5bd;
+    font-size: 0.9rem;
+    width: 100%;
+}
+
+.footer-link {
+    color: #adb5bd;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+    .footer-link:hover {
+        color: #fff;
+        padding-left: 8px;
+    }
+
+.social-btn {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 50%;
+    margin-right: 8px;
+    transition: all 0.3s ease;
+}
+
+    .social-btn:hover {
+        background-color: #0d6efd;
+        transform: translateY(-3px) scale(1.1);
+        color: #fff;
+    }
+
+/* =========================================
+   3. KARTLAR & PANEL TASARIMLARI
+   ========================================= */
+.main-gradient {
+    background: linear-gradient(135deg, #004e92 0%, #000428 100%);
+}
+
+/* Stat ve Aksiyon Kartlarý */
+.stat-card, .admin-stat-card, .action-card {
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-radius: 15px;
+}
+
+    .stat-card:hover, .admin-stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+    }
+
+    .admin-stat-card:hover {
+        transform: translateX(10px); /* Desktop için yana kayma */
+        background-color: #f8faff !important;
+    }
+
+.icon-shape, .stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+}
+
+/* Yumuþak Renkli Ýkon Kutularý */
+.bg-primary-soft {
+    background-color: rgba(0, 78, 146, 0.1);
+}
+
+.bg-success-soft {
+    background-color: rgba(25, 135, 84, 0.1);
+}
+
+.bg-info-soft {
+    background-color: rgba(13, 202, 240, 0.1);
+}
+
+/* =========================================
+   4. FORM ELEMANLARI & BUTONLAR
+   ========================================= */
+.form-control:focus, .form-select:focus {
+    background-color: #fff !important;
+    border-color: #004e92 !important;
+    box-shadow: 0 0 0 0.25rem rgba(0, 78, 146, 0.1) !important;
+}
+
+/* Focus None (Bazý durumlarda gölgeyi tamamen kaldýrmak için) */
+.focus-none:focus {
+    border-color: #dee2e6;
+    box-shadow: none !important;
+}
+
+textarea.form-control {
+    border-radius: 20px !important;
+}
+
+.btn-white {
+    background-color: #fff;
+    color: #d97706;
+}
+
+    .btn-white:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-2px);
+    }
+
+.hover-lift:hover, .hover-up:hover {
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 15px 30px rgba(0, 78, 146, 0.3) !important;
+}
+
+/* =========================================
+   5. YARDIMCI SINIFLAR & ANÝMASYONLAR
+   ========================================= */
+.fw-black {
+    font-weight: 900;
+}
+
+.ls-1 {
+    letter-spacing: 1px;
+}
+
+.ls-2 {
+    letter-spacing: 2px;
+}
+
+.ls-tight {
+    letter-spacing: -1px;
+}
+
+.x-small {
+    font-size: 0.75rem;
+}
+
+.tracking-wider {
+    letter-spacing: 2px;
+}
+
+/* Pulse Animasyonu (Kritik Bildirimler) */
+.pulse-animation {
+    animation: pulse-red 2s infinite;
+}
+
+@keyframes pulse-red {
+    0% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.5);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(220, 53, 69, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(220, 53, 69, 0);
+    }
+}
+
+/* Dropdown Animasyon */
+.dropdown-menu {
+    border-radius: 10px;
+    border: none;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    animation: fadeIn 0.3s;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =========================================
+   6. MOBÝL ÖNCELÝKLÝ DÜZENLEMELER
+   ========================================= */
+@media (max-width: 767px) {
+    .btn-lg {
+        width: 100%;
+    }
+
+    .display-2 {
+        font-size: 3.5rem;
+    }
+
+    .admin-stat-card:hover {
+        transform: translateY(-5px); /* Mobilde yana deðil yukarý kaysýn */
+    }
+}

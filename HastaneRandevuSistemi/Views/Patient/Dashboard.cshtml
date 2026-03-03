@@ -1,0 +1,331 @@
+@model HastaneRandevuSistemi.ViewModels.PatientDashboardViewModel
+
+@{
+    ViewData["Title"] = "Hasta Paneli";
+}
+
+<div class="container py-4">
+    <div class="patient-hero mb-4">
+        <div>
+            <span class="eyebrow text-white-50">Hasta Paneli</span>
+            <h1 class="mb-2">Merhaba, @Model.FullName</h1>
+            <p class="mb-0">Randevu durumlarınızı, profil bilgilerinizi ve bildirimlerinizi tek ekrandan yönetin.</p>
+        </div>
+        <div class="patient-hero-actions">
+            <a asp-controller="Appointment" asp-action="Create" class="btn btn-light text-primary fw-bold rounded-pill px-4">
+                <i class="fa-solid fa-calendar-plus me-2"></i>Yeni Randevu
+            </a>
+            <a asp-action="Profile" class="btn btn-outline-light rounded-pill px-4">
+                <i class="fa-solid fa-user-pen me-2"></i>Profilim
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="dashboard-stat-card">
+                <span>Yaklaşan Randevu</span>
+                <strong>@Model.UpcomingAppointmentsCount</strong>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="dashboard-stat-card alt">
+                <span>Tamamlanan</span>
+                <strong>@Model.CompletedAppointmentsCount</strong>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="dashboard-stat-card alt-2">
+                <span>İptal Edilen</span>
+                <strong>@Model.CancelledAppointmentsCount</strong>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="dashboard-stat-card alt-3">
+                <span>Okunmamış Bildirim</span>
+                <strong>@Model.UnreadNotificationsCount</strong>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h3 class="h5 fw-bold mb-1">Yaklaşan Randevular</h3>
+                            <p class="text-muted small mb-0">Onay durumu ve saat bilgisiyle birlikte listelenir.</p>
+                        </div>
+                        <a asp-controller="Appointment" asp-action="Index" class="btn btn-sm btn-outline-primary rounded-pill">Tüm Geçmiş</a>
+                    </div>
+
+                    @if (!Model.UpcomingAppointments.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="fa-regular fa-calendar-xmark"></i>
+                            <p class="mb-0">Planlanmış bir randevunuz bulunmuyor.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Tarih</th>
+                                        <th>Doktor</th>
+                                        <th>Branş</th>
+                                        <th>Durum</th>
+                                        <th class="text-end">İşlem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.UpcomingAppointments)
+                                    {
+                                        <tr>
+                                            <td>@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                            <td>@item.Doctor?.Name @item.Doctor?.Surname</td>
+                                            <td>@item.Doctor?.Department?.Name</td>
+                                            <td>
+                                                <span class="badge rounded-pill @(item.Status == AppointmentStatus.Onaylandi ? "bg-success" : "bg-warning text-dark")">
+                                                    @item.Status
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <a asp-controller="Appointment" asp-action="Cancel" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger rounded-pill">
+                                                    İptal Et
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h3 class="h5 fw-bold mb-3">Son Randevu Hareketleri</h3>
+
+                    @if (!Model.RecentAppointments.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="fa-regular fa-folder-open"></i>
+                            <p class="mb-0">Henüz randevu geçmişi oluşmadı.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var item in Model.RecentAppointments)
+                            {
+                                <div class="list-group-item px-0 py-3">
+                                    <div class="d-flex justify-content-between align-items-start gap-3">
+                                        <div>
+                                            <div class="fw-semibold">@item.Doctor?.Name @item.Doctor?.Surname</div>
+                                            <div class="small text-muted">@item.Doctor?.Department?.Name</div>
+                                        </div>
+                                        <div class="text-end small">
+                                            <div class="fw-semibold">@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</div>
+                                            <span class="badge rounded-pill bg-light text-dark border">@item.Status</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <h3 class="h5 fw-bold mb-3">Profil Özeti</h3>
+                    <dl class="profile-summary mb-0">
+                        <div><dt>E-Posta</dt><dd>@Model.Email</dd></div>
+                        <div><dt>Telefon</dt><dd>@Model.Telefon</dd></div>
+                        <div><dt>TC</dt><dd>@Model.TC</dd></div>
+                        <div><dt>Doğum Tarihi</dt><dd>@Model.DogumTarihi?.ToString("dd.MM.yyyy")</dd></div>
+                        <div><dt>Cinsiyet</dt><dd>@Model.Cinsiyet</dd></div>
+                    </dl>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3 class="h5 fw-bold mb-0">Son Bildirimler</h3>
+                        <a asp-action="Notifications" class="btn btn-sm btn-outline-primary rounded-pill">Tümü</a>
+                    </div>
+
+                    @if (!Model.RecentNotifications.Any())
+                    {
+                        <div class="empty-state compact">
+                            <i class="fa-regular fa-bell-slash"></i>
+                            <p class="mb-0">Henüz bildiriminiz yok.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="notification-stack">
+                            @foreach (var item in Model.RecentNotifications)
+                            {
+                                <div class="notification-card @(item.IsRead ? "is-read" : "is-unread")">
+                                    <div class="d-flex justify-content-between gap-3">
+                                        <div>
+                                            <div class="fw-semibold">@item.Title</div>
+                                            <p class="small text-muted mb-0">@item.Message</p>
+                                        </div>
+                                        <span class="small text-muted">@item.CreatedDate.ToString("dd.MM")</span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .patient-hero {
+        border-radius: 30px;
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 2rem;
+        color: #fff;
+        background: linear-gradient(135deg, #0b3b66 0%, #031c33 100%);
+        box-shadow: 0 24px 60px rgba(3, 28, 51, 0.18);
+    }
+
+    .patient-hero h1 {
+        font-size: clamp(2rem, 3vw, 3rem);
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .patient-hero p {
+        color: rgba(255, 255, 255, 0.82);
+        max-width: 42rem;
+    }
+
+    .patient-hero-actions {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .eyebrow {
+        display: inline-block;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .dashboard-stat-card {
+        background: #fff;
+        border-radius: 24px;
+        padding: 1.25rem;
+        box-shadow: 0 15px 35px rgba(22, 36, 56, 0.08);
+    }
+
+    .dashboard-stat-card span {
+        display: block;
+        color: #66788a;
+        margin-bottom: 0.6rem;
+    }
+
+    .dashboard-stat-card strong {
+        font-size: 2rem;
+        line-height: 1;
+    }
+
+    .dashboard-stat-card.alt {
+        background: linear-gradient(180deg, #fffdf4 0%, #fff6d7 100%);
+    }
+
+    .dashboard-stat-card.alt-2 {
+        background: linear-gradient(180deg, #fff7f6 0%, #ffe2dc 100%);
+    }
+
+    .dashboard-stat-card.alt-3 {
+        background: linear-gradient(180deg, #f3fbff 0%, #dff4ff 100%);
+    }
+
+    .empty-state {
+        min-height: 180px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        color: #7d8a97;
+        gap: 0.75rem;
+    }
+
+    .empty-state i {
+        font-size: 2.5rem;
+    }
+
+    .empty-state.compact {
+        min-height: 120px;
+    }
+
+    .profile-summary {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .profile-summary div {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #edf1f5;
+    }
+
+    .profile-summary dt {
+        color: #728091;
+        font-weight: 600;
+    }
+
+    .profile-summary dd {
+        margin: 0;
+        text-align: right;
+        font-weight: 600;
+    }
+
+    .notification-stack {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .notification-card {
+        border-radius: 20px;
+        padding: 1rem 1.1rem;
+        background: #fff;
+        border: 1px solid #edf1f5;
+    }
+
+    .notification-card.is-unread {
+        border-color: #b8ddff;
+        background: linear-gradient(180deg, #f8fcff 0%, #eef7ff 100%);
+    }
+
+    .notification-card.is-read {
+        opacity: 0.85;
+    }
+
+    @@media (max-width: 991px) {
+        .patient-hero {
+            flex-direction: column;
+        }
+    }
+</style>

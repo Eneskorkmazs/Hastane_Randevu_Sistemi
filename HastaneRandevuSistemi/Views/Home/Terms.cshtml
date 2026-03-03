@@ -1,0 +1,99 @@
+﻿@{
+    ViewData["Title"] = "Kullanım Şartları";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+
+                <div class="card-header border-0 text-center py-5" style="background: linear-gradient(135deg, #004e92 0%, #000428 100%);">
+                    <div class="mb-3">
+                        <i class="fa-solid fa-file-contract fa-4x text-white-50"></i>
+                    </div>
+                    <h2 class="fw-bold text-white mb-2">Kullanım Şartları</h2>
+                    <p class="text-white-50 mb-0 px-5">
+                        HRS Randevu Sistemi'ni güvenle kullanabilmeniz için belirlediğimiz kurallar ve sorumluluklar aşağıdadır.
+                    </p>
+                </div>
+
+                <div class="card-body p-4 p-md-5 bg-white">
+
+                    <div class="accordion accordion-flush" id="termsAccordion">
+
+                        <div class="accordion-item mb-3 border rounded-3 overflow-hidden shadow-sm">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button fw-bold text-primary bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true">
+                                    <i class="fa-solid fa-user-lock me-3"></i> 1. Hesap Güvenliği ve Sorumluluk
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse show" data-bs-parent="#termsAccordion">
+                                <div class="accordion-body text-secondary">
+                                    Kullanıcı hesabınızın güvenliğini sağlamak tamamen sizin sorumluluğunuzdadır.
+                                    <ul>
+                                        <li>Şifrenizi üçüncü şahıslarla paylaşmayınız.</li>
+                                        <li>Hesabınız üzerinden yapılan tüm randevu işlemleri sizin tarafınızdan yapılmış kabul edilir.</li>
+                                        <li>Şüpheli bir durum fark ettiğinizde derhal yönetimle iletişime geçiniz.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item mb-3 border rounded-3 overflow-hidden shadow-sm">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed fw-bold text-primary bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo">
+                                    <i class="fa-solid fa-calendar-check me-3"></i> 2. Randevu Kuralları
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" data-bs-parent="#termsAccordion">
+                                <div class="accordion-body text-secondary">
+                                    Sistemin adil kullanımı için aşağıdaki kısıtlamalar getirilmiştir:
+                                    <ul class="mt-2">
+                                        <li>Aynı gün içerisinde <strong>en fazla 2 farklı</strong> poliklinikten randevu alabilirsiniz.</li>
+                                        <li>Gelmeyeceğiniz randevuları randevu saatinden <strong>en az 60 dakika önce</strong> iptal etmeniz gerekmektedir.</li>
+                                        <li>Mazeretsiz olarak 3 kez randevusuna gelmeyen hesaplar geçici süreliğine askıya alınır.</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="accordion-item mb-3 border rounded-3 overflow-hidden shadow-sm">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed fw-bold text-primary bg-light" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree">
+                                    <i class="fa-solid fa-shield-virus me-3"></i> 3. Kötüye Kullanım ve Yasaklar
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" data-bs-parent="#termsAccordion">
+                                <div class="accordion-body text-secondary">
+                                    <p>Sistemin çalışmasını engelleyecek, yavaşlatacak veya diğer kullanıcılara zarar verecek her türlü işlem yasaktır.</p>
+                                    <p class="mb-0">Bot, script veya otomatik yazılım kullanımı tespit edildiğinde ilgili IP adresi engellenecektir.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <div class="alert alert-warning border-0 rounded-3 shadow-sm d-flex align-items-center mt-4" role="alert">
+                        <i class="fa-solid fa-triangle-exclamation fa-2x me-3 text-warning"></i>
+                        <div>
+                            <h5 class="alert-heading fw-bold mb-1">Eğitim Projesi Feragatnamesi</h5>
+                            <p class="mb-0 small text-muted">
+                                Bu proje yazılım geliştirme eğitimi amacıyla hazırlanmıştır. HRS Hastanesi gerçek bir kurum değildir.
+                                Burada oluşturulan randevuların, doktorların ve birimlerin gerçek hayatta bir karşılığı yoktur.
+                            </p>
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="card-footer bg-light border-0 py-3 text-center">
+                    <a href="/" class="btn btn-outline-secondary rounded-pill px-4 fw-bold hover-shadow transition">
+                        <i class="fa-solid fa-arrow-left me-2"></i> Ana Sayfaya Dön
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>

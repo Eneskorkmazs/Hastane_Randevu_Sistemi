@@ -1,0 +1,305 @@
+@model HastaneRandevuSistemi.Models.Appointment
+
+@{
+    ViewData["Title"] = "Randevu Al";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-xl-10">
+            <div class="row g-4 align-items-stretch">
+                <div class="col-lg-4">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 bg-white">
+                        <div class="card-body p-4">
+                            <span class="eyebrow text-primary">Randevu Akışı</span>
+                            <h3 class="fw-bold mb-3">3 adımda randevu oluşturun</h3>
+                            <div class="timeline-mini">
+                                <div>
+                                    <strong>1</strong>
+                                    <p>Poliklinik ve doktor seçin.</p>
+                                </div>
+                                <div>
+                                    <strong>2</strong>
+                                    <p>Tarih ve saat uygunluğunu kontrol edin.</p>
+                                </div>
+                                <div>
+                                    <strong>3</strong>
+                                    <p>Hasta bilgilerinizi onaylayıp kaydedin.</p>
+                                </div>
+                            </div>
+                            <div class="soft-note mt-4">
+                                <i class="fa-solid fa-bell me-2"></i>
+                                Oluşturduğunuz randevu hasta panelinizde ve bildirim kutunuzda görünür.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-8">
+                    <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+                        <div class="card-header auth-header text-white p-4">
+                            <h4 class="mb-1 fw-bold"><i class="fa-solid fa-calendar-check me-2"></i>Yeni Randevu Oluştur</h4>
+                            <p class="small opacity-75 mb-0">Lütfen bilgileri eksiksiz doldurunuz.</p>
+                        </div>
+
+                        <div class="card-body p-4 p-md-5">
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 small" role="alert"></div>
+
+                            <form asp-action="Create" id="appointmentForm">
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold text-secondary small">POLİKLİNİK</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-hospital text-success"></i></span>
+                                        <select id="DepartmentSelect" class="form-select border-start-0 ps-0" asp-items="ViewBag.DepartmentId">
+                                            <option value="">-- Önce poliklinik seçin --</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-4">
+                                    <label asp-for="DoctorId" class="form-label fw-bold text-secondary small">DOKTOR</label>
+                                    <div class="input-group shadow-sm">
+                                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-user-doctor text-primary"></i></span>
+                                        <select asp-for="DoctorId" class="form-select border-start-0 ps-0" id="DoctorSelect" disabled>
+                                            <option value="">-- Önce poliklinik seçin --</option>
+                                        </select>
+                                    </div>
+                                    <span asp-validation-for="DoctorId" class="text-danger x-small mt-1 d-block"></span>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-secondary small">TARİH</label>
+                                        <div class="input-group shadow-sm">
+                                            <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-calendar-days text-primary"></i></span>
+                                            <input type="date" id="DatePicker" class="form-control border-start-0 ps-0" min="@DateTime.Now.ToString("yyyy-MM-dd")" disabled />
+                                        </div>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold text-secondary small">SAAT</label>
+                                        <div class="input-group shadow-sm">
+                                            <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-clock text-primary"></i></span>
+                                            <select id="TimeSelect" class="form-select border-start-0 ps-0" disabled>
+                                                <option value="">-- Önce tarih ve doktor seçin --</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <small id="statusMsg" class="fw-semibold mt-n2 mb-4 d-block"></small>
+                                <input type="hidden" asp-for="AppointmentDate" id="FinalDate" />
+
+                                <div class="patient-mini-card p-3 p-md-4 mb-4">
+                                    <div class="d-flex justify-content-between align-items-center mb-3">
+                                        <h6 class="text-primary fw-bold mb-0"><i class="fa-solid fa-id-card me-2"></i>Hasta Bilgileri</h6>
+                                        <span class="small text-muted">Profilinizden otomatik dolduruldu</span>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label asp-for="PatientName" class="form-label small fw-semibold">Ad</label>
+                                            <input asp-for="PatientName" class="form-control" value="@ViewBag.PatientName" />
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label asp-for="PatientSurname" class="form-label small fw-semibold">Soyad</label>
+                                            <input asp-for="PatientSurname" class="form-control" value="@ViewBag.PatientSurname" />
+                                        </div>
+                                        <div class="col-12">
+                                            <label asp-for="PatientPhone" class="form-label small fw-semibold">Telefon</label>
+                                            <input asp-for="PatientPhone" class="form-control" value="@ViewBag.PatientPhone" placeholder="05xx xxx xx xx" />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-grid">
+                                    <button type="submit" class="btn btn-primary btn-lg auth-submit" id="btnSave">
+                                        <i class="fa-solid fa-circle-check me-2"></i>Randevuyu Onayla
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .auth-header {
+        background: linear-gradient(135deg, #0b3b66 0%, #031c33 100%);
+    }
+
+    .eyebrow {
+        display: inline-block;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .timeline-mini {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .timeline-mini div {
+        position: relative;
+        padding-left: 3rem;
+    }
+
+    .timeline-mini strong {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 2rem;
+        height: 2rem;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        color: #0b5cad;
+        background: rgba(11, 92, 173, 0.12);
+    }
+
+    .timeline-mini p {
+        margin: 0;
+        color: #516170;
+    }
+
+    .soft-note {
+        border-radius: 18px;
+        padding: 1rem 1.1rem;
+        background: #eef6ff;
+        color: #214e74;
+    }
+
+    .patient-mini-card {
+        border-radius: 22px;
+        background: linear-gradient(180deg, #f8fbff 0%, #eef5fd 100%);
+        border: 1px solid #dce8f5;
+    }
+
+    .auth-submit {
+        border: none;
+        border-radius: 999px;
+        padding: 0.95rem 1.5rem;
+        background: linear-gradient(90deg, #0b5cad 0%, #082847 100%);
+        box-shadow: 0 16px 35px rgba(11, 92, 173, 0.24);
+    }
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        $(document).ready(function () {
+            const $deptSelect = $("#DepartmentSelect");
+            const $doctorSelect = $("#DoctorSelect");
+            const $datePicker = $("#DatePicker");
+            const $timeSelect = $("#TimeSelect");
+            const $msgBox = $("#statusMsg");
+            const $finalInput = $("#FinalDate");
+
+            $deptSelect.change(function () {
+                const deptId = $(this).val();
+                $doctorSelect.empty().append('<option value="">-- Yükleniyor... --</option>').prop("disabled", true);
+                $datePicker.val("").prop("disabled", true);
+                resetTimeSelect();
+
+                if (!deptId) {
+                    $doctorSelect.empty().append('<option value="">-- Önce poliklinik seçin --</option>');
+                    return;
+                }
+
+                $.ajax({
+                    url: "/Appointment/GetDoctorsByDepartment",
+                    type: "GET",
+                    data: { departmentId: deptId },
+                    success: function (doctors) {
+                        $doctorSelect.empty().append('<option value="">-- Doktor seçiniz --</option>');
+                        if (doctors.length === 0) {
+                            $doctorSelect.append("<option disabled>Bu bölümde doktor bulunamadı.</option>");
+                        } else {
+                            $.each(doctors, function (_, doctor) {
+                                $doctorSelect.append($("<option></option>").val(doctor.id).html(doctor.name));
+                            });
+                            $doctorSelect.prop("disabled", false);
+                        }
+                    },
+                    error: function () {
+                        alert("Doktorlar yüklenirken hata oluştu.");
+                    }
+                });
+            });
+
+            $doctorSelect.change(function () {
+                const doctorId = $(this).val();
+                $datePicker.val("");
+                resetTimeSelect();
+                $datePicker.prop("disabled", !doctorId);
+            });
+
+            $datePicker.change(loadSlots);
+
+            function loadSlots() {
+                const doctorId = $doctorSelect.val();
+                const dateVal = $datePicker.val();
+                if (!doctorId || !dateVal) {
+                    resetTimeSelect();
+                    return;
+                }
+
+                $msgBox.text("Müsaitlik durumu kontrol ediliyor...").removeClass("text-danger text-success");
+                $timeSelect.empty().append("<option>Yükleniyor...</option>").prop("disabled", true);
+
+                $.ajax({
+                    url: "/Appointment/GetTakenSlots",
+                    type: "GET",
+                    data: { doctorId: doctorId, date: dateVal },
+                    success: function (takenSlots) {
+                        $timeSelect.empty().append('<option value="">-- Saat seçiniz --</option>');
+                        let hasSlot = false;
+                        for (let i = 9; i < 17; i++) {
+                            const hourString = (i < 10 ? "0" + i : i) + ":00";
+                            if (takenSlots.includes(hourString)) {
+                                $timeSelect.append(`<option value="${hourString}" disabled>${hourString} (DOLU)</option>`);
+                            } else {
+                                $timeSelect.append(`<option value="${hourString}">${hourString}</option>`);
+                                hasSlot = true;
+                            }
+                        }
+
+                        if (!hasSlot) {
+                            $msgBox.text("Bugün için boş yer kalmamıştır.").addClass("text-danger");
+                        } else {
+                            $msgBox.text("Müsait saatler listelendi.").addClass("text-success");
+                            $timeSelect.prop("disabled", false);
+                        }
+                    },
+                    error: function () {
+                        $msgBox.text("Müsaitlik bilgisi alınamadı.").addClass("text-danger");
+                    }
+                });
+            }
+
+            function resetTimeSelect() {
+                $timeSelect.empty().append('<option value="">-- Önce tarih ve doktor seçin --</option>');
+                $timeSelect.prop("disabled", true);
+                $msgBox.text("").removeClass("text-danger text-success");
+            }
+
+            $("#appointmentForm").submit(function (e) {
+                const d = $datePicker.val();
+                const t = $timeSelect.val();
+                if (!d || !t) {
+                    e.preventDefault();
+                    alert("Lütfen tarih ve saat seçiniz.");
+                } else {
+                    $finalInput.val(d + "T" + t);
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,72 @@
+﻿@model HastaneRandevuSistemi.ViewModels.LoginViewModel
+
+@{
+    ViewData["Title"] = "Giriş Yap";
+}
+
+<div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+    <div class="col-md-5 col-lg-4">
+
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+
+            <div class="card-header text-white text-center py-4" style="background: linear-gradient(90deg, #004e92 0%, #000428 100%);">
+                <div class="mb-2">
+                    <i class="fa-solid fa-hospital-user fa-3x"></i>
+                </div>
+                <h4 class="fw-bold mb-0">HRS Giriş</h4>
+                <small class="text-white-50">Hesabınıza erişmek için oturum açın</small>
+            </div>
+
+            <div class="card-body p-4 p-md-5">
+                <form asp-action="Login" asp-route-returnUrl="@ViewData["ReturnUrl"]">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger text-center small mb-4" role="alert"></div>
+
+                    <div class="form-floating mb-3">
+                        <input asp-for="Email" class="form-control rounded-pill px-4" placeholder="name@example.com" />
+                        <label asp-for="Email" class="px-4"><i class="fa-solid fa-envelope me-2 text-primary"></i>Email Adresi</label>
+                        <span asp-validation-for="Email" class="text-danger small ms-3"></span>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input asp-for="Password" type="password" class="form-control rounded-pill px-4" placeholder="Şifre" />
+                        <label asp-for="Password" class="px-4"><i class="fa-solid fa-key me-2 text-primary"></i>Şifre</label>
+                        <span asp-validation-for="Password" class="text-danger small ms-3"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4 px-2">
+                        <div class="form-check">
+                            <input class="form-check-input" asp-for="RememberMe" />
+                            <label class="form-check-label small text-muted" asp-for="RememberMe">Beni Hatırla</label>
+                        </div>
+                        <a asp-action="ForgotPassword" class="small text-decoration-none fw-bold text-primary">Şifremi Unuttum?</a>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg rounded-pill fw-bold shadow-sm"
+                                style="background: linear-gradient(90deg, #004e92 0%, #000428 100%); border:none;">
+                            <i class="fa-solid fa-right-to-bracket me-2"></i> Giriş Yap
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-footer bg-light text-center py-3 border-0">
+                <p class="mb-0 small text-muted">
+                    Henüz hesabınız yok mu?
+                    <a asp-action="Register" class="text-primary fw-bold text-decoration-none ms-1">Hemen Kayıt Olun</a>
+                </p>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <small class="text-muted"><i class="fa-solid fa-lock me-1"></i> Bağlantınız 256-bit SSL ile korunmaktadır.</small>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

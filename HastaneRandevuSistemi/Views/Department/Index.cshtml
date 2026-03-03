@@ -1,0 +1,56 @@
+﻿@model IEnumerable<HastaneRandevuSistemi.Models.Department>
+
+@{
+    ViewData["Title"] = "Poliklinikler";
+}
+
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-success">
+                <i class="fa-solid fa-hospital me-2"></i> Poliklinikler
+            </h2>
+            <p class="text-muted mb-0">Hastanemizdeki tüm tıbbi birimlerin listesi.</p>
+        </div>
+        <a asp-action="Create" class="btn btn-success btn-lg shadow-sm rounded-pill px-4">
+            <i class="fa fa-plus me-2"></i> Yeni Poliklinik
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light text-secondary">
+                    <tr>
+                        <th class="py-3 ps-4">Poliklinik Adı</th>
+                        <th>Açıklama</th>
+                        <th class="text-end pe-4" style="width: 150px;">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="ps-4 fw-bold text-dark">
+                                <i class="fa-solid fa-house-medical text-success me-2"></i> @item.Name
+                            </td>
+                            <td class="text-muted small">
+                                @(string.IsNullOrEmpty(item.Description) ? "-" : item.Description)
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="btn-group">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-light text-warning" title="Düzenle">
+                                        <i class="fa-solid fa-pen-to-square fa-lg"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-light text-danger" title="Sil">
+                                        <i class="fa-solid fa-trash-can fa-lg"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,270 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using HastaneRandevuSistemi.Models
+@inject SignInManager<AppUser> SignInManager
+@inject UserManager<AppUser> UserManager
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Hastane Randevu Sistemi</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body class="d-flex flex-column min-vh-100">
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow fixed-top" style="background: linear-gradient(90deg, #004e92 0%, #000428 100%);">
+            <div class="container">
+                @if (User.IsInRole("Doktor"))
+                {
+                    <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="DoctorDashboard">
+                        <i class="fa-solid fa-user-md me-2"></i> HRS <span class="fw-light small">Doktor Paneli</span>
+                    </a>
+                }
+                else if (User.IsInRole("Hasta"))
+                {
+                    <a class="navbar-brand fw-bold" asp-area="" asp-controller="Patient" asp-action="Dashboard">
+                        <i class="fa-solid fa-heart-pulse me-2"></i> HRS <span class="fw-light small">Hasta Paneli</span>
+                    </a>
+                }
+                else
+                {
+                    <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="fa-solid fa-heart-pulse me-2"></i> HRS <span class="fw-light small">Randevu Sistemi</span>
+                    </a>
+                }
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1 ms-auto mb-2 mb-lg-0">
+
+                        @if (!User.IsInRole("Doktor"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-area="" asp-controller="Home" asp-action="Index">
+                                    <i class="fa-solid fa-house-chimney me-1"></i> Ana Sayfa
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Doktor"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-warning fw-bold" asp-controller="Home" asp-action="DoctorDashboard">
+                                    <i class="fa-solid fa-chart-line me-1"></i> Panelim
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Hasta"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-warning fw-bold" asp-controller="Patient" asp-action="Dashboard">
+                                    <i class="fa-solid fa-gauge-high me-1"></i> Panelim
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="Patient" asp-action="Notifications">
+                                    <i class="fa-solid fa-bell me-1"></i> Bildirimler
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Hasta") || !User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="Appointment" asp-action="Create">
+                                    <i class="fa-solid fa-calendar-plus me-1"></i> Randevu Al
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.Identity.IsAuthenticated)
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white" asp-controller="Appointment" asp-action="Index">
+                                    @if (User.IsInRole("Hasta"))
+                                    {
+                                        <span><i class="fa-solid fa-calendar-days me-1"></i> Randevularım</span>
+                                    }
+                                    else
+                                    {
+                                        <span><i class="fa-solid fa-list-check me-1"></i> Randevu Listesi</span>
+                                    }
+                                </a>
+                            </li>
+                        }
+
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-white" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-briefcase-medical me-1"></i> Yönetim
+                                </a>
+                                <ul class="dropdown-menu border-0 shadow-lg p-2" aria-labelledby="navbarDropdown">
+                                    <li>
+                                        <a class="dropdown-item rounded" asp-controller="Doctor" asp-action="Index">
+                                            <i class="fa-solid fa-user-doctor text-primary me-2"></i> Doktorlar
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item rounded" asp-controller="Department" asp-action="Index">
+                                            <i class="fa-solid fa-hospital text-success me-2"></i> Poliklinikler
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item rounded bg-light fw-bold text-danger" asp-controller="Home" asp-action="AdminDashboard">
+                                            <i class="fa-solid fa-gauge-high me-2"></i> Yönetim Paneli
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                    </ul>
+
+                    <ul class="navbar-nav ms-3">
+                        @if (SignInManager.IsSignedIn(User))
+                        {
+                            var currentUser = await UserManager.GetUserAsync(User);
+                            @* İsim kısmına ünvanı ekledim *@
+                            var displayName = currentUser != null ? $"{currentUser.Name} {currentUser.Surname}" : User.Identity.Name;
+
+                            <li class="nav-item dropdown">
+                                <a class="btn btn-outline-light dropdown-toggle rounded-pill px-3" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa-solid fa-circle-user me-2"></i> @displayName
+                                    <br><small style="font-size:0.7em; opacity:0.8;">
+                                        @(User.IsInRole("Admin") ? "Admin" : User.IsInRole("Doktor") ? "Doktor" : "Hasta")
+                                    </small>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end border-0 shadow mt-2">
+                                    @if (User.IsInRole("Hasta"))
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Patient" asp-action="Dashboard">
+                                                <i class="fa-solid fa-gauge-high me-2"></i> Hasta Paneli
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Patient" asp-action="Profile">
+                                                <i class="fa-solid fa-user-pen me-2"></i> Profilim
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Patient" asp-action="Notifications">
+                                                <i class="fa-solid fa-bell me-2"></i> Bildirimler
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                    }
+                                    <li>
+                                        <a class="dropdown-item text-danger" asp-controller="Account" asp-action="Logout">
+                                            <i class="fa-solid fa-power-off me-2"></i> Çıkış Yap
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link text-white me-2" asp-controller="Account" asp-action="Register">
+                                    <i class="fa-solid fa-user-plus me-1"></i> Kayıt Ol
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-light text-primary fw-bold rounded-pill px-4" asp-controller="Account" asp-action="Login">
+                                    <i class="fa-solid fa-right-to-bracket me-2"></i> Giriş
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container mt-5 pt-5">
+        <main role="main" class="@(ViewData["Title"]?.ToString() == "Ana Sayfa" ? "container-fluid p-0" : "container mt-5 pt-5")">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="bg-dark text-white pt-5 mt-auto">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h5 class="text-uppercase fw-bold mb-3 text-primary"><i class="fa-solid fa-heart-pulse me-2"></i>HRS Hastanesi</h5>
+                    <p class="small text-white-50">
+                        Modern tıbbın imkanları, uzman kadromuz ve ileri teknolojimizle sağlığınız için 7/24 hizmetinizdeyiz.
+                        Randevu sistemimiz ile beklemeden muayene olabilirsiniz.
+                    </p>
+                    <div class="mt-3">
+                        <a href="https://github.com/Eneskorkmazs" target="_blank" class="social-btn"><i class="fa-brands fa-github"></i></a>
+                        <a href="https://www.instagram.com/enes_korkmazs_/#" target="_blank" class="social-btn"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="https://www.linkedin.com/in/enes-korkmaz-436a92340/" target="_blank" class="social-btn"><i class="fa-brands fa-linkedin-in"></i></a>
+                    </div>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h5 class="text-uppercase fw-bold mb-3">Hızlı Erişim</h5>
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><a href="/" class="footer-link"><i class="fa-solid fa-angle-right me-2 text-primary"></i>Ana Sayfa</a></li>
+                        <li class="mb-2"><a href="/Appointment/Create" class="footer-link"><i class="fa-solid fa-angle-right me-2 text-primary"></i>Randevu Al</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h5 class="text-uppercase fw-bold mb-3">İletişim</h5>
+                    <ul class="list-unstyled small text-white-50">
+                        <li class="mb-3">
+                            <i class="fa-solid fa-location-dot me-2 text-primary fa-lg"></i>
+                            Şanlıurfa
+                        </li>
+                        <li class="mb-3">
+                            <i class="fa-solid fa-phone me-2 text-primary fa-lg"></i>
+                            +90 543 870 96 57
+                        </li>
+                        <li class="mb-3">
+                            <i class="fa-solid fa-envelope me-2 text-primary fa-lg"></i>
+                            info@havatakip.com.tr
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-clock me-2 text-primary fa-lg"></i>
+                            7/24 Acil Servis
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <hr class="mb-4 border-secondary">
+
+            <div class="row align-items-center pb-4">
+                <div class="col-md-7 col-lg-8 text-center text-md-start">
+                    <div class="p-3">
+                        &copy; 2025 <strong class="text-primary">HRS Hastanesi</strong>. Tüm Hakları Saklıdır.
+                    </div>
+                </div>
+                <div class="col-md-5 col-lg-4 text-center text-md-end">
+                    <a asp-controller="Home" asp-action="Privacy" class="text-white-50 text-decoration-none me-3 small">Gizlilik Politikası</a>
+                    <a asp-controller="Home" asp-action="Terms" class="text-white-50 text-decoration-none small">Kullanım Şartları</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,63 @@
+﻿@model HastaneRandevuSistemi.Models.Department
+
+@{
+    ViewData["Title"] = "Poliklinik Sil";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+
+                <div class="card-header text-white text-center py-4" style="background: linear-gradient(90deg, #cb2d3e 0%, #ef473a 100%);">
+                    <i class="fa-solid fa-circle-exclamation fa-3x mb-2"></i>
+                    <h4 class="fw-bold mb-0">Poliklinik Sil</h4>
+                </div>
+
+                <div class="card-body p-4 text-center">
+
+                    @* EĞER DOKTOR VARSA BURADA KIRMIZI UYARI ÇIKACAK *@
+                    @if (Model.Doctors != null && Model.Doctors.Any())
+                    {
+                        <div class="alert alert-danger rounded-4 shadow-sm mb-4 border-0 text-start">
+                            <div class="d-flex">
+                                <i class="fa-solid fa-hand fa-2x me-3"></i>
+                                <div>
+                                    <h6 class="fw-bold">Durun! Bu Bölüm Silinemez</h6>
+                                    <p class="small mb-0">Bu poliklinikte şu an kayıtlı <strong>@Model.Doctors.Count()</strong> doktor bulunmaktadır. Önce doktorları silmeniz gerekir.</p>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <h5 class="fw-bold text-dark mb-3">Bu polikliniği silmek istediğinize emin misiniz?</h5>
+                    }
+
+                    <div class="bg-light rounded-3 p-3 text-start border mb-4">
+                        <div class="row mb-2">
+                            <div class="col-4 text-muted small fw-bold text-uppercase">Bölüm:</div>
+                            <div class="col-8 fw-bold text-danger">@Model.Name</div>
+                        </div>
+                    </div>
+
+                    <form asp-action="Delete">
+                        <input type="hidden" asp-for="Id" />
+
+                        <div class="d-grid gap-2">
+                            @* Doktor varsa silme butonunu "disabled" (pasif) yapıyoruz *@
+                            <button type="submit" class="btn btn-danger btn-lg rounded-pill fw-bold shadow-sm"
+                            @(Model.Doctors != null && Model.Doctors.Any() ? "disabled" : "")>
+                                <i class="fa-solid fa-trash-can me-2"></i> Polikliniği Sil
+                            </button>
+
+                            <a asp-action="Index" class="btn btn-outline-secondary rounded-pill fw-bold border-0">
+                                <i class="fa-solid fa-arrow-left me-2"></i> Listeye Dön
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
