@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 namespace HastaneRandevuSistemi.Controllers
 {
@@ -22,8 +23,22 @@ namespace HastaneRandevuSistemi.Controllers
             _userManager = userManager;
         }
 
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index(
+            AppointmentStatus? status = null,
+            int? doctorId = null,
+            string? search = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null)
         {
+            var normalizedFrom = fromDate?.Date;
+            var normalizedTo = toDate?.Date;
+            if (normalizedFrom.HasValue && normalizedTo.HasValue && normalizedFrom.Value > normalizedTo.Value)
+            {
+                var swap = normalizedFrom;
+                normalizedFrom = normalizedTo;
+                normalizedTo = swap;
+            }
+
             var appointmentsQuery = _context.Appointments
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
@@ -31,9 +46,9 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (User.IsInRole("Doktor"))
             {
-                var doctorId = await GetCurrentDoctorIdAsync();
-                appointmentsQuery = doctorId.HasValue
-                    ? appointmentsQuery.Where(a => a.DoctorId == doctorId.Value)
+                var doctorIdByUser = await GetCurrentDoctorIdAsync();
+                appointmentsQuery = doctorIdByUser.HasValue
+                    ? appointmentsQuery.Where(a => a.DoctorId == doctorIdByUser.Value)
                     : appointmentsQuery.Where(a => a.Id == -1);
             }
             else if (User.IsInRole("Hasta"))
@@ -47,9 +62,70 @@ namespace HastaneRandevuSistemi.Controllers
                 }
             }
 
+            if (User.IsInRole("Admin") && doctorId.HasValue)
+            {
+                appointmentsQuery = appointmentsQuery.Where(a => a.DoctorId == doctorId);
+            }
+
+            if (status.HasValue)
+            {
+                appointmentsQuery = appointmentsQuery.Where(a => a.Status == status.Value);
+            }
+
+            if (normalizedFrom.HasValue)
+            {
+                appointmentsQuery = appointmentsQuery.Where(a => a.AppointmentDate >= normalizedFrom.Value);
+            }
+
+            if (normalizedTo.HasValue)
+            {
+                appointmentsQuery = appointmentsQuery.Where(a => a.AppointmentDate < normalizedTo.Value.AddDays(1));
+            }
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var normalizedSearch = search.Trim().ToLower();
+
+                appointmentsQuery = appointmentsQuery.Where(a =>
+                    ((a.PatientName + " " + a.PatientSurname).ToLower().Contains(normalizedSearch)) ||
+                    ((a.Doctor != null ? (a.Doctor.Name + " " + a.Doctor.Surname) : "").ToLower().Contains(normalizedSearch)) ||
+                    ((a.Doctor != null && a.Doctor.Department != null ? a.Doctor.Department.Name : "").ToLower().Contains(normalizedSearch)));
+            }
+
+            ViewData["SelectedStatus"] = status.HasValue ? ((int)status.Value).ToString() : null;
+            ViewData["SearchTerm"] = search;
+            ViewData["DoctorId"] = doctorId;
+            ViewData["FromDate"] = normalizedFrom?.ToString("yyyy-MM-dd");
+            ViewData["ToDate"] = normalizedTo?.ToString("yyyy-MM-dd");
+
+            ViewData["StatusOptions"] = Enum.GetValues(typeof(AppointmentStatus))
+                .Cast<AppointmentStatus>()
+                .Select(s => new SelectListItem
+                {
+                    Value = ((int)s).ToString(),
+                    Text = s.ToString(),
+                    Selected = status.HasValue && status.Value == s
+                })
+                .ToList();
+
+            if (User.IsInRole("Admin"))
+            {
+                ViewData["DoctorOptions"] = _context.Doctors
+                    .OrderBy(d => d.Name)
+                    .ThenBy(d => d.Surname)
+                    .Select(d => new SelectListItem
+                    {
+                        Value = d.Id.ToString(),
+                        Text = d.Name + " " + d.Surname,
+                        Selected = doctorId.HasValue && doctorId.Value == d.Id
+                    })
+                    .ToList();
+            }
+
             return View(await appointmentsQuery.OrderByDescending(a => a.AppointmentDate).ToListAsync());
         }
 
+        [Authorize(Roles = "Admin,Hasta")]
         public async Task<IActionResult> Create()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -66,6 +142,7 @@ namespace HastaneRandevuSistemi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Hasta")]
         public async Task<IActionResult> Create([Bind("Id,AppointmentDate,PatientName,PatientSurname,PatientPhone,DoctorId")] Appointment appointment)
         {
             var currentUser = await _userManager.GetUserAsync(User);
@@ -81,12 +158,12 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (appointment.AppointmentDate <= DateTime.Now)
             {
-                ModelState.AddModelError(nameof(appointment.AppointmentDate), "Randevu tarihi ileri bir zaman olmalıdır.");
+                ModelState.AddModelError(nameof(appointment.AppointmentDate), "Randevu tarihi ileri bir zaman olmalıdı.");
             }
 
             if (appointment.AppointmentDate.Minute != 0 || appointment.AppointmentDate.Hour < 9 || appointment.AppointmentDate.Hour > 16)
             {
-                ModelState.AddModelError(nameof(appointment.AppointmentDate), "Randevular 09:00 - 16:00 arasındaki saat başlarında oluşturulabilir.");
+                ModelState.AddModelError(nameof(appointment.AppointmentDate), "Randevular 09:00 - 16:00 arasında saat başlarında oluşturulabilir.");
             }
 
             var isSlotBusy = await _context.Appointments.AnyAsync(a =>
@@ -137,42 +214,62 @@ namespace HastaneRandevuSistemi.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Doktor")]
         public async Task<IActionResult> Delete(int id)
         {
             var appointment = await _context.Appointments.FindAsync(id);
-            if (appointment != null)
+            if (appointment == null)
             {
-                _context.Appointments.Remove(appointment);
-                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
             }
+
+            if (User.IsInRole("Doktor") && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
+            {
+                return Forbid();
+            }
+
+            _context.Appointments.Remove(appointment);
+            await _context.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Doktor")]
         public async Task<IActionResult> Approve(int id)
         {
             var appointment = await _context.Appointments.FindAsync(id);
-            if (appointment != null)
+            if (appointment == null)
             {
-                appointment.Status = AppointmentStatus.Onaylandi;
-                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
 
-                if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
-                {
-                    await CreateNotificationAsync(
-                        appointment.PatientUserId,
-                        "Randevunuz onaylandı",
-                        $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz onaylandı.",
-                        "Durum",
-                        "/Appointment/Index");
-                }
+            if (User.IsInRole("Doktor") && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
+            {
+                return Forbid();
+            }
+
+            appointment.Status = AppointmentStatus.Onaylandi;
+            await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
+            {
+                await CreateNotificationAsync(
+                    appointment.PatientUserId,
+                    "Randevunuz onaylandı",
+                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz onaylandı.",
+                    "Durum",
+                    "/Appointment/Index");
             }
 
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Doktor,Hasta")]
         public async Task<IActionResult> Cancel(int id)
         {
@@ -182,7 +279,16 @@ namespace HastaneRandevuSistemi.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (User.IsInRole("Hasta"))
+            var isAdmin = User.IsInRole("Admin");
+            var isDoctor = User.IsInRole("Doktor");
+            var isPatient = User.IsInRole("Hasta");
+
+            if (isDoctor && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
+            {
+                return Forbid();
+            }
+
+            if (isPatient)
             {
                 var patientUser = await _userManager.GetUserAsync(User);
                 var isOwner = patientUser != null && (
@@ -194,6 +300,11 @@ namespace HastaneRandevuSistemi.Controllers
                     TempData["ErrorMessage"] = "Bu randevu iptal edilemez.";
                     return RedirectToAction(nameof(Index));
                 }
+            }
+
+            if (!isAdmin && !isDoctor && !isPatient)
+            {
+                return Forbid();
             }
 
             appointment.Status = AppointmentStatus.Iptal;
@@ -213,24 +324,33 @@ namespace HastaneRandevuSistemi.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Doktor")]
         public async Task<IActionResult> Complete(int id)
         {
             var appointment = await _context.Appointments.FindAsync(id);
-            if (appointment != null)
+            if (appointment == null)
             {
-                appointment.Status = AppointmentStatus.Tamamlandi;
-                await _context.SaveChangesAsync();
+                return RedirectToAction(nameof(Index));
+            }
 
-                if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
-                {
-                    await CreateNotificationAsync(
-                        appointment.PatientUserId,
-                        "Randevunuz tamamlandı",
-                        $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli muayeneniz tamamlandı.",
-                        "Durum",
-                        "/Appointment/Index");
-                }
+            if (User.IsInRole("Doktor") && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
+            {
+                return Forbid();
+            }
+
+            appointment.Status = AppointmentStatus.Tamamlandi;
+            await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
+            {
+                await CreateNotificationAsync(
+                    appointment.PatientUserId,
+                    "Randevunuz tamamlandı",
+                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli muayeneniz tamamlandı.",
+                    "Durum",
+                    "/Appointment/Index");
             }
 
             return RedirectToAction(nameof(Index));
@@ -263,6 +383,12 @@ namespace HastaneRandevuSistemi.Controllers
                 .ToList();
 
             return Json(taken);
+        }
+
+        private async Task<bool> IsCurrentDoctorOwnerAsync(int doctorId)
+        {
+            var currentDoctorId = await GetCurrentDoctorIdAsync();
+            return currentDoctorId.HasValue && currentDoctorId.Value == doctorId;
         }
 
         private async Task<int?> GetCurrentDoctorIdAsync()

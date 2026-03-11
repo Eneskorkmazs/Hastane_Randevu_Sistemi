@@ -172,6 +172,29 @@ namespace HastaneRandevuSistemi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAsReadAjax(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { success = false });
+            }
+
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == user.Id);
+
+            if (notification != null && !notification.IsRead)
+            {
+                notification.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+
+            var unreadCount = await GetUnreadNotificationCountAsync(user.Id);
+            return Json(new { success = true, unreadCount });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllAsRead()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -197,6 +220,46 @@ namespace HastaneRandevuSistemi.Controllers
             return RedirectToAction(nameof(Notifications));
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllAsReadAjax()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { success = false });
+            }
+
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == user.Id && !n.IsRead)
+                .ToListAsync();
+
+            foreach (var notification in notifications)
+            {
+                notification.IsRead = true;
+            }
+
+            if (notifications.Count > 0)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true, unreadCount = 0 });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> UnreadNotificationCount()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Json(new { count = 0 });
+            }
+
+            var count = await GetUnreadNotificationCountAsync(user.Id);
+            return Json(new { count });
+        }
+
         private IQueryable<Appointment> GetPatientAppointmentsQuery(AppUser user)
         {
             return _context.Appointments
@@ -205,6 +268,12 @@ namespace HastaneRandevuSistemi.Controllers
                 .Where(a =>
                     a.PatientUserId == user.Id ||
                     (a.PatientUserId == null && a.PatientName == user.Name && a.PatientSurname == user.Surname));
+        }
+
+        private async Task<int> GetUnreadNotificationCountAsync(string userId)
+        {
+            return await _context.Notifications
+                .CountAsync(n => n.UserId == userId && !n.IsRead);
         }
 
         private async Task CreateNotificationAsync(string userId, string title, string message, string type, string link)

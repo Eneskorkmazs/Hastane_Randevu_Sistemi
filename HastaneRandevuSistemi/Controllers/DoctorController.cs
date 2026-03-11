@@ -141,16 +141,22 @@ namespace HastaneRandevuSistemi.Controllers
             var doctor = await _context.Doctors.FindAsync(id);
             if (doctor != null)
             {
-
-
-                var user = await _userManager.FindByEmailAsync(doctor.Name.Replace(" ", "") + "@hastane.com");
-
-                var allUsers = await _userManager.Users.ToListAsync();
-                var identityUser = allUsers.FirstOrDefault(u => u.Name == doctor.Name && u.Surname == doctor.Surname);
-
-                if (identityUser != null)
+                if (!string.IsNullOrWhiteSpace(doctor.UserId))
                 {
-                    await _userManager.DeleteAsync(identityUser);
+                    var identityUser = await _userManager.Users.FirstOrDefaultAsync(u => u.Id == doctor.UserId);
+                    if (identityUser != null)
+                    {
+                        await _userManager.DeleteAsync(identityUser);
+                    }
+                }
+                else
+                {
+                    var identityUser = await _userManager.Users.FirstOrDefaultAsync(
+                        u => u.Name == doctor.Name && u.Surname == doctor.Surname && u.Email != null && u.Email.Contains("@hastane.com"));
+                    if (identityUser != null)
+                    {
+                        await _userManager.DeleteAsync(identityUser);
+                    }
                 }
 
                 // Sonra doktor kaydını siliyoruz

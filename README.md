@@ -16,6 +16,22 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - Hasta tarafinda randevu gecmisi ve uygun durumlarda iptal akisi destekleniyor.
 - Randevu olusturma, onay, tamamlama ve iptal hareketleri icin bildirim kayitlari uretiliyor.
 
+### Hafta 3 (Baslanacak)
+- Randevu akisi guvenligi: Admin ve doktor yetkileri icin rol bazli filtreler sertlestirilecek.
+- Doktor dashboard'u:
+  - bugun ve gelecek hafta ozetleri,
+  - durum bazli (bekleyen/onayli/tamamlanan/iptal) kartlari,
+  - filtrelenebilir randevu listesi.
+- Admin dashboard'u:
+  - genel metrik kartlarini detaylandirma (bolum + doktor + randevu trendi),
+  - son aktivite/bildirim akisi.
+- Kullanici deneyimi:
+  - randevu olusturma formunda tarih/saat validasyon mesajlari iyilestirilecek,
+  - bildirimlerde okunmamis durumunun daha net gostergesi eklenecek.
+- Teknik altta yapi:
+  - hata senaryolari icin geri bildirim mesajlari standardize edilecek,
+  - en onemli entity'ler icin basit birimler eklenecek.
+
 ## Teknolojiler
 - .NET 8
 - ASP.NET Core MVC

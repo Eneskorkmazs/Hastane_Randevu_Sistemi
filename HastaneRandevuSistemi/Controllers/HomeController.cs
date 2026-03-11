@@ -32,14 +32,20 @@ namespace HastaneRandevuSistemi.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminDashboard()
         {
-            // Admin tüm istatistikleri görür
             var model = new DashboardViewModel
             {
                 TotalDoctors = await _context.Doctors.CountAsync(),
                 TotalDepartments = await _context.Departments.CountAsync(),
                 TotalAppointments = await _context.Appointments.CountAsync(),
                 PendingAppointments = await _context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Bekliyor),
-                TodaysAppointments = await _context.Appointments.CountAsync(a => a.AppointmentDate.Date == DateTime.Today)
+                ApprovedAppointments = await _context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Onaylandi),
+                CompletedAppointments = await _context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Tamamlandi),
+                ThisWeekAppointments = await GetWeekAppointmentCountAsync(DateTime.Today),
+                TodaysAppointments = await _context.Appointments.CountAsync(a => a.AppointmentDate.Date == DateTime.Today),
+                LatestNotifications = await _context.Notifications
+                    .OrderByDescending(n => n.CreatedDate)
+                    .Take(7)
+                    .ToListAsync()
             };
 
             return View(model); // Views/Home/AdminDashboard.cshtml sayfasýna gider
@@ -49,22 +55,26 @@ namespace HastaneRandevuSistemi.Controllers
         [Authorize(Roles = "Doktor")]
         public async Task<IActionResult> DoctorDashboard()
         {
-            // Giriþ yapan kullanýcýnýn bilgilerini al
             var user = await _userManager.GetUserAsync(User);
+            var now = DateTime.Now;
+            var weekStart = now.Date.AddDays(-(int)now.DayOfWeek);
+            var weekEnd = weekStart.AddDays(7);
 
-            // Varsayýlan boþ deðerler
             int myAppointments = 0;
             int myPending = 0;
             int myToday = 0;
+            int myApproved = 0;
+            int myCompleted = 0;
+            int thisWeek = 0;
+            IReadOnlyList<Appointment> upcomingAppointments = Array.Empty<Appointment>();
 
             if (user != null)
             {
-                // Giriþ yapan kullanýcýnýn Adý ve Soyadý ile eþleþen Doktor kaydýný bul
-                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Name == user.Name && d.Surname == user.Surname);
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id)
+                             ?? await _context.Doctors.FirstOrDefaultAsync(d => d.Name == user.Name && d.Surname == user.Surname);
 
                 if (doctor != null)
                 {
-                    // Sadece BU DOKTORA ait verileri say
                     myAppointments = await _context.Appointments.CountAsync(a => a.DoctorId == doctor.Id);
 
                     myPending = await _context.Appointments
@@ -72,16 +82,34 @@ namespace HastaneRandevuSistemi.Controllers
 
                     myToday = await _context.Appointments
                         .CountAsync(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == DateTime.Today);
+
+                    myApproved = await _context.Appointments
+                        .CountAsync(a => a.DoctorId == doctor.Id && a.Status == AppointmentStatus.Onaylandi);
+
+                    myCompleted = await _context.Appointments
+                        .CountAsync(a => a.DoctorId == doctor.Id && a.Status == AppointmentStatus.Tamamlandi);
+
+                    thisWeek = await _context.Appointments
+                        .CountAsync(a => a.DoctorId == doctor.Id && a.AppointmentDate >= weekStart && a.AppointmentDate < weekEnd);
+
+                    upcomingAppointments = await _context.Appointments
+                        .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate >= now && a.Status != AppointmentStatus.Iptal)
+                        .Include(a => a.PatientUser)
+                        .OrderBy(a => a.AppointmentDate)
+                        .Take(6)
+                        .ToListAsync();
                 }
             }
 
-            // Dashboard modelini doktora özel doldur
             var model = new DashboardViewModel
             {
-                TotalAppointments = myAppointments,    // Toplam Randevusu
-                PendingAppointments = myPending,       // Onay Bekleyenleri
-                TodaysAppointments = myToday,          // Bugünün Ýþleri
-                // Diðer genel istatistikleri doktorun görmesine gerek yok (0 býrakabiliriz veya doldurabiliriz)
+                TotalAppointments = myAppointments,
+                PendingAppointments = myPending,
+                ApprovedAppointments = myApproved,
+                CompletedAppointments = myCompleted,
+                TodaysAppointments = myToday,
+                ThisWeekAppointments = thisWeek,
+                UpcomingAppointments = upcomingAppointments,
                 TotalDoctors = 0,
                 TotalDepartments = 0
             };
@@ -93,6 +121,7 @@ namespace HastaneRandevuSistemi.Controllers
         {
             return View();
         }
+
         public IActionResult Terms()
         {
             return View();
@@ -101,6 +130,15 @@ namespace HastaneRandevuSistemi.Controllers
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        private async Task<int> GetWeekAppointmentCountAsync(DateTime date)
+        {
+            var weekStart = date.Date.AddDays(-(int)date.DayOfWeek);
+            var weekEnd = weekStart.AddDays(7);
+
+            return await _context.Appointments
+                .CountAsync(a => a.AppointmentDate >= weekStart && a.AppointmentDate < weekEnd);
         }
     }
 }

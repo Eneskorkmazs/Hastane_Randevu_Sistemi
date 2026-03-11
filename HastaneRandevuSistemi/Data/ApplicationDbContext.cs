@@ -41,13 +41,20 @@ namespace HastaneRandevuSistemi.Data
                 .Property(u => u.DogumTarihi)
                 .HasColumnType("date");
 
+            var provider = Database.ProviderName ?? string.Empty;
+            var dateTimeColumnType = provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase)
+                ? "timestamp without time zone"
+                : provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase)
+                    ? "TEXT"
+                    : "datetime2";
+
             modelBuilder.Entity<Appointment>()
                 .Property(a => a.AppointmentDate)
-                .HasColumnType("timestamp without time zone");
+                .HasColumnType(dateTimeColumnType);
 
             modelBuilder.Entity<Appointment>()
                 .Property(a => a.CreatedDate)
-                .HasColumnType("timestamp without time zone");
+                .HasColumnType(dateTimeColumnType);
 
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.User)
@@ -57,7 +64,7 @@ namespace HastaneRandevuSistemi.Data
 
             modelBuilder.Entity<Notification>()
                 .Property(n => n.CreatedDate)
-                .HasColumnType("timestamp without time zone");
+                .HasColumnType(dateTimeColumnType);
         }
     }
 }

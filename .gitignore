@@ -21,3 +21,6 @@ Desktop.ini
 
 # Local config
 appsettings.Local.json
+*.db
+*.db-shm
+*.db-wal

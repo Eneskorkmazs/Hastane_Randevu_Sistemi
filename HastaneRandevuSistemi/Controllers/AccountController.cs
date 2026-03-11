@@ -1,9 +1,10 @@
-using HastaneRandevuSistemi.Data;
+﻿using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.Services;
 using HastaneRandevuSistemi.ViewModels;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Npgsql;
 
 namespace HastaneRandevuSistemi.Controllers
 {
@@ -13,17 +14,20 @@ namespace HastaneRandevuSistemi.Controllers
         private readonly UserManager<AppUser> _userManager;
         private readonly SignInManager<AppUser> _signInManager;
         private readonly EmailService _emailService;
+        private readonly ILogger<AccountController> _logger;
 
         public AccountController(
             ApplicationDbContext context,
             UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
-            EmailService emailService)
+            EmailService emailService,
+            ILogger<AccountController> logger)
         {
             _context = context;
             _userManager = userManager;
             _signInManager = signInManager;
             _emailService = emailService;
+            _logger = logger;
         }
 
         [HttpGet]
@@ -62,8 +66,8 @@ namespace HastaneRandevuSistemi.Controllers
                 await _userManager.AddToRoleAsync(user, "Hasta");
                 await CreateNotificationAsync(
                     user.Id,
-                    "Hesabınız oluşturuldu",
-                    "Hasta profiliniz aktif edildi. Profilinizi tamamlayabilir ve hemen randevu oluşturabilirsiniz.",
+                    "HesabÄ±nÄ±z oluÅŸturuldu",
+                    "Hasta profiliniz aktif edildi. Profilinizi tamamlayabilir ve hemen randevu oluÅŸturabilirsiniz.",
                     "Hosgeldiniz",
                     "/Patient/Dashboard");
 
@@ -97,38 +101,59 @@ namespace HastaneRandevuSistemi.Controllers
                 return View(model);
             }
 
-            var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
-            if (!result.Succeeded)
+            try
             {
-                ModelState.AddModelError(string.Empty, "E-Posta veya şifre hatalı.");
+                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
+                if (!result.Succeeded)
+                {
+                    ModelState.AddModelError(string.Empty, "E-Posta veya ÅŸifre hatalÄ±.");
+                    return View(model);
+                }
+
+                var user = await _userManager.FindByEmailAsync(model.Email);
+                if (user == null)
+                {
+                    await _signInManager.SignOutAsync();
+                    ModelState.AddModelError(string.Empty, "Hesap bulunamadÄ±.");
+                    return View(model);
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+                if (roles.Contains("Admin"))
+                {
+                    return RedirectToAction("AdminDashboard", "Home");
+                }
+
+                if (roles.Contains("Doktor"))
+                {
+                    return RedirectToAction("DoctorDashboard", "Home");
+                }
+
+                if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+                {
+                    return LocalRedirect(returnUrl);
+                }
+
+                return RedirectToAction("Dashboard", "Patient");
+            }
+            catch (TimeoutException ex)
+            {
+                _logger.LogError(ex, "Login sirasinda veritabani baglanti zaman asimi olustu.");
+                ModelState.AddModelError(string.Empty, "Veritabanina baglanilamadi. Lutfen internet baglantinizi veya VPN ayarlarinizi kontrol edin.");
                 return View(model);
             }
-
-            var user = await _userManager.FindByEmailAsync(model.Email);
-            if (user == null)
+            catch (NpgsqlException ex)
             {
-                await _signInManager.SignOutAsync();
-                ModelState.AddModelError(string.Empty, "Hesap bulunamadı.");
+                _logger.LogError(ex, "Login sirasinda PostgreSQL baglanti hatasi olustu.");
+                ModelState.AddModelError(string.Empty, "Veritabani baglantisi su an kullanilamiyor. Birazdan tekrar deneyin.");
                 return View(model);
             }
-
-            var roles = await _userManager.GetRolesAsync(user);
-            if (roles.Contains("Admin"))
+            catch (InvalidOperationException ex)
             {
-                return RedirectToAction("AdminDashboard", "Home");
+                _logger.LogError(ex, "Login sirasinda gecici veritabani hatasi olustu.");
+                ModelState.AddModelError(string.Empty, "Sistem gecici olarak veritabanina erisemiyor. Lutfen birazdan tekrar deneyin.");
+                return View(model);
             }
-
-            if (roles.Contains("Doktor"))
-            {
-                return RedirectToAction("DoctorDashboard", "Home");
-            }
-
-            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                return LocalRedirect(returnUrl);
-            }
-
-            return RedirectToAction("Dashboard", "Patient");
         }
 
         [HttpGet]
@@ -143,7 +168,7 @@ namespace HastaneRandevuSistemi.Controllers
         {
             if (string.IsNullOrEmpty(email))
             {
-                ViewBag.Error = "Lütfen email adresinizi giriniz.";
+                ViewBag.Error = "LÃ¼tfen email adresinizi giriniz.";
                 return View();
             }
 
@@ -155,14 +180,14 @@ namespace HastaneRandevuSistemi.Controllers
 
                 var body = $@"
                     <div style='font-family:Arial; padding:20px; border:1px solid #ddd; border-radius:10px;'>
-                        <h2 style='color:#004e92;'>Şifre Sıfırlama Talebi</h2>
+                        <h2 style='color:#004e92;'>Åifre SÄ±fÄ±rlama Talebi</h2>
                         <p>Merhaba {user.Name},</p>
-                        <p>Hesabınız için şifre sıfırlama talebinde bulundunuz. Aşağıdaki butona tıklayarak yeni şifrenizi belirleyebilirsiniz.</p>
-                        <a href='{link}' style='background-color:#004e92; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block; margin-top:10px;'>Şifremi Sıfırla</a>
-                        <p style='margin-top:20px; font-size:12px; color:#666;'>Bu işlemi siz yapmadıysanız, bu maili dikkate almayınız.</p>
+                        <p>HesabÄ±nÄ±z iÃ§in ÅŸifre sÄ±fÄ±rlama talebinde bulundunuz. AÅŸaÄŸÄ±daki butona tÄ±klayarak yeni ÅŸifrenizi belirleyebilirsiniz.</p>
+                        <a href='{link}' style='background-color:#004e92; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block; margin-top:10px;'>Åifremi SÄ±fÄ±rla</a>
+                        <p style='margin-top:20px; font-size:12px; color:#666;'>Bu iÅŸlemi siz yapmadÄ±ysanÄ±z, bu maili dikkate almayÄ±nÄ±z.</p>
                     </div>";
 
-                await _emailService.SendEmailAsync(user.Email!, "HRS - Şifre Sıfırlama", body);
+                await _emailService.SendEmailAsync(user.Email!, "HRS - Åifre SÄ±fÄ±rlama", body);
             }
 
             return View("ForgotPasswordConfirmation");
@@ -178,7 +203,7 @@ namespace HastaneRandevuSistemi.Controllers
         {
             if (token == null || email == null)
             {
-                ModelState.AddModelError(string.Empty, "Geçersiz şifre sıfırlama anahtarı.");
+                ModelState.AddModelError(string.Empty, "GeÃ§ersiz ÅŸifre sÄ±fÄ±rlama anahtarÄ±.");
                 return View();
             }
 
@@ -245,3 +270,4 @@ namespace HastaneRandevuSistemi.Controllers
         }
     }
 }
+

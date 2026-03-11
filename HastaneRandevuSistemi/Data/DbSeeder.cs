@@ -12,7 +12,15 @@ namespace HastaneRandevuSistemi.Data
             var userManager = service.GetRequiredService<UserManager<AppUser>>();
             var roleManager = service.GetRequiredService<RoleManager<IdentityRole>>();
 
-            await context.Database.MigrateAsync();
+            var provider = context.Database.ProviderName ?? string.Empty;
+            if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.MigrateAsync();
+            }
+            else
+            {
+                await context.Database.EnsureCreatedAsync();
+            }
 
             string[] roles = { "Admin", "Doktor", "Hasta" };
             foreach (var role in roles)

@@ -5,15 +5,40 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "Postgres";
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (string.IsNullOrWhiteSpace(connectionString))
+var localConnectionString = builder.Configuration.GetConnectionString("LocalDefaultConnection");
+
+if ((databaseProvider.Equals("LocalDb", StringComparison.OrdinalIgnoreCase)
+    || databaseProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+    && string.IsNullOrWhiteSpace(localConnectionString))
+{
+    throw new InvalidOperationException(
+        "ConnectionStrings:LocalDefaultConnection ayari bos. Local baglanti bilgisini appsettings.Development.json icinde tanimlayin.");
+}
+
+if (databaseProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase)
+    && string.IsNullOrWhiteSpace(connectionString))
 {
     throw new InvalidOperationException(
         "ConnectionStrings:DefaultConnection ayari bos. Supabase PostgreSQL baglanti bilgisini appsettings veya environment uzerinden girin.");
 }
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseNpgsql(connectionString));
+{
+    if (databaseProvider.Equals("LocalDb", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseSqlServer(localConnectionString);
+    }
+    else if (databaseProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
+    {
+        options.UseSqlite(localConnectionString);
+    }
+    else
+    {
+        options.UseNpgsql(connectionString);
+    }
+});
 
 builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 {
@@ -35,9 +60,8 @@ if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();

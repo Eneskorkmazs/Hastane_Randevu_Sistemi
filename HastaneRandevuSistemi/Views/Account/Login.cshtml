@@ -28,8 +28,11 @@
                     </div>
 
                     <div class="form-floating mb-3">
-                        <input asp-for="Password" type="password" class="form-control rounded-pill px-4" placeholder="Şifre" />
+                        <input asp-for="Password" type="password" class="form-control rounded-pill px-4 pe-5" placeholder="Şifre" id="loginPassword" />
                         <label asp-for="Password" class="px-4"><i class="fa-solid fa-key me-2 text-primary"></i>Şifre</label>
+                        <button type="button" id="toggleLoginPassword" class="btn btn-link position-absolute end-0 top-50 translate-middle-y px-3 text-muted" tabindex="-1" aria-label="Şifreyi göster / gizle">
+                            <i class="fa-solid fa-eye" id="loginPasswordIcon"></i>
+                        </button>
                         <span asp-validation-for="Password" class="text-danger small ms-3"></span>
                     </div>
 
@@ -69,4 +72,22 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <script>
+        (function () {
+            const input = document.getElementById("loginPassword");
+            const button = document.getElementById("toggleLoginPassword");
+            const icon = document.getElementById("loginPasswordIcon");
+
+            if (!input || !button || !icon) {
+                return;
+            }
+
+            button.addEventListener("click", function () {
+                const isPassword = input.type === "password";
+                input.type = isPassword ? "text" : "password";
+                icon.className = isPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+            });
+        })();
+    </script>
 }
