@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hafta 1 Raporu</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2.5cm;
+        }
+
+        body {
+            margin: 0;
+            background: #f4f4f4;
+            color: #111;
+            font-family: "Times New Roman", serif;
+            font-size: 12pt;
+            line-height: 1.6;
+        }
+
+        .page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 2.5cm;
+            box-sizing: border-box;
+            background: #fff;
+        }
+
+        h1, h2, h3 {
+            margin-top: 0;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 18pt;
+            margin-bottom: 10px;
+        }
+
+        h2 {
+            font-size: 14pt;
+            margin-bottom: 24px;
+            font-weight: normal;
+        }
+
+        h3 {
+            text-align: left;
+            font-size: 13pt;
+            margin: 24px 0 8px;
+        }
+
+        p {
+            margin: 0 0 12px;
+            text-align: justify;
+        }
+
+        ul {
+            margin: 0 0 12px 20px;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        .meta {
+            margin-bottom: 24px;
+        }
+
+        .meta p {
+            margin: 4px 0;
+            text-align: left;
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <h1>Hastane Randevu Sistemi</h1>
+        <h2>Hafta 1 Raporu</h2>
+
+        <div class="meta">
+            <p><strong>Hazırlayan:</strong> Enes Korkmaz</p>
+            <p><strong>Konu:</strong> Kullanıcı altyapısının genişletilmesi</p>
+        </div>
+
+        <h3>Genel Çalışmalar</h3>
+        <p>
+            İlk hafta içinde projenin temel kullanıcı yapısı güçlendirilmiş ve sistemin hasta odaklı
+            çalışabilmesi için gerekli kimlik ve profil alanları genişletilmiştir. Amaç, standart bir
+            giriş-kayıt ekranından daha fazlasını sunarak hastaya ait temel bilgilerin sistem içinde
+            güvenli biçimde tutulmasını sağlamaktır.
+        </p>
+
+        <h3>Yapılan Geliştirmeler</h3>
+        <ul>
+            <li><code>AppUser</code> modeli TC, telefon, doğum tarihi, cinsiyet ve adres alanları ile genişletildi.</li>
+            <li>Kayıt ekranı yeni alanları destekleyecek şekilde güncellendi.</li>
+            <li><code>RegisterViewModel</code> üzerinde yeni doğrulama alanları tanımlandı.</li>
+            <li>Kayıt sonrası kullanıcı akışı hasta paneline yönlenecek şekilde hazırlandı.</li>
+        </ul>
+
+        <h3>Sonuç</h3>
+        <p>
+            İlk hafta sonunda uygulamanın kullanıcı yönetimi kısmı daha gerçekçi bir hastane randevu
+            sistemine uygun hale getirilmiştir. Böylece sonraki haftalarda hasta paneli, bildirim ve
+            randevu ilişkilendirme gibi modüller için sağlam bir temel oluşturulmuştur.
+        </p>
+    </div>
+</body>
+</html>
