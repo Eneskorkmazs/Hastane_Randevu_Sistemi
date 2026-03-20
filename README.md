@@ -75,13 +75,11 @@ dotnet run --project .\HastaneRandevuSistemi\HastaneRandevuSistemi.csproj
 ```
 
 ## Haftalık Raporlar
-- [Hafta 1 Raporu PDF](./Reports/Hafta1_Raporu.pdf)
-- [Hafta 2 Raporu PDF](./Reports/Hafta2_Raporu.pdf)
-- [Hafta 3 Raporu PDF](./Reports/Hafta3_Raporu.pdf)
-- [Hafta 4 Raporu PDF](./Reports/Hafta4_Raporu.pdf)
-- [Hafta 5 Raporu PDF](./Reports/Hafta5_Raporu.pdf)
-- [Hafta 4 Raporu HTML](./Reports/Hafta4_Raporu.html)
-- [Hafta 5 Raporu HTML](./Reports/Hafta5_Raporu.html)
+- [Hafta 1 Raporu PDF](Reports/Hafta1_Raporu.pdf)
+- [Hafta 2 Raporu PDF](Reports/Hafta2_Raporu.pdf)
+- [Hafta 3 Raporu PDF](Reports/Hafta3_Raporu.pdf)
+- [Hafta 4 Raporu PDF](Reports/Hafta4_Raporu.pdf)
+- [Hafta 5 Raporu PDF](Reports/Hafta5_Raporu.pdf)
 
 ## Varsayılan Roller
 - `Admin`
