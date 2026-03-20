@@ -1,36 +1,61 @@
-# Hastane Randevu Sistemi
+﻿# Hastane Randevu Sistemi
 
 ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu uygulaması.
 
 ## Güncel Kapsam
 
 ### Hafta 1
-- `AppUser` modeli TC, telefon, dogum tarihi, cinsiyet ve adres alanlari ile genisletildi.
-- Kayit ekrani ve `RegisterViewModel` yeni alanlari destekleyecek sekilde guncellendi.
-- Yeni kullanicilar kayit olduktan sonra dogrudan hasta paneline yonlendirilir.
-- Ana hasta akisi icin gerekli bildirim servisi ve temel profil altyapisi eklendi.
+- `AppUser` modeli TC, telefon, doğum tarihi, cinsiyet ve adres alanları ile genişletildi.
+- Kayıt ekranı ve `RegisterViewModel` yeni alanları destekleyecek şekilde güncellendi.
+- Yeni kullanıcılar kayıt olduktan sonra doğrudan hasta paneline yönlendirilir.
+- Ana hasta akışı için gerekli bildirim servisi ve temel profil altyapısı eklendi.
 
 ### Hafta 2
 - Hasta paneli eklendi: `Dashboard`, `Profile`, `Notifications`.
-- Randevular hasta kullanicisi ile iliskilendirildi.
-- Hasta tarafinda randevu gecmisi ve uygun durumlarda iptal akisi destekleniyor.
-- Randevu olusturma, onay, tamamlama ve iptal hareketleri icin bildirim kayitlari uretiliyor.
+- Randevular hasta kullanıcısı ile ilişkilendirildi.
+- Hasta tarafında randevu geçmişi ve uygun durumlarda iptal akışı destekleniyor.
+- Randevu oluşturma, onay, tamamlama ve iptal hareketleri için bildirim kayıtları üretiliyor.
 
-### Hafta 3 (Baslanacak)
-- Randevu akisi guvenligi: Admin ve doktor yetkileri icin rol bazli filtreler sertlestirilecek.
+### Hafta 3
+- Randevu akışı güvenliği: Admin ve doktor yetkileri için rol bazlı filtreler sertleştirilecek.
 - Doktor dashboard'u:
-  - bugun ve gelecek hafta ozetleri,
-  - durum bazli (bekleyen/onayli/tamamlanan/iptal) kartlari,
+  - bugün ve gelecek hafta özetleri,
+  - durum bazlı (bekleyen/onaylı/tamamlanan/iptal) kartları,
   - filtrelenebilir randevu listesi.
 - Admin dashboard'u:
-  - genel metrik kartlarini detaylandirma (bolum + doktor + randevu trendi),
-  - son aktivite/bildirim akisi.
-- Kullanici deneyimi:
-  - randevu olusturma formunda tarih/saat validasyon mesajlari iyilestirilecek,
-  - bildirimlerde okunmamis durumunun daha net gostergesi eklenecek.
-- Teknik altta yapi:
-  - hata senaryolari icin geri bildirim mesajlari standardize edilecek,
-  - en onemli entity'ler icin basit birimler eklenecek.
+  - genel metrik kartlarını detaylandırma (bölüm + doktor + randevu trendi),
+  - son aktivite/bildirim akışı.
+- Kullanıcı deneyimi:
+  - randevu oluşturma formunda tarih/saat validasyon mesajları iyileştirilecek,
+  - bildirimlerde okunmamış durumunun daha net göstergesi eklenecek.
+- Teknik alt yapı:
+  - hata senaryoları için geri bildirim mesajları standardize edilecek,
+  - en önemli entity'ler için basit birimler eklenecek.
+
+### Hafta 4
+- Hafta 4 kapsamındaki tamamlanan güncellemeler:
+- Admin dashboard'u detaylandırıldı:
+  - haftalık trend gösterimi,
+  - poliklinik yoğunluk kartları,
+  - iptal edilen randevu metrikleri.
+- Yeni raporlama ekranı eklendi:
+  - tarih aralığı,
+  - poliklinik ve durum filtreleri,
+  - yazdırılabilir yönetim özeti.
+- Duyuru ve bilgilendirme modülü eklendi:
+  - tüm kullanıcılar veya rol bazlı hedefleme,
+  - bildirim kutusuna anlık duyuru gönderimi.
+
+### Hafta 5
+- Hafta 5 kapsamındaki tamamlanan güncellemeler:
+- Randevu listesinde gelişmiş arama ve filtreleme:
+  - poliklinik,
+  - sıralama,
+  - sadece gelecek randevular seçeneği.
+- Liste ekranına hızlı özet kartları eklendi.
+- Randevu alma deneyimi iyileştirildi:
+  - doktora göre en yakın uygun saat önerileri,
+  - hızlı slot seçimi.
 
 ## Teknolojiler
 - .NET 8
@@ -40,20 +65,30 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - SQL Server / LocalDB
 - Bootstrap 5
 
-## Baslatma
-1. `appsettings.json` icindeki baglanti bilgisini kontrol edin.
-2. Veritabani daha once eski sema ile olusturulduysa sifirlayin veya migration uygulayin.
-3. Projeyi calistirin:
+## Başlatma
+1. `appsettings.json` içindeki bağlantı bilgisini kontrol edin.
+2. Veritabanı daha önce eski şema ile oluşturulduysa sıfırlayın veya migration uygulayın.
+3. Projeyi çalıştırın:
 
 ```powershell
 dotnet run --project .\HastaneRandevuSistemi\HastaneRandevuSistemi.csproj
 ```
 
-## Varsayilan Roller
+## Haftalık Raporlar
+- [Hafta 1 Raporu PDF](./Reports/Hafta1_Raporu.pdf)
+- [Hafta 2 Raporu PDF](./Reports/Hafta2_Raporu.pdf)
+- [Hafta 3 Raporu PDF](./Reports/Hafta3_Raporu.pdf)
+- [Hafta 4 Raporu PDF](./Reports/Hafta4_Raporu.pdf)
+- [Hafta 5 Raporu PDF](./Reports/Hafta5_Raporu.pdf)
+- [Hafta 4 Raporu HTML](./Reports/Hafta4_Raporu.html)
+- [Hafta 5 Raporu HTML](./Reports/Hafta5_Raporu.html)
+
+## Varsayılan Roller
 - `Admin`
 - `Doktor`
 - `Hasta`
 
 ## Notlar
-- Yeni migration dosyasi proje icine eklendi: `20260303120000_AddPatientPortalAndIdentityFields`
-- Hasta paneline giris yapan kullanicilar `Patient/Dashboard` uzerinden yonlendirilir.
+- Yeni migration dosyası proje içine eklendi: `20260303120000_AddPatientPortalAndIdentityFields`
+- Hasta paneline giriş yapan kullanıcılar `Patient/Dashboard` üzerinden yönlendirilir.
+
