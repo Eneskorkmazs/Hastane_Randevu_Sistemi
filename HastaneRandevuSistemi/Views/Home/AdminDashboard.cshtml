@@ -1,14 +1,22 @@
-@model HastaneRandevuSistemi.Models.DashboardViewModel
+﻿@model HastaneRandevuSistemi.Models.DashboardViewModel
 
 @{
-    ViewData["Title"] = "Y�netim Merkezi";
+    ViewData["Title"] = "Yönetim Merkezi";
 }
 
 <div class="container-fluid px-md-5 py-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
     <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-5 border-bottom pb-4">
         <div class="mb-3 mb-md-0">
-            <h6 class="text-primary fw-bold text-uppercase ls-2 small mb-1">Sistem Genel Bak��</h6>
-            <h1 class="display-5 fw-bold text-dark mb-0">Y�netim Merkezi</h1>
+            <h6 class="text-primary fw-bold text-uppercase ls-2 small mb-1">Sistem Genel Bakış</h6>
+            <h1 class="display-5 fw-bold text-dark mb-0">Yönetim Merkezi</h1>
         </div>
         <div class="text-md-end">
             <span class="badge bg-white text-dark border px-4 py-2 rounded-pill shadow-sm">
@@ -30,7 +38,7 @@
         <div class="col-12 col-md-6 col-xl-3">
             <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
                 <div>
-                    <p class="text-muted x-small fw-bold mb-1">BRAN�LAR</p>
+                    <p class="text-muted x-small fw-bold mb-1">BRANŞLAR</p>
                     <h2 class="fw-bold mb-0">@Model.TotalDepartments</h2>
                 </div>
                 <div class="stat-icon bg-success-soft text-success"><i class="fa-solid fa-hospital fs-4"></i></div>
@@ -39,7 +47,7 @@
         <div class="col-12 col-md-6 col-xl-3">
             <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
                 <div>
-                    <p class="text-muted x-small fw-bold mb-1">BUG�N</p>
+                    <p class="text-muted x-small fw-bold mb-1">BUGÜN</p>
                     <h2 class="fw-bold mb-0">@Model.TodaysAppointments</h2>
                 </div>
                 <div class="stat-icon bg-info-soft text-info"><i class="fa-solid fa-calendar-day fs-4"></i></div>
@@ -60,7 +68,7 @@
         <div class="col-12 col-lg-4">
             <div class="card border-0 shadow-sm rounded-5 h-100">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold">Durum �zeti</h5>
+                    <h5 class="fw-bold">Durum Özeti</h5>
                     <div class="d-flex justify-content-between py-2 border-bottom">
                         <span>Toplam</span>
                         <strong>@Model.TotalAppointments</strong>
@@ -77,6 +85,10 @@
                         <span>Tamamlanan</span>
                         <strong class="text-primary">@Model.CompletedAppointments</strong>
                     </div>
+                    <div class="d-flex justify-content-between py-2 border-top mt-2">
+                        <span>İptal Edilen</span>
+                        <strong class="text-danger">@Model.CancelledAppointments</strong>
+                    </div>
                 </div>
             </div>
         </div>
@@ -90,7 +102,7 @@
 
                     @if (!Model.LatestNotifications.Any())
                     {
-                        <div class="text-muted">Hen�z sistem bildirimi bulunmuyor.</div>
+                        <div class="text-muted">Henüz sistem bildirimi bulunmuyor.</div>
                     }
                     else
                     {
@@ -120,20 +132,131 @@
     </div>
 
     <div class="row g-4 mt-1">
+        <div class="col-12 col-xl-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Haftalık Randevu Trendi</h5>
+                            <p class="text-muted small mb-0">Son 7 gün yerine aktif hafta gün bazlı dağılım.</p>
+                        </div>
+                        <a asp-controller="Home" asp-action="AdminReport" class="btn btn-sm btn-outline-primary rounded-pill">Detaylı Rapor</a>
+                    </div>
+
+                    @if (!Model.WeeklyTrend.Any())
+                    {
+                        <div class="text-muted">Trend verisi bulunamadı.</div>
+                    }
+                    else
+                    {
+                        var maxTrend = Math.Max(Model.WeeklyTrend.Max(x => x.TotalCount), 1);
+                        <div class="trend-grid">
+                            @foreach (var point in Model.WeeklyTrend)
+                            {
+                                var width = Math.Max(10, (int)Math.Round(point.TotalCount * 100.0 / maxTrend));
+                                <div class="trend-row">
+                                    <div class="trend-label">@point.Label</div>
+                                    <div class="trend-bar-wrap">
+                                        <div class="trend-bar" style="width:@width%">
+                                            <span>@point.TotalCount</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">En Yoğun Poliklinikler</h5>
+                            <p class="text-muted small mb-0">Randevu ve doktor sayısı birlikte gösterilir.</p>
+                        </div>
+                    </div>
+
+                    @if (!Model.DepartmentStats.Any())
+                    {
+                        <div class="text-muted">Bölüm istatistiği bulunamadı.</div>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var item in Model.DepartmentStats)
+                            {
+                                <div class="list-group-item px-0 py-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong>@item.DepartmentName</strong>
+                                        <span class="badge bg-light text-dark border">@item.AppointmentCount randevu</span>
+                                    </div>
+                                    <small class="text-muted">@item.DoctorCount doktor aktif</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
         <div class="col-12">
             <div class="bg-white p-4 rounded-4 shadow-sm border d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
                 <div class="d-flex align-items-center">
                     <div class="bg-warning bg-opacity-10 p-2 rounded-3 me-3">
                         <i class="fa-solid fa-bolt text-warning fs-4"></i>
                     </div>
-                    <h5 class="fw-bold mb-0">H�zl� Eri�im</h5>
+                    <h5 class="fw-bold mb-0">Hızlı Erişim</h5>
                 </div>
                 <div class="d-flex flex-wrap justify-content-center gap-2">
                     <a asp-controller="Doctor" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">Doktor Ekle</a>
-                    <a asp-controller="Department" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">B�l�m Ekle</a>
+                    <a asp-controller="Department" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">Bölüm Ekle</a>
+                    <a asp-controller="Home" asp-action="CreateAnnouncement" class="btn btn-outline-dark rounded-pill fw-bold px-4">Duyuru Gönder</a>
+                    <a asp-controller="Home" asp-action="AdminReport" class="btn btn-outline-dark rounded-pill fw-bold px-4">Rapor Al</a>
                     <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm">Yeni Randevu</a>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .trend-grid {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .trend-row {
+        display: grid;
+        grid-template-columns: 56px 1fr;
+        align-items: center;
+        gap: 0.9rem;
+    }
+
+    .trend-label {
+        font-weight: 600;
+        color: #526173;
+    }
+
+    .trend-bar-wrap {
+        background: #edf3f8;
+        border-radius: 999px;
+        overflow: hidden;
+        min-height: 36px;
+    }
+
+    .trend-bar {
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 0.85rem;
+        color: #fff;
+        font-weight: 700;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #0b5cad 0%, #0d8bd6 100%);
+    }
+</style>
+

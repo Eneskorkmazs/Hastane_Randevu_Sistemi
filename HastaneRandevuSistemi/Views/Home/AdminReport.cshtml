@@ -1,0 +1,144 @@
+@model HastaneRandevuSistemi.ViewModels.AdminReportViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Raporlama";
+    var departmentOptions = ViewData["DepartmentOptions"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
+    var statusOptions = ViewData["StatusOptions"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <span class="text-uppercase small fw-bold text-primary">Hafta 4</span>
+            <h1 class="h3 fw-bold mb-1">Raporlama Merkezi</h1>
+            <p class="text-muted mb-0">Tarih, poliklinik ve durum bazlı yönetim raporu.</p>
+        </div>
+        <button type="button" class="btn btn-outline-dark rounded-pill px-4" onclick="window.print()">
+            <i class="fa-solid fa-print me-2"></i>Yazdır
+        </button>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Başlangıç</label>
+                    <input type="date" name="fromDate" value="@Model.FromDate?.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bitiş</label>
+                    <input type="date" name="toDate" value="@Model.ToDate?.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Poliklinik</label>
+                    <select name="departmentId" class="form-select">
+                        <option value="">Tüm Poliklinikler</option>
+                        @foreach (var item in departmentOptions)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Durum</label>
+                    <select name="status" class="form-select">
+                        <option value="">Tüm Durumlar</option>
+                        @foreach (var item in statusOptions)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-12 d-flex gap-2 justify-content-end">
+                    <a asp-action="AdminReport" class="btn btn-outline-secondary rounded-pill px-4">Temizle</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Raporu Uygula</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body p-4"><div class="text-muted small">Toplam Randevu</div><div class="display-6 fw-bold">@Model.TotalAppointments</div></div></div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body p-4"><div class="text-muted small">Hasta Sayısı</div><div class="display-6 fw-bold">@Model.TotalPatients</div></div></div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body p-4"><div class="text-muted small">Tamamlanan</div><div class="display-6 fw-bold text-primary">@Model.CompletedAppointments</div></div></div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body p-4"><div class="text-muted small">İptal Edilen</div><div class="display-6 fw-bold text-danger">@Model.CancelledAppointments</div></div></div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Poliklinik Dağılımı</h5>
+                    @if (!Model.DepartmentStats.Any())
+                    {
+                        <div class="text-muted">Veri bulunamadı.</div>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var item in Model.DepartmentStats)
+                            {
+                                <div class="list-group-item px-0 py-3">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>@item.DepartmentName</strong>
+                                        <span>@item.AppointmentCount</span>
+                                    </div>
+                                    <small class="text-muted">@item.DoctorCount doktor</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Son Randevu Kayıtları</h5>
+                    @if (!Model.RecentAppointments.Any())
+                    {
+                        <div class="text-muted">Filtreye uygun kayıt bulunamadı.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Tarih</th>
+                                        <th>Hasta</th>
+                                        <th>Doktor</th>
+                                        <th>Poliklinik</th>
+                                        <th>Durum</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.RecentAppointments)
+                                    {
+                                        <tr>
+                                            <td>@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                            <td>@item.PatientName @item.PatientSurname</td>
+                                            <td>@item.Doctor?.Name @item.Doctor?.Surname</td>
+                                            <td>@item.Doctor?.Department?.Name</td>
+                                            <td>@item.Status</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

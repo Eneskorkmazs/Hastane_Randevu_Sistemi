@@ -1,29 +1,43 @@
-ï»¿@model IEnumerable<HastaneRandevuSistemi.Models.Notification>
+@model IEnumerable<HastaneRandevuSistemi.Models.Notification>
 
 @{
     ViewData["Title"] = "Bildirimler";
+    var totalCount = Model.Count();
     var unreadCount = Model.Count(n => !n.IsRead);
 }
 
 <div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
         <div>
             <span class="eyebrow text-primary">Bildirim Merkezi</span>
             <h1 class="h3 fw-bold mb-1">Hasta Bildirimleri</h1>
-            <p class="text-muted mb-0">Randevu hareketleri ve profil guncellemeleri burada listelenir.</p>
+            <p class="text-muted mb-0">Randevu hareketleri ve profil güncellemeleri burada listelenir.</p>
         </div>
 
-        <div class="d-flex align-items-center gap-2">
-            <span id="notificationsUnreadBadge" class="badge rounded-pill bg-primary-subtle text-primary border border-primary px-3 py-2">Okunmamis: @unreadCount</span>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <span class="badge rounded-pill bg-light text-secondary border px-3 py-2">Toplam: @totalCount</span>
+            <span id="notificationsUnreadBadge" class="badge rounded-pill bg-primary-subtle text-primary border border-primary px-3 py-2">Okunmamýþ: @unreadCount</span>
 
             <form id="markAllAsReadForm" asp-action="MarkAllAsReadAjax" method="post" class="notification-mark-all-form">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="btn btn-outline-primary rounded-pill px-4" @(unreadCount == 0 ? "disabled" : "")>
-                    <i class="fa-solid fa-check-double me-2"></i>Tumunu Okundu Isaretle
+                    <i class="fa-solid fa-check-double me-2"></i>Tümünü Okundu Ýþaretle
                 </button>
             </form>
         </div>
     </div>
+
+    @if (TempData["SuccessMessage"] != null || TempData["ErrorMessage"] != null || TempData["InfoMessage"] != null)
+    {
+        var alertClass = TempData["SuccessMessage"] != null ? "alert-success" :
+                         TempData["ErrorMessage"] != null ? "alert-danger" : "alert-info";
+        <div class="alert @alertClass shadow-sm rounded-3 d-flex justify-content-between align-items-center">
+            <div>
+                @TempData["SuccessMessage"]@TempData["ErrorMessage"]@TempData["InfoMessage"]
+            </div>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
 
     @if (!Model.Any())
     {
@@ -31,67 +45,95 @@
             <div class="card-body p-5">
                 <div class="empty-state">
                     <i class="fa-regular fa-bell-slash"></i>
-                    <p class="mb-0">HenÃ¼z bildiriminiz bulunmuyor.</p>
+                    <p class="mb-0">Henüz bildiriminiz bulunmuyor.</p>
                 </div>
             </div>
         </div>
     }
     else
     {
-        <div class="notification-stack">
-            @foreach (var item in Model)
-            {
-                <div class="notification-card large @(item.IsRead ? "is-read" : "is-unread")">
-                    <div class="d-flex justify-content-between gap-3 flex-wrap">
-                        <div>
-                            <div class="d-flex align-items-center gap-2 mb-1">
-                                <span class="badge rounded-pill bg-light text-dark border">@item.Type</span>
+        <form asp-action="DeleteSelected" method="post" id="deleteSelectedForm">
+            @Html.AntiForgeryToken()
+            <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="selectAllNotifications">
+                    <label class="form-check-label" for="selectAllNotifications">Tümünü seç</label>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-outline-danger rounded-pill px-3" id="btnDeleteSelected" disabled>
+                        <i class="fa-solid fa-trash-can me-2"></i>Seçilenleri Sil
+                    </button>
+                    <button type="submit" formaction="@Url.Action("DeleteAll","Patient")" class="btn btn-danger rounded-pill px-3" onclick="return confirm('Tüm bildirimler silinsin mi?');">
+                        <i class="fa-solid fa-trash me-2"></i>Tümünü Sil
+                    </button>
+                </div>
+            </div>
+
+            <div class="notification-stack">
+                @foreach (var item in Model)
+                {
+                    <div class="notification-card large @(item.IsRead ? "is-read" : "is-unread")">
+                        <div class="d-flex justify-content-between gap-3 flex-wrap">
+                            <div class="d-flex gap-2 align-items-start">
+                                <input class="form-check-input mt-1 notification-checkbox" type="checkbox" name="ids" value="@item.Id" aria-label="Seç">
+                                <div>
+                                    <div class="d-flex align-items-center gap-2 mb-1">
+                                        <span class="badge rounded-pill bg-light text-dark border">@item.Type</span>
+                                        @if (!item.IsRead)
+                                        {
+                                            <span class="badge rounded-pill bg-primary text-white">Yeni</span>
+                                        }
+                                        <strong>@item.Title</strong>
+                                    </div>
+                                    <p class="mb-2 text-muted">@item.Message</p>
+                                    <div class="small text-muted">@item.CreatedDate.ToString("dd.MM.yyyy HH:mm")</div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-start gap-2">
+                                @if (!string.IsNullOrWhiteSpace(item.Link))
+                                {
+                                <a href="@item.Link" class="btn btn-sm btn-light rounded-pill">Ýlgili Sayfa</a>
+                            }
                                 @if (!item.IsRead)
                                 {
-                                    <span class="badge rounded-pill bg-primary text-white">Yeni</span>
+                                    <button type="button"
+                                            class="btn btn-sm btn-primary rounded-pill mark-read-btn"
+                                            data-id="@item.Id">
+                                        Okundu
+                                    </button>
                                 }
-                                <strong>@item.Title</strong>
                             </div>
-                            <p class="mb-2 text-muted">@item.Message</p>
-                            <div class="small text-muted">@item.CreatedDate.ToString("dd.MM.yyyy HH:mm")</div>
-                        </div>
-
-                        <div class="d-flex align-items-start gap-2">
-                            @if (!string.IsNullOrWhiteSpace(item.Link))
-                            {
-                                <a href="@item.Link" class="btn btn-sm btn-light rounded-pill">Ilgili Sayfa</a>
-                            }
-                            @if (!item.IsRead)
-                            {
-                                <form asp-action="MarkAsReadAjax" method="post" class="notification-mark-form">
-                                    @Html.AntiForgeryToken()
-                                    <input type="hidden" name="id" value="@item.Id" />
-                                    <button type="submit" class="btn btn-sm btn-primary rounded-pill">Okundu</button>
-                                </form>
-                            }
                         </div>
                     </div>
-                </div>
-            }
-        </div>
+                }
+            </div>
+        </form>
     }
 </div>
 
+<form id="markReadForm" method="post" asp-action="MarkAsReadAjax" asp-controller="Patient" class="d-none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" id="markReadId" />
+</form>
+
 @section Scripts {
-    <script>
+        <script>
         (function () {
             const cards = document.querySelectorAll(".notification-card");
             const summaryBadge = document.getElementById("notificationsUnreadBadge");
             const headerBadge = document.getElementById("unreadNotificationBadge");
             const markAllForm = document.getElementById("markAllAsReadForm");
-            const singleForms = document.querySelectorAll(".notification-mark-form");
+            const markButtons = document.querySelectorAll(".mark-read-btn");
+            const markReadForm = document.getElementById("markReadForm");
+            const markReadIdInput = document.getElementById("markReadId");
 
             function setUnreadCount(count) {
                 if (!summaryBadge) {
                     return;
                 }
 
-                summaryBadge.textContent = `Okunmamis: ${count}`;
+                summaryBadge.textContent = `Okunmamýþ: ${count}`;
                 const markAllButton = markAllForm?.querySelector("button");
                 if (markAllButton) {
                     markAllButton.disabled = count === 0;
@@ -129,11 +171,10 @@
             }
 
             function hideMarkAsReadButton(card) {
-                const markForm = card.querySelector('.notification-mark-form');
-                if (markForm) {
-                    markForm.remove();
+                const markButton = card.querySelector('.mark-read-btn');
+                if (markButton) {
+                    markButton.remove();
                 }
-
                 const badge = card.querySelector('.badge.rounded-pill.bg-primary.text-white');
                 if (badge) {
                     badge.remove();
@@ -142,12 +183,36 @@
                 card.classList.add('is-read');
             }
 
-            singleForms.forEach(form => {
-                form.addEventListener('submit', async (event) => {
+            markButtons.forEach(button => {
+                button.addEventListener('click', async (event) => {
                     event.preventDefault();
-                    const card = form.closest('.notification-card');
-                    const result = await postAjax(form);
+                    event.stopPropagation();
 
+                    if (!markReadForm || !markReadIdInput) {
+                        return;
+                    }
+
+                    markReadIdInput.value = button.dataset.id || '';
+                    const formData = new URLSearchParams(new FormData(markReadForm));
+
+                    const card = button.closest('.notification-card');
+
+                    const response = await fetch(markReadForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'RequestVerificationToken': markReadForm.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                        },
+                        body: formData.toString(),
+                        credentials: 'same-origin'
+                    });
+
+                    if (!response.ok) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    const result = await response.json().catch(() => null);
                     if (!result || result.success !== true) {
                         window.location.reload();
                         return;
@@ -177,6 +242,34 @@
                     });
                 });
             }
+
+            // Seçim ve silme
+            const selectAll = document.getElementById("selectAllNotifications");
+            const checkboxes = document.querySelectorAll(".notification-checkbox");
+            const deleteSelectedBtn = document.getElementById("btnDeleteSelected");
+
+            function updateDeleteButtonState() {
+                const anyChecked = Array.from(checkboxes).some(cb => cb.checked);
+                if (deleteSelectedBtn) {
+                    deleteSelectedBtn.disabled = !anyChecked;
+                }
+            }
+
+            if (selectAll) {
+                selectAll.addEventListener("change", () => {
+                    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+                    updateDeleteButtonState();
+                });
+            }
+
+            checkboxes.forEach(cb => cb.addEventListener("change", () => {
+                if (selectAll) {
+                    const allChecked = Array.from(checkboxes).every(x => x.checked);
+                    selectAll.checked = allChecked;
+                    selectAll.indeterminate = !allChecked && Array.from(checkboxes).some(x => x.checked);
+                }
+                updateDeleteButtonState();
+            }));
         })();
     </script>
 }
@@ -229,3 +322,4 @@
         font-size: 2.5rem;
     }
 </style>
+

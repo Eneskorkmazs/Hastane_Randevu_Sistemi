@@ -45,7 +45,6 @@ namespace HastaneRandevuSistemi.Controllers
         {
             if (ModelState.IsValid)
             {
-                // 1. Önce Identity (Giriş) Hesabını Oluşturuyoruz
                 var user = new AppUser
                 {
                     UserName = Email,
@@ -55,21 +54,16 @@ namespace HastaneRandevuSistemi.Controllers
                     EmailConfirmed = true
                 };
 
-                // Kullanıcıyı şifresiyle veritabanına (AspNetUsers) ekle
                 var result = await _userManager.CreateAsync(user, Password);
 
                 if (result.Succeeded)
                 {
-                    // 2. ROL ATAMA: Kullanıcıyı "Doktor" rolüne ekle
                     if (!await _roleManager.RoleExistsAsync("Doktor"))
                     {
                         await _roleManager.CreateAsync(new IdentityRole("Doktor"));
                     }
                     await _userManager.AddToRoleAsync(user, "Doktor");
 
-                    // 3. DOCTOR TABLOSUNA MÜHÜRLEME
-                    // Formdan gelen doktor nesnesine, az önce oluşan kullanıcının ID'sini veriyoruz
-                    // Not: Doctor modelinde UserId alanı olduğundan emin ol!
                     doctor.UserId = user.Id;
 
                     _context.Add(doctor);
@@ -78,7 +72,6 @@ namespace HastaneRandevuSistemi.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                // Eğer Identity tarafında hata varsa (şifre zayıfsa vs.) buraya düşer
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError("", error.Description);

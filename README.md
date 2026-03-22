@@ -45,6 +45,7 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - Duyuru ve bilgilendirme modülü eklendi:
   - tüm kullanıcılar veya rol bazlı hedefleme,
   - bildirim kutusuna anlık duyuru gönderimi.
+- Randevu durumlarının farklı ekranlarda daha tutarlı yönetilebilmesi için zaman bazlı kontrol ve ortak durum senkronizasyon altyapısı güçlendirildi.
 
 ### Hafta 5
 - Hafta 5 kapsamındaki tamamlanan güncellemeler:
@@ -56,6 +57,14 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - Randevu alma deneyimi iyileştirildi:
   - doktora göre en yakın uygun saat önerileri,
   - hızlı slot seçimi.
+- Hasta paneli güncellendi:
+  - bekleyen, tamamlanan ve iptal edilen sayaçlar filtreli liste ekranları ile ilişkilendirildi,
+  - gerçekleşmemiş randevular bekleyen başlığı altında daha net gösterildi.
+- Randevu durum akışı iyileştirildi:
+  - gelecek tarihli onaylı randevular için `Tamamla` yerine `Bekleniyor` gösterimi eklendi,
+  - zamanı geçen randevuların otomatik olarak `Tamamlandı` durumuna dönmesi sağlandı,
+  - otomatik tamamlanan randevular için geçmiş olsun mesajı içeren bildirim desteği eklendi.
+- Diş Hastalıkları bölümü için yeni doktor kaydı eklendi.
 
 ## Teknolojiler
 - .NET 8
@@ -64,15 +73,6 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - ASP.NET Core Identity
 - SQL Server / LocalDB
 - Bootstrap 5
-
-## Başlatma
-1. `appsettings.json` içindeki bağlantı bilgisini kontrol edin.
-2. Veritabanı daha önce eski şema ile oluşturulduysa sıfırlayın veya migration uygulayın.
-3. Projeyi çalıştırın:
-
-```powershell
-dotnet run --project .\HastaneRandevuSistemi\HastaneRandevuSistemi.csproj
-```
 
 ## Haftalık Raporlar
 - [Hafta 1 Raporu PDF](Reports/Hafta1_Raporu.pdf)

@@ -1,5 +1,6 @@
 using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
+using HastaneRandevuSistemi.Services;
 using HastaneRandevuSistemi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -24,6 +25,8 @@ namespace HastaneRandevuSistemi.Controllers
 
         public async Task<IActionResult> Dashboard()
         {
+            await AppointmentStatusSync.CompleteExpiredAppointmentsAsync(_context);
+
             var user = await _userManager.GetUserAsync(User);
             if (user == null)
             {
@@ -31,7 +34,8 @@ namespace HastaneRandevuSistemi.Controllers
             }
 
             var appointments = await GetPatientAppointmentsQuery(user)
-                .OrderByDescending(a => a.AppointmentDate)
+                .OrderByDescending(a => a.CreatedDate)
+                .ThenByDescending(a => a.Id)
                 .ToListAsync();
 
             var notifications = await _context.Notifications
@@ -40,6 +44,12 @@ namespace HastaneRandevuSistemi.Controllers
                 .ToListAsync();
 
             var now = DateTime.Now;
+            var pendingAppointments = appointments
+                .Where(a => a.AppointmentDate >= now && a.Status != AppointmentStatus.Iptal && a.Status != AppointmentStatus.Tamamlandi)
+                .OrderByDescending(a => a.CreatedDate)
+                .ThenByDescending(a => a.Id)
+                .ToList();
+
             var model = new PatientDashboardViewModel
             {
                 FullName = $"{user.Name} {user.Surname}".Trim(),
@@ -48,15 +58,11 @@ namespace HastaneRandevuSistemi.Controllers
                 TC = user.TC,
                 DogumTarihi = user.DogumTarihi,
                 Cinsiyet = user.Cinsiyet,
-                UpcomingAppointmentsCount = appointments.Count(a => a.AppointmentDate >= now && a.Status != AppointmentStatus.Iptal),
+                PendingAppointmentsCount = pendingAppointments.Count,
                 CompletedAppointmentsCount = appointments.Count(a => a.Status == AppointmentStatus.Tamamlandi),
                 CancelledAppointmentsCount = appointments.Count(a => a.Status == AppointmentStatus.Iptal),
                 UnreadNotificationsCount = notifications.Count(n => !n.IsRead),
-                UpcomingAppointments = appointments
-                    .Where(a => a.AppointmentDate >= now && a.Status != AppointmentStatus.Iptal)
-                    .OrderBy(a => a.AppointmentDate)
-                    .Take(5)
-                    .ToList(),
+                PendingAppointments = pendingAppointments.Take(5).ToList(),
                 RecentAppointments = appointments.Take(5).ToList(),
                 RecentNotifications = notifications.Take(5).ToList()
             };
@@ -245,6 +251,66 @@ namespace HastaneRandevuSistemi.Controllers
             }
 
             return Json(new { success = true, unreadCount = 0 });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSelected(int[] ids)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            if (ids == null || ids.Length == 0)
+            {
+                TempData["ErrorMessage"] = "Silinecek bildirim seçilmedi.";
+                return RedirectToAction(nameof(Notifications));
+            }
+
+            var toDelete = await _context.Notifications
+                .Where(n => n.UserId == user.Id && ids.Contains(n.Id))
+                .ToListAsync();
+
+            if (toDelete.Count == 0)
+            {
+                TempData["ErrorMessage"] = "Silinecek bildirim bulunamadı.";
+                return RedirectToAction(nameof(Notifications));
+            }
+
+            _context.Notifications.RemoveRange(toDelete);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"{toDelete.Count} bildirim silindi.";
+            return RedirectToAction(nameof(Notifications));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAll()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var all = await _context.Notifications
+                .Where(n => n.UserId == user.Id)
+                .ToListAsync();
+
+            if (all.Count == 0)
+            {
+                TempData["InfoMessage"] = "Silinecek bildirim yok.";
+                return RedirectToAction(nameof(Notifications));
+            }
+
+            _context.Notifications.RemoveRange(all);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Tüm bildirimler silindi.";
+            return RedirectToAction(nameof(Notifications));
         }
 
         [HttpGet]

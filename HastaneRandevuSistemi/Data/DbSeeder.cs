@@ -50,35 +50,67 @@ namespace HastaneRandevuSistemi.Data
                 }
             }
 
-            if (await context.Departments.AnyAsync())
+            var renameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
-                return;
+                { "Dahiliye (Ic Hastaliklari)", "Dahiliye (İç Hastalıkları)" },
+                { "Dis Hastaliklari", "Diş Hastalıkları" },
+                { "Noroloji", "Nöroloji" },
+                { "Goz Hastaliklari", "Göz Hastalıkları" },
+                { "Kulak Burun Bogaz", "Kulak Burun Boğaz" },
+                { "Kadin Hastaliklari ve Dogum", "Kadın Hastalıkları ve Doğum" },
+                { "Gogus Hastaliklari", "Göğüs Hastalıkları" },
+                { "Enfeksiyon Hastaliklari", "Enfeksiyon Hastalıkları" },
+                { "Uroloji", "Üroloji" }
+            };
+
+            // Var olan kayitlarin isimlerini duzelt
+            var existingDepartments = await context.Departments.ToListAsync();
+            foreach (var dep in existingDepartments)
+            {
+                if (renameMap.TryGetValue(dep.Name, out var newName))
+                {
+                    dep.Name = newName;
+                }
+            }
+            if (existingDepartments.Any())
+            {
+                await context.SaveChangesAsync();
+            }
+
+            if (existingDepartments.Any())
+            {
+                // Var olanlar duzeltildi; eksik olanlari eklemeye devam edebiliriz.
             }
 
             var hospitalData = new Dictionary<string, List<string>>
             {
-                { "Dahiliye (Ic Hastaliklari)", new List<string> { "Prof. Dr. Canan Karatay", "Uzm. Dr. Ahmet Maranki" } },
-                { "Kardiyoloji", new List<string> { "Prof. Dr. Mehmet Oz", "Doc. Dr. Bingur Sonmez" } },
-                { "Noroloji", new List<string> { "Prof. Dr. Gazi Yasargil", "Uzm. Dr. Serdar Dag" } },
+                { "Diş Hastalıkları", new List<string> { "Uzm. Dr. Elif Yılmaz" } },
+                { "Dahiliye (İç Hastalıkları)", new List<string> { "Prof. Dr. Canan Karatay", "Uzm. Dr. Ahmet Maranki" } },
+                { "Kardiyoloji", new List<string> { "Prof. Dr. Mehmet Öz", "Doç. Dr. Bingür Sönmez" } },
+                { "Nöroloji", new List<string> { "Prof. Dr. Gazi Yaşargil", "Uzm. Dr. Serdar Dağ" } },
                 { "Ortopedi ve Travmatoloji", new List<string> { "Op. Dr. Feridun Kunak", "Prof. Dr. Burhan Uslu" } },
-                { "Goz Hastaliklari", new List<string> { "Op. Dr. Kudret Goz", "Uzm. Dr. Levent Akcay" } },
-                { "Kulak Burun Bogaz", new List<string> { "Op. Dr. Aytug Altundag", "Prof. Dr. Ibrahim Saracoglu" } },
-                { "Genel Cerrahi", new List<string> { "Prof. Dr. Munci Kalayoglu", "Op. Dr. Ender Sarac" } },
-                { "Dermatoloji", new List<string> { "Uzm. Dr. Nihat Hatipoglu", "Dr. Seyma Subasi" } },
-                { "Pediatri", new List<string> { "Uzm. Dr. Osman Muftuoglu", "Dr. Sami Ulus" } },
-                { "Psikiyatri", new List<string> { "Prof. Dr. Ilber Ortayli", "Dr. Gulseren Budayicioglu" } },
-                { "Uroloji", new List<string> { "Op. Dr. Haydar Dumen", "Prof. Dr. Kemal Ozkan" } },
-                { "Fizik Tedavi ve Rehabilitasyon", new List<string> { "Uzm. Dr. Halit Yerebakan", "Dr. Ferhat Gocer" } },
-                { "Kadin Hastaliklari ve Dogum", new List<string> { "Op. Dr. Banu Ciftci", "Prof. Dr. Teksen Camlibel" } },
-                { "Gogus Hastaliklari", new List<string> { "Prof. Dr. Ahmet Rasim Kucukusta", "Uzm. Dr. Tevfik Ozlu" } },
-                { "Enfeksiyon Hastaliklari", new List<string> { "Prof. Dr. Mehmet Ceyhan", "Doc. Dr. Ates Kara" } }
+                { "Göz Hastalıkları", new List<string> { "Op. Dr. Kudret Göz", "Uzm. Dr. Levent Akçay" } },
+                { "Kulak Burun Boğaz", new List<string> { "Op. Dr. Aytuğ Altundağ", "Prof. Dr. İbrahim Saraçoğlu" } },
+                { "Genel Cerrahi", new List<string> { "Prof. Dr. Münci Kalayoğlu", "Op. Dr. Ender Saraç" } },
+                { "Dermatoloji", new List<string> { "Uzm. Dr. Nihat Hatipoğlu", "Dr. Şeyma Subaşı" } },
+                { "Pediatri", new List<string> { "Uzm. Dr. Osman Müftüoğlu", "Dr. Sami Ulus" } },
+                { "Psikiyatri", new List<string> { "Prof. Dr. İlber Ortaylı", "Dr. Gülseren Budayıcıoğlu" } },
+                { "Üroloji", new List<string> { "Op. Dr. Haydar Dümen", "Prof. Dr. Kemal Özkan" } },
+                { "Fizik Tedavi ve Rehabilitasyon", new List<string> { "Uzm. Dr. Halit Yerebakan", "Dr. Ferhat Göçer" } },
+                { "Kadın Hastalıkları ve Doğum", new List<string> { "Op. Dr. Banu Çiftçi", "Prof. Dr. Teksen Çamlıbel" } },
+                { "Göğüs Hastalıkları", new List<string> { "Prof. Dr. Ahmet Rasim Küçükusta", "Uzm. Dr. Tevfik Özlü" } },
+                { "Enfeksiyon Hastalıkları", new List<string> { "Prof. Dr. Mehmet Ceyhan", "Doç. Dr. Ateş Kara" } }
             };
 
             foreach (var item in hospitalData)
             {
-                var department = new Department { Name = item.Key };
-                await context.Departments.AddAsync(department);
-                await context.SaveChangesAsync();
+                var department = await context.Departments.FirstOrDefaultAsync(d => d.Name == item.Key);
+                if (department == null)
+                {
+                    department = new Department { Name = item.Key };
+                    await context.Departments.AddAsync(department);
+                    await context.SaveChangesAsync();
+                }
 
                 foreach (var doctorFullName in item.Value)
                 {

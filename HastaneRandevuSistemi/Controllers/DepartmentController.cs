@@ -37,10 +37,23 @@ namespace HastaneRandevuSistemi.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,Description")] Department department)
         {
+            department.Name = department.Name?.Trim();
+            department.Description = department.Description?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(department.Name))
+            {
+                var exists = await _context.Departments.AnyAsync(d => d.Name.ToLower() == department.Name.ToLower());
+                if (exists)
+                {
+                    ModelState.AddModelError(nameof(department.Name), "Bu isimde bir poliklinik zaten mevcut.");
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 _context.Add(department);
                 await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Poliklinik basariyla eklendi.";
                 return RedirectToAction(nameof(Index));
             }
             return View(department);
@@ -63,12 +76,25 @@ namespace HastaneRandevuSistemi.Controllers
         {
             if (id != department.Id) return NotFound();
 
+            department.Name = department.Name?.Trim();
+            department.Description = department.Description?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(department.Name))
+            {
+                var exists = await _context.Departments.AnyAsync(d => d.Id != department.Id && d.Name.ToLower() == department.Name.ToLower());
+                if (exists)
+                {
+                    ModelState.AddModelError(nameof(department.Name), "Bu isimde bir poliklinik zaten mevcut.");
+                }
+            }
+
             if (ModelState.IsValid)
             {
                 try
                 {
                     _context.Update(department);
                     await _context.SaveChangesAsync();
+                    TempData["SuccessMessage"] = "Poliklinik bilgileri guncellendi.";
                 }
                 catch (DbUpdateConcurrencyException)
                 {

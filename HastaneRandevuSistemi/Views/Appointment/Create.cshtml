@@ -1,4 +1,4 @@
-@model HastaneRandevuSistemi.Models.Appointment
+﻿@model HastaneRandevuSistemi.Models.Appointment
 
 @{
     ViewData["Title"] = "Randevu Al";
@@ -74,6 +74,7 @@
                                             <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-calendar-days text-primary"></i></span>
                                             <input type="date" id="DatePicker" class="form-control border-start-0 ps-0" min="@DateTime.Now.ToString("yyyy-MM-dd")" disabled />
                                         </div>
+                                        <small id="doctorScheduleNote" class="text-muted d-block mt-2">Doktor seçildiğinde uygun gün planı burada gösterilir.</small>
                                     </div>
 
                                     <div class="col-md-6">
@@ -88,6 +89,27 @@
                                 </div>
 
                                 <small id="statusMsg" class="fw-semibold mt-n2 mb-4 d-block"></small>
+                                <div id="availabilityPreview" class="availability-preview d-none mb-4">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                        <strong class="text-secondary small">HAFTALIK PLAN</strong>
+                                        <span class="small text-muted">12:00 - 13:00 öğle arası kapalıdır</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="small text-muted mb-2">Çalışma günleri</div>
+                                        <div id="availabilityDays" class="d-flex flex-wrap gap-2"></div>
+                                    </div>
+                                    <div>
+                                        <div class="small text-muted mb-2">Müsait saatler</div>
+                                        <div id="availabilityHours" class="d-flex flex-wrap gap-2"></div>
+                                    </div>
+                                </div>
+                                <div id="slotSuggestions" class="mb-4 d-none">
+                                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                                        <strong class="text-secondary small">HIZLI ÖNERİLER</strong>
+                                        <span class="small text-muted">En yakın müsait 5 slot</span>
+                                    </div>
+                                    <div id="slotSuggestionButtons" class="d-flex flex-wrap gap-2"></div>
+                                </div>
                                 <input type="hidden" asp-for="AppointmentDate" id="FinalDate" />
 
                                 <div class="patient-mini-card p-3 p-md-4 mb-4">
@@ -188,6 +210,58 @@
         background: linear-gradient(90deg, #0b5cad 0%, #082847 100%);
         box-shadow: 0 16px 35px rgba(11, 92, 173, 0.24);
     }
+
+    #slotSuggestionButtons .btn {
+        border-width: 1px;
+        background: #fff;
+        color: #0b5cad;
+        border-color: #b8d2ee;
+        font-weight: 700;
+        transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    }
+
+    #slotSuggestionButtons .btn:hover,
+    #slotSuggestionButtons .btn:focus {
+        background: #eaf4ff;
+        color: #083761;
+        border-color: #0b5cad;
+        box-shadow: 0 10px 20px rgba(11, 92, 173, 0.16);
+        transform: translateY(-1px);
+    }
+
+    #slotSuggestionButtons .btn:active {
+        background: #dcecff;
+        color: #082847;
+    }
+
+    .availability-preview {
+        padding: 1rem 1.1rem;
+        border-radius: 18px;
+        border: 1px solid #d9e6f3;
+        background: linear-gradient(180deg, #fbfdff 0%, #f1f7fd 100%);
+    }
+
+    .availability-chip {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 999px;
+        padding: 0.45rem 0.8rem;
+        font-size: 0.85rem;
+        font-weight: 600;
+        border: 1px solid #d7e4f2;
+        background: #fff;
+        color: #214e74;
+    }
+
+    .availability-chip.day {
+        background: rgba(11, 92, 173, 0.08);
+        color: #0b5cad;
+    }
+
+    .availability-chip.hour {
+        background: rgba(25, 135, 84, 0.08);
+        color: #1f6f46;
+    }
 </style>
 
 @section Scripts {
@@ -201,11 +275,21 @@
             const $timeSelect = $("#TimeSelect");
             const $msgBox = $("#statusMsg");
             const $finalInput = $("#FinalDate");
+            const $suggestions = $("#slotSuggestions");
+            const $suggestionButtons = $("#slotSuggestionButtons");
+            const $scheduleNote = $("#doctorScheduleNote");
+            const $availabilityPreview = $("#availabilityPreview");
+            const $availabilityDays = $("#availabilityDays");
+            const $availabilityHours = $("#availabilityHours");
+            let doctorAvailability = null;
 
             $deptSelect.change(function () {
                 const deptId = $(this).val();
                 $doctorSelect.empty().append('<option value="">-- Yükleniyor... --</option>').prop("disabled", true);
                 $datePicker.val("").prop("disabled", true);
+                doctorAvailability = null;
+                $scheduleNote.text("Doktor seçildiğinde uygun gün planı burada gösterilir.");
+                renderAvailability(null);
                 resetTimeSelect();
 
                 if (!deptId) {
@@ -239,9 +323,87 @@
                 $datePicker.val("");
                 resetTimeSelect();
                 $datePicker.prop("disabled", !doctorId);
+                doctorAvailability = null;
+                renderAvailability(null);
+
+                if (!doctorId) {
+                    $scheduleNote.text("Doktor seçildiğinde uygun gün planı burada gösterilir.");
+                    return;
+                }
+
+                loadDoctorAvailability(doctorId);
             });
 
-            $datePicker.change(loadSlots);
+            $datePicker.change(function () {
+                if (!isSelectedDateAllowed()) {
+                    resetTimeSelect();
+                    loadRecommendations();
+                    return;
+                }
+
+                loadSlots();
+                loadRecommendations();
+            });
+
+            function loadDoctorAvailability(doctorId) {
+                $scheduleNote.text("Doktor çalışma planı yükleniyor...");
+
+                $.ajax({
+                    url: "/Appointment/GetDoctorAvailability",
+                    type: "GET",
+                    data: { doctorId: doctorId },
+                    success: function (availability) {
+                        doctorAvailability = availability;
+                        $scheduleNote.text("Çalışma planı: " + availability.summary + ".");
+                        renderAvailability(availability);
+                        $msgBox.text("Doktor için uygun gün ve saat planı hazır.").removeClass("text-danger").addClass("text-success");
+                        loadRecommendations();
+                    },
+                    error: function () {
+                        doctorAvailability = null;
+                        $scheduleNote.text("Doktor çalışma planı alınamadı.");
+                        renderAvailability(null);
+                        $msgBox.text("Doktor çalışma planı alınamadı.").removeClass("text-success").addClass("text-danger");
+                    }
+                });
+            }
+
+            function renderAvailability(availability) {
+                $availabilityDays.empty();
+                $availabilityHours.empty();
+
+                if (!availability) {
+                    $availabilityPreview.addClass("d-none");
+                    return;
+                }
+
+                $.each(availability.workingDayNames, function (_, dayName) {
+                    $availabilityDays.append(`<span class="availability-chip day">${dayName}</span>`);
+                });
+
+                $.each(availability.availableHours, function (_, hour) {
+                    $availabilityHours.append(`<span class="availability-chip hour">${hour}</span>`);
+                });
+
+                $availabilityPreview.removeClass("d-none");
+            }
+
+            function isSelectedDateAllowed() {
+                const dateVal = $datePicker.val();
+                if (!dateVal || !doctorAvailability || !doctorAvailability.workingDays) {
+                    return true;
+                }
+
+                const selectedDate = new Date(dateVal + "T00:00:00");
+                if (doctorAvailability.workingDays.includes(selectedDate.getDay())) {
+                    return true;
+                }
+
+                $msgBox.text("Seçtiğiniz gün bu doktorun çalışma planında yok. " + doctorAvailability.summary + " hizmet vermektedir.")
+                    .removeClass("text-success")
+                    .addClass("text-danger");
+                return false;
+            }
 
             function loadSlots() {
                 const doctorId = $doctorSelect.val();
@@ -258,23 +420,27 @@
                     url: "/Appointment/GetTakenSlots",
                     type: "GET",
                     data: { doctorId: doctorId, date: dateVal },
-                    success: function (takenSlots) {
+                    success: function (payload) {
                         $timeSelect.empty().append('<option value="">-- Saat seçiniz --</option>');
+                        if (!payload.isAvailableDay) {
+                            $msgBox.text(payload.message).removeClass("text-success").addClass("text-danger");
+                            return;
+                        }
+
                         let hasSlot = false;
-                        for (let i = 9; i < 17; i++) {
-                            const hourString = (i < 10 ? "0" + i : i) + ":00";
-                            if (takenSlots.includes(hourString)) {
+                        $.each(payload.availableHours, function (_, hourString) {
+                            if (payload.takenSlots.includes(hourString)) {
                                 $timeSelect.append(`<option value="${hourString}" disabled>${hourString} (DOLU)</option>`);
                             } else {
                                 $timeSelect.append(`<option value="${hourString}">${hourString}</option>`);
                                 hasSlot = true;
                             }
-                        }
+                        });
 
                         if (!hasSlot) {
                             $msgBox.text("Bugün için boş yer kalmamıştır.").addClass("text-danger");
                         } else {
-                            $msgBox.text("Müsait saatler listelendi.").addClass("text-success");
+                            $msgBox.text(payload.message).addClass("text-success");
                             $timeSelect.prop("disabled", false);
                         }
                     },
@@ -288,6 +454,54 @@
                 $timeSelect.empty().append('<option value="">-- Önce tarih ve doktor seçin --</option>');
                 $timeSelect.prop("disabled", true);
                 $msgBox.text("").removeClass("text-danger text-success");
+                $suggestions.addClass("d-none");
+                $suggestionButtons.empty();
+                $finalInput.val("");
+            }
+
+            function loadRecommendations() {
+                const doctorId = $doctorSelect.val();
+                const startDate = $datePicker.val();
+
+                if (!doctorId) {
+                    $suggestions.addClass("d-none");
+                    $suggestionButtons.empty();
+                    return;
+                }
+
+                $.ajax({
+                    url: "/Appointment/GetRecommendedSlots",
+                    type: "GET",
+                    data: { doctorId: doctorId, startDate: startDate },
+                    success: function (items) {
+                        $suggestionButtons.empty();
+                        if (!items || items.length === 0) {
+                            $suggestions.addClass("d-none");
+                            return;
+                        }
+
+                        $.each(items, function (_, slot) {
+                            const [datePart, timePart] = slot.value.split("T");
+                            const $btn = $('<button type="button" class="btn btn-sm btn-outline-primary rounded-pill"></button>');
+                            $btn.text(slot.label);
+                            $btn.on("click", function () {
+                                $datePicker.val(datePart);
+                                loadSlots();
+
+                                const waitForSlots = setInterval(function () {
+                                    if (!$timeSelect.prop("disabled")) {
+                                        $timeSelect.val(timePart.substring(0, 5));
+                                        clearInterval(waitForSlots);
+                                    }
+                                }, 120);
+                            });
+
+                            $suggestionButtons.append($btn);
+                        });
+
+                        $suggestions.removeClass("d-none");
+                    }
+                });
             }
 
             $("#appointmentForm").submit(function (e) {
@@ -303,3 +517,4 @@
         });
     </script>
 }
+

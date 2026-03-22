@@ -87,7 +87,8 @@
         <p>
             Dördüncü hafta içinde yönetim paneli daha görünür, takip edilebilir ve rapor üretmeye
             uygun hale getirildi. Admin kullanıcısının sistemi izlemesi için özet kartlar, haftalık
-            trendler ve poliklinik yoğunluk görünümleri geliştirildi.
+            trendler ve poliklinik yoğunluk görünümleri geliştirildi. Bu kapsam daha sonra bildirim
+            ve durum yönetimi tarafındaki yeni kurallarla desteklenerek yönetim deneyimi güçlendirildi.
         </p>
 
         <h3>Yapılan Geliştirmeler</h3>
@@ -96,13 +97,34 @@
             <li>Poliklinik yoğunluğu ve iptal edilen randevular için yeni metrik alanları eklendi.</li>
             <li>Tarih aralığı, poliklinik ve durum filtreleri içeren yeni yönetim raporu ekranı geliştirildi.</li>
             <li>Tüm kullanıcılar veya belirli roller için duyuru oluşturma ve bildirim gönderme desteği eklendi.</li>
+            <li>Randevu durumlarının yönetim ekranlarında daha tutarlı görünmesi için zaman bazlı kontrol mantıkları güçlendirildi.</li>
+            <li>Geçmiş randevuların tamamlanma akışı ile bildirim üretimi arasındaki ilişki netleştirildi.</li>
+            <li>Yönetici ve doktor tarafında durum verilerinin raporlara daha doğru yansıması için ortak senkron mantığına altyapı hazırlandı.</li>
+            <li>Randevu statülerinin farklı ekranlarda aynı kurala göre güncellenebilmesi için merkezi bir durum senkronizasyon yaklaşımı benimsendi.</li>
+        </ul>
+
+        <h3>Teknik Değerlendirme</h3>
+        <p>
+            Haftanın ilk hedefi yönetim görünürlüğünü artırmak olsa da süreç içinde sadece ekran eklemekle
+            yetinilmedi. Randevu, bildirim ve raporlama verilerinin birbirini beslemesi sağlandı. Böylece
+            yönetim ekranlarında görülen özetler ile kullanıcı tarafındaki işlem sonuçları arasında daha
+            güvenilir bir ilişki kurulmuş oldu. Özellikle daha sonra eklenen otomatik tamamlanma ve bildirim
+            kuralları için gerekli temel yapı bu hafta içindeki düzenlemelerle güçlendirildi.
+        </p>
+
+        <h3>Bugün Eklenen Net Güncellemeler</h3>
+        <ul>
+            <li>Randevu statülerinin tüm ana ekranlarda ortak bir senkron mantığı ile güncellenmesi sağlandı.</li>
+            <li>Zamanı geçen randevuların manuel takibe bağlı kalmaması için merkezi otomasyon altyapısı güçlendirildi.</li>
+            <li>Yönetim ve doktor ekranlarında görülen özet verilerin gerçek durumla daha uyumlu olması hedeflendi.</li>
         </ul>
 
         <h3>Sonuç</h3>
         <p>
             Dördüncü hafta sonunda sistem yalnızca işlem yapan değil, ürettiği verileri anlamlı
             biçimde gösteren bir yapıya kavuşmuştur. Özellikle admin tarafında görünürlük ve kontrol
-            seviyesi belirgin şekilde artırılmıştır.
+            seviyesi belirgin şekilde artırılmış, bildirim ve durum yönetimi de bu yapıyı destekleyecek
+            şekilde olgunlaştırılmıştır.
         </p>
     </div>
 </body>

@@ -1,4 +1,4 @@
-/* =========================================
+ï»¿/* =========================================
    1. GENEL AYARLAR & YAPI (LAYOUT)
    ========================================= */
 html, body {
@@ -30,12 +30,102 @@ html {
 }
 
 /* =========================================
-   2. NAVBAR & FOOTER ÖZELLEÞTÝRMELERÝ
+   2. NAVBAR & FOOTER OZELLESTIRMELERI
    ========================================= */
 .navbar-custom {
     background: linear-gradient(90deg, #004e92 0%, #000428 100%);
     padding-top: 1rem;
     padding-bottom: 1rem;
+}
+
+.navbar-custom .navbar-nav {
+    gap: 0.3rem;
+}
+
+.nav-link-premium {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.1rem;
+    padding: 0.72rem 1rem !important;
+    border-radius: 999px;
+    color: rgba(255, 255, 255, 0.88) !important;
+    transition: color 0.25s ease, background-color 0.25s ease, transform 0.25s ease, box-shadow 0.25s ease;
+    isolation: isolate;
+    overflow: hidden;
+}
+
+.nav-link-premium::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.04));
+    opacity: 0;
+    transform: scale(0.92);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: -2;
+}
+
+.nav-link-premium::after {
+    content: "";
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 8px;
+    height: 2.5px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7dd3fc, #ffffff, #7dd3fc);
+    transform: scaleX(0);
+    transform-origin: center;
+    opacity: 0;
+    transition: transform 0.28s ease, opacity 0.28s ease;
+    z-index: -1;
+}
+
+.nav-link-premium:hover,
+.nav-link-premium:focus-visible {
+    color: #ffffff !important;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 24px rgba(2, 12, 27, 0.22);
+}
+
+.nav-link-premium:hover::before,
+.nav-link-premium:focus-visible::before,
+.nav-link-premium.is-active::before {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.nav-link-premium:hover::after,
+.nav-link-premium:focus-visible::after,
+.nav-link-premium.is-active::after {
+    transform: scaleX(1);
+    opacity: 1;
+}
+
+.nav-link-premium.is-active {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.nav-link-premium .nav-badge-premium {
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background-color 0.25s ease;
+}
+
+.nav-link-premium:hover .nav-badge-premium,
+.nav-link-premium.is-active .nav-badge-premium {
+    transform: translateY(-1px) scale(1.08);
+    box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.15);
+}
+
+.navbar-custom .dropdown-menu .dropdown-item {
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.navbar-custom .dropdown-menu .dropdown-item:hover {
+    transform: translateX(4px);
 }
 
 .footer-custom {
@@ -84,11 +174,8 @@ html {
     background: linear-gradient(135deg, #004e92 0%, #000428 100%);
 }
 
-/* Stat ve Aksiyon Kartlarý */
-.stat-card, .admin-stat-card, .action-card {
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    border-radius: 15px;
-}
+/* Stat ve Aksiyon Kartlari */
+
 
     .stat-card:hover, .admin-stat-card:hover {
         transform: translateY(-5px);
@@ -96,7 +183,7 @@ html {
     }
 
     .admin-stat-card:hover {
-        transform: translateX(10px); /* Desktop için yana kayma */
+        transform: translateX(10px); /* Desktop icin yana kayma */
         background-color: #f8faff !important;
     }
 
@@ -107,7 +194,7 @@ html {
     border-radius: 12px;
 }
 
-/* Yumuþak Renkli Ýkon Kutularý */
+/* Yumusak Renkli Ikon Kutulari */
 .bg-primary-soft {
     background-color: rgba(0, 78, 146, 0.1);
 }
@@ -129,7 +216,7 @@ html {
     box-shadow: 0 0 0 0.25rem rgba(0, 78, 146, 0.1) !important;
 }
 
-/* Focus None (Bazý durumlarda gölgeyi tamamen kaldýrmak için) */
+/* Focus None (Bazi durumlarda golgeyi tamamen kaldirmak icin) */
 .focus-none:focus {
     border-color: #dee2e6;
     box-shadow: none !important;
@@ -155,7 +242,7 @@ textarea.form-control {
 }
 
 /* =========================================
-   5. YARDIMCI SINIFLAR & ANÝMASYONLAR
+   5. YARDIMCI SINIFLAR & ANIMASYONLAR
    ========================================= */
 .fw-black {
     font-weight: 900;
@@ -221,9 +308,27 @@ textarea.form-control {
 }
 
 /* =========================================
-   6. MOBÝL ÖNCELÝKLÝ DÜZENLEMELER
+   6. MOBIL ONCELIKLI DUZENLEMELER
    ========================================= */
 @media (max-width: 767px) {
+    .navbar-custom .navbar-nav {
+        gap: 0.15rem;
+    }
+
+    .nav-link-premium {
+        width: 100%;
+        border-radius: 18px;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+
+    .nav-link-premium::after {
+        left: 14px;
+        right: auto;
+        width: 42px;
+        transform-origin: left center;
+    }
+
     .btn-lg {
         width: 100%;
     }
@@ -233,6 +338,8 @@ textarea.form-control {
     }
 
     .admin-stat-card:hover {
-        transform: translateY(-5px); /* Mobilde yana deðil yukarý kaysýn */
+        transform: translateY(-5px); /* Mobilde yana degil yukari kaysin */
     }
 }
+
+

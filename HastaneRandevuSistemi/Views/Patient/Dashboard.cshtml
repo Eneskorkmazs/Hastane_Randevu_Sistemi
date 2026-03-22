@@ -23,22 +23,22 @@
 
     <div class="row g-3 mb-4">
         <div class="col-md-6 col-xl-3">
-            <div class="dashboard-stat-card">
-                <span>Yaklaşan Randevu</span>
-                <strong>@Model.UpcomingAppointmentsCount</strong>
-            </div>
+            <a asp-controller="Appointment" asp-action="Index" asp-route-onlyUpcoming="true" class="dashboard-stat-card stat-link text-decoration-none text-reset d-block">
+                <span>Bekleyen Randevu</span>
+                <strong>@Model.PendingAppointmentsCount</strong>
+            </a>
         </div>
         <div class="col-md-6 col-xl-3">
-            <div class="dashboard-stat-card alt">
+            <a asp-controller="Appointment" asp-action="Index" asp-route-status="@( (int)AppointmentStatus.Tamamlandi )" class="dashboard-stat-card alt stat-link text-decoration-none text-reset d-block">
                 <span>Tamamlanan</span>
                 <strong>@Model.CompletedAppointmentsCount</strong>
-            </div>
+            </a>
         </div>
         <div class="col-md-6 col-xl-3">
-            <div class="dashboard-stat-card alt-2">
+            <a asp-controller="Appointment" asp-action="Index" asp-route-status="@( (int)AppointmentStatus.Iptal )" class="dashboard-stat-card alt-2 stat-link text-decoration-none text-reset d-block">
                 <span>İptal Edilen</span>
                 <strong>@Model.CancelledAppointmentsCount</strong>
-            </div>
+            </a>
         </div>
         <div class="col-md-6 col-xl-3">
             <div class="dashboard-stat-card alt-3">
@@ -54,17 +54,17 @@
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                            <h3 class="h5 fw-bold mb-1">Yaklaşan Randevular</h3>
-                            <p class="text-muted small mb-0">Onay durumu ve saat bilgisiyle birlikte listelenir.</p>
+                            <h3 class="h5 fw-bold mb-1">Bekleyen Randevular</h3>
+                            <p class="text-muted small mb-0">Henüz gerçekleşmemiş randevularınız burada listelenir.</p>
                         </div>
-                        <a asp-controller="Appointment" asp-action="Index" class="btn btn-sm btn-outline-primary rounded-pill">Tüm Geçmiş</a>
+                        <a asp-controller="Appointment" asp-action="Index" asp-route-onlyUpcoming="true" class="btn btn-sm btn-outline-primary rounded-pill">Tüm Bekleyenler</a>
                     </div>
 
-                    @if (!Model.UpcomingAppointments.Any())
+                    @if (!Model.PendingAppointments.Any())
                     {
                         <div class="empty-state">
                             <i class="fa-regular fa-calendar-xmark"></i>
-                            <p class="mb-0">Planlanmış bir randevunuz bulunmuyor.</p>
+                            <p class="mb-0">Bekleyen randevunuz bulunmuyor.</p>
                         </div>
                     }
                     else
@@ -81,8 +81,11 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in Model.UpcomingAppointments)
+                                    @foreach (var item in Model.PendingAppointments)
                                     {
+                                        var canCancel = item.AppointmentDate > DateTime.Now
+                                            && item.Status != AppointmentStatus.Iptal
+                                            && item.Status != AppointmentStatus.Tamamlandi;
                                         <tr>
                                             <td>@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
                                             <td>@item.Doctor?.Name @item.Doctor?.Surname</td>
@@ -93,9 +96,16 @@
                                                 </span>
                                             </td>
                                             <td class="text-end">
-                                                <a asp-controller="Appointment" asp-action="Cancel" asp-route-id="@item.Id" class="btn btn-sm btn-outline-danger rounded-pill">
-                                                    İptal Et
-                                                </a>
+                                                @if (canCancel) {
+                                                    <form asp-controller="Appointment" asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm(''Bu randevuyu iptal etmek istiyor musunuz?'');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
+                                                            İptal Et
+                                                        </button>
+                                                    </form>
+                                                } else {
+                                                    <span class="badge bg-light text-secondary border">Tamamlanacak</span>
+                                                }
                                             </td>
                                         </tr>
                                     }
@@ -236,6 +246,12 @@
         border-radius: 24px;
         padding: 1.25rem;
         box-shadow: 0 15px 35px rgba(22, 36, 56, 0.08);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-link:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 18px 40px rgba(22, 36, 56, 0.12);
     }
 
     .dashboard-stat-card span {
@@ -329,3 +345,5 @@
         }
     }
 </style>
+
+

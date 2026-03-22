@@ -1,0 +1,62 @@
+@model HastaneRandevuSistemi.ViewModels.AnnouncementCreateViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Duyuru Gönder";
+    var roleOptions = ViewData["AnnouncementRoles"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
+}
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header text-white p-4" style="background: linear-gradient(135deg, #0b3b66 0%, #031c33 100%);">
+                    <h1 class="h4 fw-bold mb-1">Duyuru ve Bilgilendirme Modülü</h1>
+                    <p class="mb-0 small opacity-75">Admin tarafından seçili kullanıcı gruplarına anlık bildirim gönderir.</p>
+                </div>
+                <div class="card-body p-4 p-md-5">
+                    <form asp-action="CreateAnnouncement" method="post">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="TargetRole" class="form-label fw-semibold">Hedef Kitle</label>
+                            <select asp-for="TargetRole" class="form-select">
+                                @foreach (var item in roleOptions)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label fw-semibold">Başlık</label>
+                            <input asp-for="Title" class="form-control" />
+                            <span asp-validation-for="Title" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Message" class="form-label fw-semibold">Mesaj</label>
+                            <textarea asp-for="Message" class="form-control" rows="5"></textarea>
+                            <span asp-validation-for="Message" class="text-danger small"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Link" class="form-label fw-semibold">Yönlendirme Linki</label>
+                            <input asp-for="Link" class="form-control" placeholder="/Appointment/Index" />
+                            <span asp-validation-for="Link" class="text-danger small"></span>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Vazgeç</a>
+                            <button type="submit" class="btn btn-primary rounded-pill px-4">Duyuruyu Gönder</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

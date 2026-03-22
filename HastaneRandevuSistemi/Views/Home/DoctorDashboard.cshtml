@@ -88,6 +88,7 @@
                     {
                         foreach (var item in upcoming)
                         {
+                            var isFutureApprovedAppointment = item.Status == AppointmentStatus.Onaylandi && item.AppointmentDate > DateTime.Now;
                             <tr>
                                 <td class="ps-4">@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.PatientName @item.PatientSurname</td>
@@ -106,10 +107,17 @@
                                     }
                                     else if (item.Status == AppointmentStatus.Onaylandi)
                                     {
-                                        <form asp-controller="Appointment" asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-primary">Tamamla</button>
-                                        </form>
+                                        @if (isFutureApprovedAppointment)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-secondary" disabled>Bekleniyor</button>
+                                        }
+                                        else
+                                        {
+                                            <form asp-controller="Appointment" asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-primary">Tamamla</button>
+                                            </form>
+                                        }
                                     }
                                 </td>
                             </tr>

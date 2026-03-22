@@ -2,34 +2,68 @@
 
 @{
     bool isHasta = User.IsInRole("Hasta");
-    ViewData["Title"] = isHasta ? "Randevu Gecmisim" : "Randevu Listesi";
+    ViewData["Title"] = isHasta ? "Randevu Geçmişim" : "Randevu Listesi";
     var statusOptions = ViewData["StatusOptions"] as IEnumerable<SelectListItem>;
     var doctorOptions = ViewData["DoctorOptions"] as IEnumerable<SelectListItem>;
+    var departmentOptions = ViewData["DepartmentOptions"] as IEnumerable<SelectListItem>;
     var selectedStatus = ViewData["SelectedStatus"]?.ToString();
     var searchTerm = ViewData["SearchTerm"] as string;
-    var selectedDoctorId = ViewData["DoctorId"] as int?;
+    var selectedDoctorId = ViewData["DoctorId"]?.ToString();
+    var selectedDepartmentId = ViewData["DepartmentId"]?.ToString();
     var fromDate = ViewData["FromDate"] as string;
     var toDate = ViewData["ToDate"] as string;
+    var selectedSortBy = ViewData["SortBy"]?.ToString();
+    var onlyUpcoming = ViewData["OnlyUpcoming"] as bool? == true;
     var today = DateTime.Today;
     var todayText = today.ToString("yyyy-MM-dd");
     var next7Text = today.AddDays(7).ToString("yyyy-MM-dd");
     var next30Text = today.AddDays(30).ToString("yyyy-MM-dd");
+    var totalCount = Model.Count();
+    var pendingCount = Model.Count(x => x.Status == AppointmentStatus.Bekliyor);
+    var completedCount = Model.Count(x => x.Status == AppointmentStatus.Tamamlandi);
 }
 
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
         <div>
             <h2 class="fw-bold text-primary"><i class="fa-solid fa-calendar-check me-2"></i>@ViewData["Title"]</h2>
-            <p class="text-muted mb-0">@(isHasta ? "Gecmis ve yaklasan tum randevulariniz." : "Randevulari filtreleyip yonetin.")</p>
+            <p class="text-muted mb-0">@(isHasta ? "Geçmiş ve yaklaşan tüm randevularınız." : "Randevuları filtreleyip yönetin.")</p>
         </div>
         <div class="d-flex gap-2">
             @if (isHasta)
             {
-                <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-outline-primary rounded-pill px-4">Panele Don</a>
+                <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-outline-primary rounded-pill px-4">Panele Dön</a>
             }
             <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
                 <i class="fa fa-plus me-2"></i>Yeni Randevu
             </a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">Liste Kaydı</div>
+                    <div class="h3 fw-bold mb-0">@totalCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">Bekleyen</div>
+                    <div class="h3 fw-bold text-warning mb-0">@pendingCount</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body">
+                    <div class="text-muted small">Tamamlanan</div>
+                    <div class="h3 fw-bold text-primary mb-0">@completedCount</div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -39,7 +73,7 @@
                 <div class="col-12 col-md-3">
                     <label class="form-label">Durum</label>
                     <select name="status" class="form-select">
-                        <option value="">Tum Durumlar</option>
+                        <option value="">Tüm Durumlar</option>
                         @if (statusOptions != null)
                         {
                             foreach (var item in statusOptions)
@@ -50,17 +84,31 @@
                     </select>
                 </div>
 
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Poliklinik</label>
+                    <select name="departmentId" class="form-select">
+                        <option value="">Tüm Poliklinikler</option>
+                        @if (departmentOptions != null)
+                        {
+                            foreach (var item in departmentOptions)
+                            {
+                                <option value="@item.Value" selected="@(item.Value == selectedDepartmentId)">@item.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+
                 @if (!isHasta)
                 {
                     <div class="col-12 col-md-3">
                         <label class="form-label">Doktor</label>
                         <select name="doctorId" class="form-select">
-                            <option value="">Tum Doktorlar</option>
+                            <option value="">Tüm Doktorlar</option>
                             @if (doctorOptions != null)
                             {
                                 foreach (var item in doctorOptions)
                                 {
-                                    <option value="@item.Value" selected="@(selectedDoctorId.HasValue && item.Value == selectedDoctorId.Value.ToString())">@item.Text</option>
+                                    <option value="@item.Value" selected="@(item.Value == selectedDoctorId)">@item.Text</option>
                                 }
                             }
                         </select>
@@ -68,26 +116,43 @@
                 }
 
                 <div class="col-12 col-md-3">
-                    <label class="form-label">Baslangic</label>
+                    <label class="form-label">Başlangıç</label>
                     <input type="date" name="fromDate" value="@fromDate" class="form-control" />
                 </div>
 
                 <div class="col-12 col-md-3">
-                    <label class="form-label">Bitis</label>
+                    <label class="form-label">Bitiş</label>
                     <input type="date" name="toDate" value="@toDate" class="form-control" />
                 </div>
 
                 <div class="col-12 col-md-6">
                     <label class="form-label">Arama</label>
-                    <input type="text" name="search" value="@searchTerm" class="form-control" placeholder="Hasta, doktor veya bolum" />
+                    <input type="text" name="search" value="@searchTerm" class="form-control" placeholder="Hasta, doktor veya bölüm" />
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <label class="form-label">Sıralama</label>
+                    <select name="sortBy" class="form-select">
+                        <option value="" selected="@(string.IsNullOrWhiteSpace(selectedSortBy))">En yeni tarih</option>
+                        <option value="date_asc" selected="@(selectedSortBy == "date_asc")">En yakın tarih</option>
+                        <option value="status" selected="@(selectedSortBy == "status")">Duruma göre</option>
+                        <option value="doctor" selected="@(selectedSortBy == "doctor")">Doktora göre</option>
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="form-check mt-4 pt-2">
+                        <input class="form-check-input" type="checkbox" name="onlyUpcoming" value="true" id="onlyUpcoming" checked="@onlyUpcoming" />
+                        <label class="form-check-label" for="onlyUpcoming">Sadece gelecek randevular</label>
+                    </div>
                 </div>
 
                 <div class="col-12">
-                    <label class="form-label">Hizli tarih araligi</label>
+                    <label class="form-label">Hızlı tarih aralığı</label>
                     <div class="d-flex flex-wrap gap-2">
-                        <a asp-action="Index" asp-route-fromDate="@todayText" asp-route-toDate="@todayText" class="btn btn-outline-secondary btn-sm rounded-pill">Bugun</a>
-                        <a asp-action="Index" asp-route-fromDate="@todayText" asp-route-toDate="@next7Text" class="btn btn-outline-secondary btn-sm rounded-pill">Sonraki 7 gun</a>
-                        <a asp-action="Index" asp-route-fromDate="@todayText" asp-route-toDate="@next30Text" class="btn btn-outline-secondary btn-sm rounded-pill">Sonraki 30 gun</a>
+                        <a asp-action="Index" asp-route-fromDate="@todayText" asp-route-toDate="@todayText" class="btn btn-outline-secondary btn-sm rounded-pill">Bugün</a>
+                        <a asp-action="Index" asp-route-fromDate="@todayText" asp-route-toDate="@next7Text" class="btn btn-outline-secondary btn-sm rounded-pill">Sonraki 7 gün</a>
+                        <a asp-action="Index" asp-route-fromDate="@todayText" asp-route-toDate="@next30Text" class="btn btn-outline-secondary btn-sm rounded-pill">Sonraki 30 gün</a>
                     </div>
                 </div>
 
@@ -104,7 +169,7 @@
         <div class="card border-0 shadow-sm rounded-4">
             <div class="card-body py-5 text-center">
                 <div class="text-muted mb-3"><i class="fa-regular fa-calendar-xmark fa-4x"></i></div>
-                <h4>Kayıt bulunamadi.</h4>
+                <h4>Kayıt bulunamadı.</h4>
             </div>
         </div>
     }
@@ -114,6 +179,7 @@
             @foreach (var item in Model)
             {
                 var canPatientCancel = isHasta && item.AppointmentDate > DateTime.Now && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
+                var isFutureApprovedAppointment = item.Status == AppointmentStatus.Onaylandi && item.AppointmentDate > DateTime.Now;
 
                 <div class="card shadow-sm mb-3 border-0 rounded-4">
                     <div class="card-body">
@@ -137,7 +203,7 @@
                                 {
                                     <form asp-action="Cancel" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
                                         @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-outline-danger rounded-pill w-100">Randevuyu Iptal Et</button>
+                                        <button type="submit" class="btn btn-outline-danger rounded-pill w-100">Randevuyu İptal Et</button>
                                     </form>
                                 }
                             }
@@ -159,13 +225,27 @@
                                 else if (item.Status == AppointmentStatus.Onaylandi)
                                 {
                                     <div class="btn-group w-100">
-                                        <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-primary">Tamamla</button>
-                                        </form>
+                                        @if (isFutureApprovedAppointment)
+                                        {
+                                            <button type="button"
+                                                    class="btn btn-secondary"
+                                                    disabled
+                                                    title="Randevu zamanı gelince tamamlanabilir">
+                                                Bekleniyor
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-primary">
+                                                    Tamamla
+                                                </button>
+                                            </form>
+                                        }
                                         <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-outline-danger">Iptal</button>
+                                            <button type="submit" class="btn btn-outline-danger">İptal</button>
                                         </form>
                                     </div>
                                 }
@@ -203,6 +283,7 @@
                             @foreach (var item in Model)
                             {
                                 var canPatientCancel = isHasta && item.AppointmentDate > DateTime.Now && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
+                                var isFutureApprovedAppointment = item.Status == AppointmentStatus.Onaylandi && item.AppointmentDate > DateTime.Now;
 
                                 <tr>
                                     <td class="ps-4">
@@ -232,7 +313,7 @@
                                             {
                                                 <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
                                                     @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">Iptal Et</button>
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">İptal Et</button>
                                                 </form>
                                             }
                                         }
@@ -251,13 +332,29 @@
                                             }
                                             else if (item.Status == AppointmentStatus.Onaylandi)
                                             {
-                                                <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-primary" title="Tamamla"><i class="fa-solid fa-clipboard-check"></i></button>
-                                                </form>
+                                                @if (isFutureApprovedAppointment)
+                                                {
+                                                    <button type="button"
+                                                            class="btn btn-sm btn-secondary"
+                                                            title="Randevu zamanı bekleniyor"
+                                                            disabled>
+                                                        Bekleniyor
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit"
+                                                                class="btn btn-sm btn-primary"
+                                                                title="Tamamla">
+                                                            <i class="fa-solid fa-clipboard-check"></i>
+                                                        </button>
+                                                    </form>
+                                                }
                                                 <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
                                                     @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Iptal"><i class="fa-solid fa-ban"></i></button>
+                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="İptal"><i class="fa-solid fa-ban"></i></button>
                                                 </form>
                                             }
                                             else
@@ -278,3 +375,4 @@
         </div>
     }
 }
+

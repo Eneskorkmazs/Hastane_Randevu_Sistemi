@@ -10,11 +10,11 @@ namespace HastaneRandevuSistemi.ViewModels
         public string? TC { get; set; }
         public DateTime? DogumTarihi { get; set; }
         public string? Cinsiyet { get; set; }
-        public int UpcomingAppointmentsCount { get; set; }
+        public int PendingAppointmentsCount { get; set; }
         public int CompletedAppointmentsCount { get; set; }
         public int CancelledAppointmentsCount { get; set; }
         public int UnreadNotificationsCount { get; set; }
-        public IReadOnlyList<Appointment> UpcomingAppointments { get; set; } = Array.Empty<Appointment>();
+        public IReadOnlyList<Appointment> PendingAppointments { get; set; } = Array.Empty<Appointment>();
         public IReadOnlyList<Appointment> RecentAppointments { get; set; } = Array.Empty<Appointment>();
         public IReadOnlyList<Notification> RecentNotifications { get; set; } = Array.Empty<Notification>();
     }
