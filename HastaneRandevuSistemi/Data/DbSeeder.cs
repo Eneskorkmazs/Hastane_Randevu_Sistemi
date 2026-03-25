@@ -1,4 +1,4 @@
-using HastaneRandevuSistemi.Models;
+﻿using HastaneRandevuSistemi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,6 +22,16 @@ namespace HastaneRandevuSistemi.Data
                 await context.Database.EnsureCreatedAsync();
             }
 
+            await EnsureRolesAsync(roleManager);
+            await EnsureAdminAsync(userManager);
+            await NormalizeDepartmentsAsync(context);
+            await SeedDepartmentsAndDoctorsAsync(context, userManager);
+
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task EnsureRolesAsync(RoleManager<IdentityRole> roleManager)
+        {
             string[] roles = { "Admin", "Doktor", "Hasta" };
             foreach (var role in roles)
             {
@@ -30,61 +40,94 @@ namespace HastaneRandevuSistemi.Data
                     await roleManager.CreateAsync(new IdentityRole(role));
                 }
             }
+        }
 
+        private static async Task EnsureAdminAsync(UserManager<AppUser> userManager)
+        {
             const string adminEmail = "admin@havatakip.com.tr";
-            if (await userManager.FindByEmailAsync(adminEmail) == null)
+            if (await userManager.FindByEmailAsync(adminEmail) != null)
             {
-                var newAdmin = new AppUser
-                {
-                    UserName = adminEmail,
-                    Email = adminEmail,
-                    Name = "Sistem",
-                    Surname = "Yoneticisi",
-                    EmailConfirmed = true
-                };
-
-                var createAdminResult = await userManager.CreateAsync(newAdmin, "Admin123!");
-                if (createAdminResult.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(newAdmin, "Admin");
-                }
+                return;
             }
 
+            var admin = new AppUser
+            {
+                UserName = adminEmail,
+                Email = adminEmail,
+                Name = "Sistem",
+                Surname = "Yoneticisi",
+                EmailConfirmed = true
+            };
+
+            var createAdminResult = await userManager.CreateAsync(admin, "Admin123!");
+            if (createAdminResult.Succeeded)
+            {
+                await userManager.AddToRoleAsync(admin, "Admin");
+            }
+        }
+
+        private static async Task NormalizeDepartmentsAsync(ApplicationDbContext context)
+        {
             var renameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 { "Dahiliye (Ic Hastaliklari)", "Dahiliye (İç Hastalıkları)" },
-                { "Dis Hastaliklari", "Diş Hastalıkları" },
+                { "Dis Hastaliklari", "Diş Sağlığı ve Hastalıkları" },
+                { "Dis Sagligi ve Hastaliklari", "Diş Sağlığı ve Hastalıkları" },
                 { "Noroloji", "Nöroloji" },
                 { "Goz Hastaliklari", "Göz Hastalıkları" },
                 { "Kulak Burun Bogaz", "Kulak Burun Boğaz" },
                 { "Kadin Hastaliklari ve Dogum", "Kadın Hastalıkları ve Doğum" },
                 { "Gogus Hastaliklari", "Göğüs Hastalıkları" },
                 { "Enfeksiyon Hastaliklari", "Enfeksiyon Hastalıkları" },
-                { "Uroloji", "Üroloji" }
+                { "Uroloji", "Üroloji" },
+                { "Beyin ve Sinir Cerrahisi", "Beyin ve Sinir Cerrahisi" }
             };
 
-            // Var olan kayitlarin isimlerini duzelt
             var existingDepartments = await context.Departments.ToListAsync();
             foreach (var dep in existingDepartments)
             {
-                if (renameMap.TryGetValue(dep.Name, out var newName))
+                if (renameMap.TryGetValue(dep.Name, out var normalized))
                 {
-                    dep.Name = newName;
+                    dep.Name = normalized;
                 }
             }
-            if (existingDepartments.Any())
+
+            if (existingDepartments.Count > 0)
             {
                 await context.SaveChangesAsync();
             }
 
-            if (existingDepartments.Any())
+            var mergedDepartments = await context.Departments
+                .Include(d => d.Doctors)
+                .ToListAsync();
+
+            foreach (var group in mergedDepartments
+                         .GroupBy(d => d.Name, StringComparer.OrdinalIgnoreCase)
+                         .Where(g => g.Count() > 1))
             {
-                // Var olanlar duzeltildi; eksik olanlari eklemeye devam edebiliriz.
+                var keeper = group.First();
+                foreach (var duplicate in group.Skip(1))
+                {
+                    if (duplicate.Doctors != null)
+                    {
+                        foreach (var doctor in duplicate.Doctors)
+                        {
+                            doctor.DepartmentId = keeper.Id;
+                        }
+                    }
+
+                    context.Departments.Remove(duplicate);
+                }
             }
 
+            await context.SaveChangesAsync();
+        }
+
+        private static async Task SeedDepartmentsAndDoctorsAsync(ApplicationDbContext context, UserManager<AppUser> userManager)
+        {
             var hospitalData = new Dictionary<string, List<string>>
             {
-                { "Diş Hastalıkları", new List<string> { "Uzm. Dr. Elif Yılmaz" } },
+                { "Diş Sağlığı ve Hastalıkları", new List<string> { "Uzm. Dr. Elif Yılmaz", "Uzm. Dr. Mehmet Korkmaz" } },
                 { "Dahiliye (İç Hastalıkları)", new List<string> { "Prof. Dr. Canan Karatay", "Uzm. Dr. Ahmet Maranki" } },
                 { "Kardiyoloji", new List<string> { "Prof. Dr. Mehmet Öz", "Doç. Dr. Bingür Sönmez" } },
                 { "Nöroloji", new List<string> { "Prof. Dr. Gazi Yaşargil", "Uzm. Dr. Serdar Dağ" } },
@@ -99,7 +142,8 @@ namespace HastaneRandevuSistemi.Data
                 { "Fizik Tedavi ve Rehabilitasyon", new List<string> { "Uzm. Dr. Halit Yerebakan", "Dr. Ferhat Göçer" } },
                 { "Kadın Hastalıkları ve Doğum", new List<string> { "Op. Dr. Banu Çiftçi", "Prof. Dr. Teksen Çamlıbel" } },
                 { "Göğüs Hastalıkları", new List<string> { "Prof. Dr. Ahmet Rasim Küçükusta", "Uzm. Dr. Tevfik Özlü" } },
-                { "Enfeksiyon Hastalıkları", new List<string> { "Prof. Dr. Mehmet Ceyhan", "Doç. Dr. Ateş Kara" } }
+                { "Enfeksiyon Hastalıkları", new List<string> { "Prof. Dr. Mehmet Ceyhan", "Doç. Dr. Ateş Kara" } },
+                { "Beyin ve Sinir Cerrahisi", new List<string> { "Prof. Dr. Yakup Yazıcı", "Prof. Dr. Enes Korkmaz" } }
             };
 
             foreach (var item in hospitalData)
@@ -112,57 +156,123 @@ namespace HastaneRandevuSistemi.Data
                     await context.SaveChangesAsync();
                 }
 
-                foreach (var doctorFullName in item.Value)
+                foreach (var doctorDisplayName in item.Value)
                 {
-                    var parts = doctorFullName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    var surname = parts.Last();
-                    var name = string.Join(" ", parts.Take(parts.Length - 1));
+                    var (title, name, surname) = ParseDoctorIdentity(doctorDisplayName);
+                    var email = BuildDoctorEmail(name, surname);
 
-                    var cleanName = ConvertToIdentifier(name)
-                        .Replace("prof.", "")
-                        .Replace("dr.", "")
-                        .Replace("uzm.", "")
-                        .Replace("doc.", "")
-                        .Replace("op.", "")
-                        .Trim()
-                        .Replace(" ", ".");
+                    var existingUser = await userManager.FindByEmailAsync(email);
+                    if (existingUser == null)
+                    {
+                        var user = new AppUser
+                        {
+                            UserName = email,
+                            Email = email,
+                            Name = name,
+                            Surname = surname,
+                            EmailConfirmed = true
+                        };
 
-                    var cleanSurname = ConvertToIdentifier(surname);
-                    var email = $"{cleanName}.{cleanSurname}@havatakip.com.tr".ToLowerInvariant();
+                        var createResult = await userManager.CreateAsync(user, "Doktor123!");
+                        if (!createResult.Succeeded)
+                        {
+                            continue;
+                        }
 
-                    if (await userManager.FindByEmailAsync(email) != null)
+                        await userManager.AddToRoleAsync(user, "Doktor");
+                        existingUser = user;
+                    }
+                    else if (!await userManager.IsInRoleAsync(existingUser, "Doktor"))
+                    {
+                        await userManager.AddToRoleAsync(existingUser, "Doktor");
+                    }
+
+                    var doctorExists = await context.Doctors.AnyAsync(d => d.UserId == existingUser.Id ||
+                        (d.Name == name && d.Surname == surname && d.DepartmentId == department.Id));
+
+                    if (doctorExists)
                     {
                         continue;
                     }
-
-                    var user = new AppUser
-                    {
-                        UserName = email,
-                        Email = email,
-                        Name = name,
-                        Surname = surname,
-                        EmailConfirmed = true
-                    };
-
-                    var result = await userManager.CreateAsync(user, "Doktor123!");
-                    if (!result.Succeeded)
-                    {
-                        continue;
-                    }
-
-                    await userManager.AddToRoleAsync(user, "Doktor");
 
                     await context.Doctors.AddAsync(new Doctor
                     {
                         Name = name,
                         Surname = surname,
+                        Title = title,
                         DepartmentId = department.Id,
-                        UserId = user.Id
+                        UserId = existingUser.Id
                     });
                 }
             }
+        }
 
-            await context.SaveChangesAsync();
+        private static string BuildDoctorEmail(string name, string surname)
+        {
+            var normalizedName = ConvertToIdentifier(name).Replace(" ", ".").Trim('.');
+            var normalizedSurname = ConvertToIdentifier(surname).Replace(" ", ".").Trim('.');
+
+            if (string.IsNullOrWhiteSpace(normalizedName))
+            {
+                normalizedName = "doktor";
+            }
+
+            if (string.IsNullOrWhiteSpace(normalizedSurname))
+            {
+                normalizedSurname = "hrs";
+            }
+
+            return $"{normalizedName}.{normalizedSurname}@havatakip.com.tr".ToLowerInvariant();
+        }
+
+        private static (string Title, string Name, string Surname) ParseDoctorIdentity(string displayName)
+        {
+            var tokens = displayName
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .ToList();
+
+            var titleTokens = new List<string>();
+            while (tokens.Count > 1 && IsTitleToken(tokens[0]))
+            {
+                titleTokens.Add(tokens[0]);
+                tokens.RemoveAt(0);
+            }
+
+            if (tokens.Count == 0)
+            {
+                return ("Uzm. Dr.", string.Empty, string.Empty);
+            }
+
+            var surname = tokens[^1];
+            var name = string.Join(" ", tokens.Take(tokens.Count - 1));
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = surname;
+                surname = string.Empty;
+            }
+
+            var rawTitle = titleTokens.Count > 0 ? string.Join(" ", titleTokens) : "Uzm. Dr.";
+            return (NormalizeTitle(rawTitle), name, surname);
+        }
+
+        private static bool IsTitleToken(string token)
+        {
+            var t = token.Trim().ToLowerInvariant();
+            return t is "prof." or "prof" or "doç." or "doç" or "doc." or "doc" or "op." or "op" or "uzm." or "uzm" or "dr." or "dr";
+        }
+
+        private static string NormalizeTitle(string title)
+        {
+            var normalized = title.ToLowerInvariant().Replace("  ", " ").Trim();
+            return normalized switch
+            {
+                "prof. dr." or "prof dr" or "prof. dr" => "Prof. Dr.",
+                "doç. dr." or "doç dr" or "doç. dr" or "doc. dr." or "doc dr" or "doc. dr" => "Doç. Dr.",
+                "op. dr." or "op dr" or "op. dr" => "Op. Dr.",
+                "uzm. dr." or "uzm dr" or "uzm. dr" => "Uzm. Dr.",
+                "dr." or "dr" => "Dr.",
+                _ => "Uzm. Dr."
+            };
         }
 
         private static string ConvertToIdentifier(string text)
@@ -179,7 +289,10 @@ namespace HastaneRandevuSistemi.Data
                 .Replace("ü", "u")
                 .Replace("ş", "s")
                 .Replace("ç", "c")
-                .Replace("ğ", "g");
+                .Replace("ğ", "g")
+                .Replace("'", string.Empty)
+                .Replace("`", string.Empty)
+                .Trim();
         }
     }
 }

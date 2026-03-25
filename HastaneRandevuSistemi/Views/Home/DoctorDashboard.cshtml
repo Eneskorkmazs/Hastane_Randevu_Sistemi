@@ -59,7 +59,9 @@
             <h3 class="fw-bold mb-1">Yaklaşan Randevular</h3>
             <p class="text-muted mb-0">Yaklaşan en fazla 6 randevunuz filtrelenerek listelenir.</p>
         </div>
-        <div class="d-flex gap-2">
+        <div class="d-flex gap-2 flex-wrap">
+            <a asp-controller="DoctorTools" asp-action="Index" class="btn btn-outline-primary rounded-pill px-4">Doktor Araçları</a>
+            <a asp-controller="DoctorTools" asp-action="Schedule" class="btn btn-outline-secondary rounded-pill px-4">Takvimim</a>
             <a asp-controller="Appointment" asp-action="Index" asp-route-status="@( (int)AppointmentStatus.Bekliyor )" class="btn btn-outline-warning rounded-pill px-4">Bekleyenler</a>
             <a asp-controller="Appointment" asp-action="Index" asp-route-status="@( (int)AppointmentStatus.Onaylandi )" class="btn btn-outline-success rounded-pill px-4">Onaylı</a>
             <a asp-controller="Appointment" asp-action="Index" class="btn btn-outline-primary rounded-pill px-4">Tümü</a>

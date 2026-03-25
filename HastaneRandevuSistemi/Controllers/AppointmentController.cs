@@ -60,6 +60,16 @@ namespace HastaneRandevuSistemi.Controllers
             _userManager = userManager;
         }
 
+        private async Task<(string? UserId, string DisplayName)> GetCurrentActorAsync()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            var displayName = user != null
+                ? $"{user.Name} {user.Surname}".Trim()
+                : (User.Identity?.Name ?? "Sistem");
+
+            return (user?.Id, displayName);
+        }
+
         public async Task<IActionResult> Index(
             AppointmentStatus? status = null,
             int? doctorId = null,
@@ -307,28 +317,6 @@ namespace HastaneRandevuSistemi.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin,Doktor")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            var appointment = await _context.Appointments.FindAsync(id);
-            if (appointment == null)
-            {
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (User.IsInRole("Doktor") && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
-            {
-                return Forbid();
-            }
-
-            _context.Appointments.Remove(appointment);
-            await _context.SaveChangesAsync();
-
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Doktor")]
         public async Task<IActionResult> Approve(int id)
         {
             var appointment = await _context.Appointments.FindAsync(id);
@@ -342,7 +330,18 @@ namespace HastaneRandevuSistemi.Controllers
                 return Forbid();
             }
 
+            if (appointment.Status == AppointmentStatus.Tamamlandi)
+            {
+                TempData["InfoMessage"] = "Tamamlanmış randevular tekrar onaylanamaz.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var actor = await GetCurrentActorAsync();
+
             appointment.Status = AppointmentStatus.Onaylandi;
+            appointment.ApprovedByUserId = actor.UserId;
+            appointment.ApprovedByName = actor.DisplayName;
+            appointment.ApprovedDate = DateTime.Now;
             await _context.SaveChangesAsync();
 
             if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
@@ -373,20 +372,9 @@ namespace HastaneRandevuSistemi.Controllers
             var isDoctor = User.IsInRole("Doktor");
             var isPatient = User.IsInRole("Hasta");
 
-            // Geçmiş randevular iptal edilemez; gerekiyorsa tamamlanmışa çek.
             if (appointment.AppointmentDate <= DateTime.Now)
             {
-                if (appointment.Status != AppointmentStatus.Tamamlandi && appointment.Status != AppointmentStatus.Iptal)
-                {
-                    appointment.Status = AppointmentStatus.Tamamlandi;
-                    await _context.SaveChangesAsync();
-                    TempData["InfoMessage"] = "Süresi geçen randevu iptal edilmedi, tamamlandı olarak işaretlendi.";
-                }
-                else
-                {
-                    TempData["InfoMessage"] = "Süresi geçen randevular iptal edilemez.";
-                }
-
+                TempData["InfoMessage"] = "Geçmiş randevular iptal edilemez. Yalnızca tamamlandı olarak kapatılabilir.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -414,7 +402,12 @@ namespace HastaneRandevuSistemi.Controllers
                 return Forbid();
             }
 
+            var actor = await GetCurrentActorAsync();
+
             appointment.Status = AppointmentStatus.Iptal;
+            appointment.CancelledByUserId = actor.UserId;
+            appointment.CancelledByName = actor.DisplayName;
+            appointment.CancelledDate = DateTime.Now;
             await _context.SaveChangesAsync();
 
             if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
@@ -450,6 +443,12 @@ namespace HastaneRandevuSistemi.Controllers
             if (appointment.AppointmentDate > DateTime.Now)
             {
                 TempData["InfoMessage"] = "Gelecek tarihli randevular tamamlandı olarak işaretlenemez.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (appointment.Status == AppointmentStatus.Iptal)
+            {
+                TempData["InfoMessage"] = "İptal edilmiş randevular tamamlandı olarak işaretlenemez.";
                 return RedirectToAction(nameof(Index));
             }
 

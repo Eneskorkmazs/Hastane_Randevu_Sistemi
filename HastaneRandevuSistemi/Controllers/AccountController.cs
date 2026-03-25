@@ -1,4 +1,4 @@
-ï»¿using HastaneRandevuSistemi.Data;
+using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.Services;
 using HastaneRandevuSistemi.ViewModels;
@@ -66,9 +66,9 @@ namespace HastaneRandevuSistemi.Controllers
                 await _userManager.AddToRoleAsync(user, "Hasta");
                 await CreateNotificationAsync(
                     user.Id,
-                    "HesabÄ±nÄ±z oluÅŸturuldu",
-                    "Hasta profiliniz aktif edildi. Profilinizi tamamlayabilir ve hemen randevu oluÅŸturabilirsiniz.",
-                    "HoÅŸ geldiniz",
+                    "Hesabýnýz oluþturuldu",
+                    "Hasta profiliniz aktif edildi. Profilinizi tamamlayabilir ve hemen randevu oluþturabilirsiniz.",
+                    "Hoþ geldiniz",
                     "/Patient/Dashboard");
 
                 await _signInManager.SignInAsync(user, isPersistent: false);
@@ -86,11 +86,14 @@ namespace HastaneRandevuSistemi.Controllers
         [HttpGet]
         public IActionResult Login(string? returnUrl = null)
         {
+            Response.Headers.CacheControl = "no-store, no-cache, must-revalidate";
+            Response.Headers.Pragma = "no-cache";
             ViewData["ReturnUrl"] = returnUrl;
             return View();
         }
 
         [HttpPost]
+        [IgnoreAntiforgeryToken]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
         {
@@ -106,7 +109,7 @@ namespace HastaneRandevuSistemi.Controllers
                 var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
                 if (!result.Succeeded)
                 {
-                    ModelState.AddModelError(string.Empty, "E-posta veya ÅŸifre hatalÄ±.");
+                    ModelState.AddModelError(string.Empty, "E-posta veya þifre hatalý.");
                     return View(model);
                 }
 
@@ -114,7 +117,7 @@ namespace HastaneRandevuSistemi.Controllers
                 if (user == null)
                 {
                     await _signInManager.SignOutAsync();
-                    ModelState.AddModelError(string.Empty, "Hesap bulunamadÄ±.");
+                    ModelState.AddModelError(string.Empty, "Hesap bulunamadý.");
                     return View(model);
                 }
 
@@ -126,7 +129,21 @@ namespace HastaneRandevuSistemi.Controllers
 
                 if (roles.Contains("Doktor"))
                 {
+                    if (string.Equals(model.SelectedRole, "Hasta", StringComparison.OrdinalIgnoreCase))
+                    {
+                        await _signInManager.SignOutAsync();
+                        ModelState.AddModelError(string.Empty, "Bu hesap doktor hesabýdýr. Lütfen doktor giriþi seçerek tekrar deneyin.");
+                        return View(model);
+                    }
+
                     return RedirectToAction("DoctorDashboard", "Home");
+                }
+
+                if (string.Equals(model.SelectedRole, "Doktor", StringComparison.OrdinalIgnoreCase))
+                {
+                    await _signInManager.SignOutAsync();
+                    ModelState.AddModelError(string.Empty, "Bu hesap hasta hesabýdýr. Lütfen hasta giriþi seçerek tekrar deneyin.");
+                    return View(model);
                 }
 
                 if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -139,7 +156,7 @@ namespace HastaneRandevuSistemi.Controllers
             catch (TimeoutException ex)
             {
                 _logger.LogError(ex, "Login sirasinda veritabani baglanti zaman asimi olustu.");
-                ModelState.AddModelError(string.Empty, "VeritabanÄ±na baÄŸlanÄ±lamadÄ±. LÃ¼tfen internet baÄŸlantÄ±nÄ±zÄ± veya VPN ayarlarÄ±nÄ±zÄ± kontrol edin.");
+                ModelState.AddModelError(string.Empty, "Veritabanýna baðlanýlamadý. Lütfen internet baðlantýnýzý veya VPN ayarlarýnýzý kontrol edin.");
                 return View(model);
             }
             catch (NpgsqlException ex)
@@ -151,7 +168,7 @@ namespace HastaneRandevuSistemi.Controllers
             catch (InvalidOperationException ex)
             {
                 _logger.LogError(ex, "Login sirasinda gecici veritabani hatasi olustu.");
-                ModelState.AddModelError(string.Empty, "Sistem geÃ§ici olarak veritabanÄ±na eriÅŸemiyor. LÃ¼tfen birazdan tekrar deneyin.");
+                ModelState.AddModelError(string.Empty, "Sistem geçici olarak veritabanýna eriþemiyor. Lütfen birazdan tekrar deneyin.");
                 return View(model);
             }
         }
@@ -168,7 +185,7 @@ namespace HastaneRandevuSistemi.Controllers
         {
             if (string.IsNullOrEmpty(email))
             {
-                ViewBag.Error = "LÃ¼tfen e-posta adresinizi giriniz.";
+                ViewBag.Error = "Lütfen e-posta adresinizi giriniz.";
                 return View();
             }
 
@@ -180,14 +197,18 @@ namespace HastaneRandevuSistemi.Controllers
 
                 var body = $@"
                     <div style='font-family:Arial; padding:20px; border:1px solid #ddd; border-radius:10px;'>
-                        <h2 style='color:#004e92;'>Åžifre SÄ±fÄ±rlama Talebi</h2>
+                        <h2 style='color:#004e92;'>Þifre Sýfýrlama Talebi</h2>
                         <p>Merhaba {user.Name},</p>
-                        <p>HesabÄ±nÄ±z iÃ§in ÅŸifre sÄ±fÄ±rlama talebinde bulundunuz. AÅŸaÄŸÄ±daki butona tÄ±klayarak yeni ÅŸifrenizi belirleyebilirsiniz.</p>
-                        <a href='{link}' style='background-color:#004e92; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block; margin-top:10px;'>Åžifremi SÄ±fÄ±rla</a>
-                        <p style='margin-top:20px; font-size:12px; color:#666;'>Bu iÅŸlemi siz yapmadÄ±ysanÄ±z, bu e-postayÄ± dikkate almayÄ±nÄ±z.</p>
+                        <p>Hesabýnýz için þifre sýfýrlama talebinde bulundunuz. Aþaðýdaki butona týklayarak yeni þifrenizi belirleyebilirsiniz.</p>
+                        <a href='{link}' style='background-color:#004e92; color:white; padding:10px 20px; text-decoration:none; border-radius:5px; display:inline-block; margin-top:10px;'>Þifremi Sýfýrla</a>
+                        <p style='margin-top:20px; font-size:12px; color:#666;'>Bu iþlemi siz yapmadýysanýz, bu e-postayý dikkate almayýnýz.</p>
                     </div>";
 
-                await _emailService.SendEmailAsync(user.Email!, "HRS - Åžifre SÄ±fÄ±rlama", body);
+                var mailSent = await _emailService.SendEmailAsync(user.Email!, "HRS - Þifre Sýfýrlama", body);
+                if (!mailSent)
+                {
+                    _logger.LogWarning("ForgotPassword isteginde e-posta gonderilemedi. KullaniciId: {UserId}", user.Id);
+                }
             }
 
             return View("ForgotPasswordConfirmation");
@@ -203,7 +224,7 @@ namespace HastaneRandevuSistemi.Controllers
         {
             if (token == null || email == null)
             {
-                ModelState.AddModelError(string.Empty, "GeÃ§ersiz ÅŸifre sÄ±fÄ±rlama anahtarÄ±.");
+                ModelState.AddModelError(string.Empty, "Geçersiz þifre sýfýrlama anahtarý.");
                 return View();
             }
 
@@ -270,4 +291,3 @@ namespace HastaneRandevuSistemi.Controllers
         }
     }
 }
-

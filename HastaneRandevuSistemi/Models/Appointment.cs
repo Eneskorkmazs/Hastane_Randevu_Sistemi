@@ -40,5 +40,21 @@ namespace HastaneRandevuSistemi.Models
 
         public AppointmentStatus Status { get; set; } = AppointmentStatus.Bekliyor;
         public DateTime CreatedDate { get; set; } = DateTime.Now;
+
+        [StringLength(450)]
+        public string? ApprovedByUserId { get; set; }
+
+        [StringLength(200)]
+        public string? ApprovedByName { get; set; }
+
+        public DateTime? ApprovedDate { get; set; }
+
+        [StringLength(450)]
+        public string? CancelledByUserId { get; set; }
+
+        [StringLength(200)]
+        public string? CancelledByName { get; set; }
+
+        public DateTime? CancelledDate { get; set; }
     }
 }

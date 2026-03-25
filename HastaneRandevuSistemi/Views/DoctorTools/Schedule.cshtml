@@ -1,0 +1,419 @@
+﻿@model HastaneRandevuSistemi.ViewModels.DoctorScheduleViewModel
+@using System.Linq
+@using System.Text.Json
+
+@{
+    ViewData["Title"] = "Takvimim";
+
+    var initialDay = Model.DayDetails.FirstOrDefault(day => day.IsToday && day.IsCurrentMonth)
+        ?? Model.DayDetails.FirstOrDefault(day => day.IsCurrentMonth)
+        ?? Model.DayDetails.FirstOrDefault();
+
+    var initialDayKey = initialDay?.DayKey ?? string.Empty;
+    var initialAppointments = initialDay?.Appointments ?? Array.Empty<HastaneRandevuSistemi.ViewModels.DoctorCalendarAppointmentViewModel>();
+
+    var calendarDayMapJson = JsonSerializer.Serialize(
+        Model.DayDetails.ToDictionary(
+            day => day.DayKey,
+            day => new
+            {
+                day.DateLabel,
+                day.IsSunday,
+                day.IsWorkingDay,
+                day.IsHoliday,
+                day.HolidayLabel,
+                day.AppointmentCount,
+                Appointments = day.Appointments.Select(appointment => new
+                {
+                    appointment.TimeLabel,
+                    appointment.PatientName,
+                    appointment.StatusText,
+                    appointment.StatusClass
+                }).ToList()
+            }));
+}
+
+<div class="container py-4 py-lg-5 doctor-schedule-v3">
+    <div class="calendar-hero card border-0 shadow-lg rounded-5 overflow-hidden mb-4">
+        <div class="card-body p-4 p-lg-5">
+            <div class="hero-grid">
+                <div>
+                    <div class="hero-tag">Akilli Takvim</div>
+                    <h1 class="hero-title">@Model.DoctorName</h1>
+                    <p class="hero-subtitle mb-0">@Model.DepartmentName - @Model.Title</p>
+                </div>
+                <div class="hero-actions">
+                    <a asp-controller="Home" asp-action="DoctorDashboard" class="btn btn-light rounded-pill px-4">
+                        <i class="fa-solid fa-gauge-high me-2"></i>Panele Don
+                    </a>
+                    <a asp-controller="DoctorTools" asp-action="Index" class="btn btn-outline-light rounded-pill px-4">
+                        <i class="fa-solid fa-suitcase-medical me-2"></i>Araclarim
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="metric-card metric-indigo">
+                <div class="metric-label">Bu Ay</div>
+                <div class="metric-value">@Model.AppointmentCountThisMonth</div>
+                <div class="metric-note">Toplam randevu</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="metric-card metric-blue">
+                <div class="metric-label">Bugun</div>
+                <div class="metric-value">@Model.TodayAppointmentCount</div>
+                <div class="metric-note">Gunun randevulari</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="metric-card metric-green">
+                <div class="metric-label">Yaklasan</div>
+                <div class="metric-value">@Model.UpcomingAppointmentCount</div>
+                <div class="metric-note">Planlanan gorusmeler</div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="metric-card metric-amber">
+                <div class="metric-label">Calisma Plani</div>
+                <div class="metric-value metric-text">@Model.DailyCapacityText</div>
+                <div class="metric-note">Haftalik kapasite</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="calendar-toolbar card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-3 p-lg-4">
+            <div class="toolbar-grid">
+                <div>
+                    <div class="toolbar-label">Aylik Gorunum</div>
+                    <h2 class="toolbar-title mb-0">@Model.MonthTitle</h2>
+                </div>
+                <div class="btn-group">
+                    <a asp-action="Schedule" asp-route-monthOffset="-1" class="btn btn-outline-primary">
+                        <i class="fa-solid fa-chevron-left me-1"></i>Onceki Ay
+                    </a>
+                    <a asp-action="Schedule" asp-route-monthOffset="0" class="btn btn-primary">Bugun</a>
+                    <a asp-action="Schedule" asp-route-monthOffset="1" class="btn btn-outline-primary">
+                        Sonraki Ay <i class="fa-solid fa-chevron-right ms-1"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="legend-row mt-3">
+                <span class="legend-chip"><span class="legend-dot sunday"></span>Pazar</span>
+                <span class="legend-chip"><span class="legend-dot holiday"></span>Resmi tatil</span>
+                <span class="legend-chip"><span class="legend-dot work"></span>Calisma gunu</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 align-items-start">
+        <div class="col-xl-8">
+            <div class="calendar-panel card border-0 shadow-sm rounded-4">
+                <div class="card-body p-3 p-lg-4">
+                    <div class="calendar-weekdays">
+                        <div>Pzt</div>
+                        <div>Sal</div>
+                        <div>Car</div>
+                        <div>Per</div>
+                        <div>Cum</div>
+                        <div>Cts</div>
+                        <div>Paz</div>
+                    </div>
+
+                    <div class="calendar-grid">
+                        @foreach (var week in Model.Weeks)
+                        {
+                            foreach (var day in week.Days)
+                            {
+                                <button type="button"
+                                        class="day-cell calendar-day-button @(day.IsCurrentMonth ? "current-month" : "other-month") @(day.IsToday ? "today" : "") @(day.IsSunday ? "sunday" : "") @(day.IsHoliday ? "holiday" : "") @(day.Date.Date < DateTime.Today.Date ? "past-day" : "") @(day.Date.ToString("yyyy-MM-dd") == initialDayKey ? "selected" : "")"
+                                        data-day-key="@day.Date.ToString("yyyy-MM-dd")"
+                                        aria-pressed="@(day.Date.ToString("yyyy-MM-dd") == initialDayKey ? "true" : "false")">
+                                    <div class="day-head">
+                                        <span class="day-number">@day.Date.Day</span>
+                                        @if (day.AppointmentCount > 0)
+                                        {
+                                            <span class="day-pill">@day.AppointmentCount</span>
+                                        }
+                                    </div>
+                                    <div class="day-state">@(day.IsWorkingDay ? "Calisma gunu" : "Bos gun")</div>
+                                    @if (day.IsHoliday)
+                                    {
+                                        <div class="day-holiday">@day.HolidayLabel</div>
+                                    }
+                                    else if (day.IsSunday)
+                                    {
+                                        <div class="day-holiday">Pazar tatili</div>
+                                    }
+                                    @if (day.AppointmentCount > 0)
+                                    {
+                                        <div class="day-foot">Detaylar icin sec</div>
+                                    }
+                                </button>
+                            }
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4">
+            <div class="stack-grid">
+                <div class="side-card card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <div class="side-card-title">Secili Gun</div>
+                        <h3 class="selected-day-date" id="selectedDayDate">@(initialDay?.DateLabel ?? "Takvim verisi bulunamadi")</h3>
+                        <div class="chip-row mb-3">
+                            <span class="chip" id="selectedDayWorkState">@((initialDay?.IsWorkingDay ?? false) ? "Calisma gunu" : "Bos gun")</span>
+                            <span class="chip chip-muted" id="selectedDayCount">@((initialDay?.AppointmentCount ?? 0) > 0 ? $"{initialDay!.AppointmentCount} randevu" : "Randevu yok")</span>
+                            <span class="chip chip-holiday" id="selectedDayHoliday" style="@((initialDay?.IsHoliday == true || initialDay?.IsSunday == true) ? "display:inline-flex;" : "display:none;")">
+                                @if (initialDay?.IsHoliday == true)
+                                {
+                                    @initialDay.HolidayLabel
+                                }
+                                else if (initialDay?.IsSunday == true)
+                                {
+                                    @:Pazar tatili
+                                }
+                            </span>
+                        </div>
+
+                        <div class="empty-state" id="selectedDayEmptyState" style="@((initialAppointments.Count > 0) ? "display:none;" : "display:block;")">
+                            Bu gun icin planlanmis randevu bulunmuyor.
+                        </div>
+
+                        <div class="appointment-list" id="selectedDayAppointments">
+                            @foreach (var appointment in initialAppointments)
+                            {
+                                <div class="appointment-item">
+                                    <div>
+                                        <div class="item-time">@appointment.TimeLabel</div>
+                                        <div class="item-name">@appointment.PatientName</div>
+                                    </div>
+                                    <span class="badge rounded-pill @appointment.StatusClass">@appointment.StatusText</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-card card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <div class="side-card-title">Dijital Recete - Ilerleyen Haftalar</div>
+                        <div class="slot-list">
+                            @foreach (var week in Model.PrescriptionWeeks)
+                            {
+                                <div class="slot-item d-flex justify-content-between align-items-center">
+                                    <span>@week.WeekLabel</span>
+                                    @if (week.UpcomingCount > 0)
+                                    {
+                                        <span class="badge rounded-pill bg-success">@week.UpcomingCount aday</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge rounded-pill bg-secondary">islem yok</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <div class="side-card card border-0 shadow-sm rounded-4">
+                    <div class="card-body p-4">
+                        <div class="side-card-title">Yaklasan Randevular</div>
+                        <div class="upcoming-list">
+                            @if (!Model.UpcomingAppointments.Any())
+                            {
+                                <div class="slot-item slot-empty">Yaklasan randevu yok.</div>
+                            }
+                            else
+                            {
+                                foreach (var item in Model.UpcomingAppointments.Take(6))
+                                {
+                                    <div class="upcoming-item">
+                                        <div>
+                                            <div class="item-time">@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</div>
+                                            <div class="item-name">@item.PatientName</div>
+                                        </div>
+                                        <span class="badge rounded-pill @item.StatusClass">@item.StatusText</span>
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .doctor-schedule-v3 {
+        --ink: #0d2845;
+        --muted: #5f738d;
+        --line: #dbe5f1;
+        --primary: #0f4fa8;
+        --primary-soft: #eaf2ff;
+        --card: #ffffff;
+    }
+
+    .doctor-schedule-v3 .calendar-hero {
+        background: radial-gradient(circle at 85% 15%, rgba(132, 181, 255, 0.28), transparent 38%), linear-gradient(135deg, #0c2d4e 0%, #0f4273 52%, #1260a8 100%);
+        color: #fff;
+    }
+
+    .hero-grid { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+    .hero-tag { display: inline-flex; padding: 0.4rem 0.8rem; border-radius: 999px; background: rgba(255, 255, 255, 0.14); font-weight: 700; letter-spacing: 0.04em; margin-bottom: 0.8rem; font-size: 0.8rem; }
+    .hero-title { margin: 0 0 0.2rem; font-size: clamp(1.35rem, 2.4vw, 2rem); font-weight: 800; }
+    .hero-subtitle { opacity: 0.88; font-weight: 500; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+
+    .metric-card { height: 100%; border-radius: 18px; border: 1px solid var(--line); padding: 1rem; background: var(--card); }
+    .metric-indigo { background: linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%); }
+    .metric-blue { background: linear-gradient(180deg, #ffffff 0%, #eff8ff 100%); }
+    .metric-green { background: linear-gradient(180deg, #ffffff 0%, #eefbf4 100%); }
+    .metric-amber { background: linear-gradient(180deg, #ffffff 0%, #fff7eb 100%); }
+    .metric-label { font-size: 0.76rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 800; }
+    .metric-value { font-size: 2rem; line-height: 1.08; margin: 0.2rem 0; color: var(--ink); font-weight: 900; }
+    .metric-text { font-size: 1rem; font-weight: 700; }
+    .metric-note { color: var(--muted); font-size: 0.88rem; }
+
+    .toolbar-grid { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .toolbar-label { color: var(--muted); text-transform: uppercase; font-size: 0.76rem; letter-spacing: 0.08em; font-weight: 800; }
+    .toolbar-title { color: var(--ink); font-weight: 800; }
+    .legend-row { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+    .legend-chip { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.3rem 0.6rem; border-radius: 999px; border: 1px solid #e3ebf5; font-size: 0.78rem; color: #48607d; background: #f8fbff; }
+    .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .legend-dot.sunday { background: #f6b0b0; }
+    .legend-dot.holiday { background: #f0bf83; }
+    .legend-dot.work { background: #8ac0ff; }
+
+    .calendar-panel, .side-card, .calendar-toolbar { background: var(--card); }
+    .calendar-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; color: var(--muted); font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800; }
+    .calendar-weekdays div { padding-left: 0.4rem; }
+    .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+
+    .day-cell { border: 1px solid var(--line); border-radius: 14px; min-height: 108px; background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%); padding: 0.7rem; text-align: left; display: flex; flex-direction: column; gap: 0.35rem; transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; cursor: pointer; }
+    .day-cell:hover { border-color: #b6c9e4; transform: translateY(-2px); box-shadow: 0 8px 18px rgba(15, 56, 98, 0.09); }
+    .day-cell.other-month { opacity: 0.45; background: #f4f7fb; }
+    .day-cell.past-day {
+        background: linear-gradient(180deg, #e3e9f1 0%, #d7e0ea 100%);
+        border-color: #b7c4d5;
+    }
+    .day-cell.past-day .day-number,
+    .day-cell.past-day .day-state,
+    .day-cell.past-day .day-foot {
+        color: #334155;
+    }
+    .day-cell.today { border-color: #2f80ed; }
+    .day-cell.sunday { background: linear-gradient(180deg, #fff7f7 0%, #fff0f0 100%); border-color: #efcccc; }
+    .day-cell.holiday { background: linear-gradient(180deg, #fff5e7 0%, #ffedda 100%); border-color: #f3c998; }
+    .day-cell.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15, 79, 168, 0.15); }
+    .day-cell:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(15, 79, 168, 0.24); }
+
+    .day-head { display: flex; justify-content: space-between; align-items: center; }
+    .day-number { font-size: 1.05rem; font-weight: 800; color: var(--ink); }
+    .day-pill { min-width: 24px; height: 24px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--primary); color: #fff; font-size: 0.76rem; font-weight: 700; padding: 0 0.35rem; }
+    .day-state { color: var(--muted); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 700; }
+    .day-holiday { color: #ad3d00; font-size: 0.72rem; font-weight: 700; }
+    .day-foot { margin-top: auto; color: #1f6cd5; font-weight: 700; font-size: 0.75rem; }
+
+    .stack-grid { display: grid; gap: 1rem; }
+    .side-card-title { text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-size: 0.75rem; font-weight: 800; margin-bottom: 0.6rem; }
+    .selected-day-date { font-size: 1.05rem; color: var(--ink); font-weight: 800; margin-bottom: 0.75rem; }
+    .chip-row { display: flex; flex-wrap: wrap; gap: 0.45rem; }
+    .chip { display: inline-flex; align-items: center; padding: 0.35rem 0.7rem; border-radius: 999px; background: var(--primary-soft); border: 1px solid #d5e4ff; color: #154a92; font-size: 0.8rem; font-weight: 700; }
+    .chip-muted { background: #f2f5fa; border-color: #e2e9f3; color: #5f738d; }
+    .chip-holiday { background: #fff3e3; border-color: #f2cc9f; color: #ad4e00; }
+
+    .appointment-list, .upcoming-list, .slot-list { display: flex; flex-direction: column; gap: 0.55rem; }
+    .appointment-item, .upcoming-item, .slot-item { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; border: 1px solid var(--line); border-radius: 12px; background: #fbfdff; padding: 0.62rem 0.7rem; }
+    .slot-item { justify-content: flex-start; font-weight: 700; color: var(--ink); }
+    .slot-empty { color: var(--muted); background: #fafcff; border-style: dashed; font-weight: 500; }
+    .item-time { color: var(--ink); font-weight: 800; font-size: 0.86rem; }
+    .item-name { color: #2f425a; font-size: 0.89rem; font-weight: 600; }
+    .empty-state { border: 1px dashed #d6e1ef; border-radius: 12px; background: #fafcff; color: var(--muted); padding: 0.9rem; font-size: 0.9rem; }
+
+    @@media (max-width: 1199.98px) {
+        .hero-grid, .toolbar-grid { flex-direction: column; align-items: flex-start; }
+        .hero-actions { width: 100%; }
+        .hero-actions .btn { flex: 1 1 auto; }
+    }
+
+    @@media (max-width: 767.98px) {
+        .calendar-grid, .calendar-weekdays { grid-template-columns: repeat(7, minmax(115px, 1fr)); }
+        .calendar-panel { overflow-x: auto; }
+        .day-cell { min-height: 98px; }
+    }
+</style>
+
+<script>
+    (() => {
+        const calendarDays = @Html.Raw(calendarDayMapJson);
+        const buttons = Array.from(document.querySelectorAll('.calendar-day-button'));
+        const selectedDayDate = document.getElementById('selectedDayDate');
+        const selectedDayWorkState = document.getElementById('selectedDayWorkState');
+        const selectedDayCount = document.getElementById('selectedDayCount');
+        const selectedDayHoliday = document.getElementById('selectedDayHoliday');
+        const selectedDayAppointments = document.getElementById('selectedDayAppointments');
+        const selectedDayEmptyState = document.getElementById('selectedDayEmptyState');
+
+        const renderDay = (dayKey) => {
+            const day = calendarDays[dayKey];
+            if (!day) {
+                return;
+            }
+
+            buttons.forEach((button) => {
+                const isSelected = button.dataset.dayKey === dayKey;
+                button.classList.toggle('selected', isSelected);
+                button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
+            });
+
+            selectedDayDate.textContent = day.DateLabel;
+            selectedDayWorkState.textContent = day.IsWorkingDay ? 'Calisma gunu' : 'Bos gun';
+            selectedDayCount.textContent = day.AppointmentCount > 0 ? `${day.AppointmentCount} randevu` : 'Randevu yok';
+
+            if (day.IsHoliday) {
+                selectedDayHoliday.textContent = day.HolidayLabel;
+                selectedDayHoliday.style.display = 'inline-flex';
+            } else if (day.IsSunday) {
+                selectedDayHoliday.textContent = 'Pazar tatili';
+                selectedDayHoliday.style.display = 'inline-flex';
+            } else {
+                selectedDayHoliday.style.display = 'none';
+            }
+
+            if (!day.Appointments || day.Appointments.length === 0) {
+                selectedDayAppointments.innerHTML = '';
+                selectedDayEmptyState.style.display = 'block';
+                return;
+            }
+
+            selectedDayEmptyState.style.display = 'none';
+            selectedDayAppointments.innerHTML = day.Appointments.map((appointment) => `
+                <div class="appointment-item">
+                    <div>
+                        <div class="item-time">${appointment.TimeLabel}</div>
+                        <div class="item-name">${appointment.PatientName}</div>
+                    </div>
+                    <span class="badge rounded-pill ${appointment.StatusClass}">${appointment.StatusText}</span>
+                </div>
+            `).join('');
+        };
+
+        buttons.forEach((button) => {
+            button.addEventListener('click', () => renderDay(button.dataset.dayKey));
+        });
+
+        const initial = buttons.find((button) => button.classList.contains('selected')) || buttons[0];
+        if (initial) {
+            renderDay(initial.dataset.dayKey);
+        }
+    })();
+</script>

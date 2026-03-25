@@ -89,6 +89,21 @@
                                     <i class="fa-solid fa-chart-line me-1"></i> Panelim
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("DoctorTools", "Schedule")" asp-controller="DoctorTools" asp-action="Schedule">
+                                    <i class="fa-solid fa-calendar-days me-1"></i> Takvimim
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("Appointment", "Index")" asp-controller="Appointment" asp-action="Index">
+                                    <i class="fa-solid fa-list-check me-1"></i> Randevular
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("DoctorTools", "Index", "Prescription", "PrescriptionFromAppointment", "PrescriptionPreview")" asp-controller="DoctorTools" asp-action="Index">
+                                    <i class="fa-solid fa-suitcase-medical me-1"></i> Araçlarım
+                                </a>
+                            </li>
                         }
 
                         @if (User.IsInRole("Hasta"))
@@ -108,7 +123,7 @@
                             </li>
                         }
 
-                        @if (User.IsInRole("Hasta") || !User.Identity.IsAuthenticated)
+                        @if (User.IsInRole("Hasta") || User.Identity?.IsAuthenticated != true)
                         {
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Appointment", "Create")" asp-controller="Appointment" asp-action="Create">
@@ -117,7 +132,7 @@
                             </li>
                         }
 
-                        @if (User.Identity.IsAuthenticated)
+                        @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Appointment", "Index")" asp-controller="Appointment" asp-action="Index">
@@ -176,7 +191,7 @@
                         {
                             var currentUser = await UserManager.GetUserAsync(User);
 
-                            var displayName = currentUser != null ? $"{currentUser.Name} {currentUser.Surname}" : User.Identity.Name;
+                            var displayName = currentUser != null ? $"{currentUser.Name} {currentUser.Surname}" : (User.Identity?.Name ?? "Kullanıcı");
 
                             <li class="nav-item dropdown">
                                 <a class="btn btn-outline-light dropdown-toggle rounded-pill px-3" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -205,6 +220,30 @@
                                                 @unreadNotificationCount
                                             </span>
                                         </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                    }
+                                    @if (User.IsInRole("Doktor"))
+                                    {
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Home" asp-action="DoctorDashboard">
+                                                <i class="fa-solid fa-chart-line me-2"></i> Doktor Paneli
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="DoctorTools" asp-action="Index">
+                                                <i class="fa-solid fa-suitcase-medical me-2"></i> Doktor Araçları
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="DoctorTools" asp-action="Schedule">
+                                                <i class="fa-solid fa-calendar-days me-2"></i> Çalışma Takvimi
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Appointment" asp-action="Index">
+                                                <i class="fa-solid fa-list-check me-2"></i> Randevular
+                                            </a>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
                                     }

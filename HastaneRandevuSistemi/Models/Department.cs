@@ -10,7 +10,7 @@ namespace HastaneRandevuSistemi.Models
         [Required(ErrorMessage = "Bölüm adı zorunludur.")]
         [StringLength(100, ErrorMessage = "Bölüm adı en fazla 100 karakter olabilir.")] // Bölüm isimleri uzun olabilir
         [Display(Name = "Bölüm Adı")]
-        public string Name { get; set; }
+        public required string Name { get; set; }
 
         [StringLength(250)] // Açıklama biraz uzun olabilir ama sınırsız olmasın
         [Display(Name = "Açıklama")]

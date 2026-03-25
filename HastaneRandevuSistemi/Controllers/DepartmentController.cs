@@ -37,7 +37,7 @@ namespace HastaneRandevuSistemi.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("Id,Name,Description")] Department department)
         {
-            department.Name = department.Name?.Trim();
+            department.Name = department.Name?.Trim() ?? string.Empty;
             department.Description = department.Description?.Trim();
 
             if (!string.IsNullOrWhiteSpace(department.Name))
@@ -76,7 +76,7 @@ namespace HastaneRandevuSistemi.Controllers
         {
             if (id != department.Id) return NotFound();
 
-            department.Name = department.Name?.Trim();
+            department.Name = department.Name?.Trim() ?? string.Empty;
             department.Description = department.Description?.Trim();
 
             if (!string.IsNullOrWhiteSpace(department.Name))
@@ -134,7 +134,7 @@ namespace HastaneRandevuSistemi.Controllers
             if (department != null)
             {
                 // Eğer bu bölüme kayıtlı en az bir doktor varsa
-                if (department.Doctors.Any())
+                if (department.Doctors?.Any() == true)
                 {
                     // Kullanıcıya hata mesajı gönder ve silme işlemini yapmadan Index'e dön
                     TempData["ErrorMessage"] = $"'{department.Name}' polikliniği silinemez! İçerisinde kayıtlı doktorlar bulunmaktadır.";

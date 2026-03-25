@@ -90,3 +90,19 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - Yeni migration dosyası proje içine eklendi: `20260303120000_AddPatientPortalAndIdentityFields`
 - Hasta paneline giriş yapan kullanıcılar `Patient/Dashboard` üzerinden yönlendirilir.
 
+## Hatasiz Baslatma (Windows)
+Sabahtan beri yasadiginiz `ERR_CONNECTION_REFUSED` gibi sorunlari tekrar etmemek icin projeyi bu script ile baslatin:
+
+```powershell
+.\start-http.ps1
+```
+
+Ek not:
+- Portu otomatik temizler (`5087` doluysa eski sureci kapatir).
+- Dogru launch profile ile (`http`) calistirir.
+- Gecici derleme atlamak isterseniz:
+
+```powershell
+.\start-http.ps1 -NoBuild
+```
+

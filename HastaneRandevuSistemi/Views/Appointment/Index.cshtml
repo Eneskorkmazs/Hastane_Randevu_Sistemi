@@ -192,6 +192,14 @@
                                 _ => "bg-primary"
                             })">@item.Status</span>
                         </div>
+                        @if (item.Status == AppointmentStatus.Onaylandi && !string.IsNullOrWhiteSpace(item.ApprovedByName))
+                        {
+                            <div class="small text-muted mb-2">Onaylayan: @item.ApprovedByName</div>
+                        }
+                        else if (item.Status == AppointmentStatus.Iptal && !string.IsNullOrWhiteSpace(item.CancelledByName))
+                        {
+                            <div class="small text-muted mb-2">İptal eden: @item.CancelledByName</div>
+                        }
 
                         <h5 class="card-title fw-bold text-primary">@item.Doctor?.Name @item.Doctor?.Surname</h5>
                         <p class="small text-muted mb-1">@item.Doctor?.Department?.Name</p>
@@ -251,10 +259,7 @@
                                 }
                                 else
                                 {
-                                    <form asp-action="Delete" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Bu kaydi kalici olarak silmek istediginizden emin misiniz?');">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-outline-secondary w-100">Sil</button>
-                                    </form>
+                                    <span class="badge bg-light text-secondary border w-100 py-2">Kayıt kapalı</span>
                                 }
                             }
                         </div>
@@ -305,6 +310,14 @@
                                             AppointmentStatus.Iptal => "bg-danger",
                                             _ => "bg-primary"
                                         })">@item.Status</span>
+                                        @if (item.Status == AppointmentStatus.Onaylandi && !string.IsNullOrWhiteSpace(item.ApprovedByName))
+                                        {
+                                            <div class="small text-muted mt-1">Onaylayan: @item.ApprovedByName</div>
+                                        }
+                                        else if (item.Status == AppointmentStatus.Iptal && !string.IsNullOrWhiteSpace(item.CancelledByName))
+                                        {
+                                            <div class="small text-muted mt-1">İptal eden: @item.CancelledByName</div>
+                                        }
                                     </td>
                                     <td class="text-end pe-4">
                                         @if (isHasta)
@@ -359,10 +372,7 @@
                                             }
                                             else
                                             {
-                                                <form asp-action="Delete" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu kaydi silmek istediginizden emin misiniz?');">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-light text-danger" title="Sil"><i class="fa-solid fa-trash-can"></i></button>
-                                                </form>
+                                                <span class="badge bg-light text-secondary border">Kayıt kapalı</span>
                                             }
                                         }
                                     </td>

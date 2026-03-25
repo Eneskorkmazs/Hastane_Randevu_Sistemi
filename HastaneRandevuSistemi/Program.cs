@@ -1,13 +1,40 @@
 ﻿using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.IO;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var databaseProvider = builder.Configuration["DatabaseProvider"] ?? "Postgres";
+if (string.IsNullOrWhiteSpace(builder.Configuration["ASPNETCORE_URLS"]))
+{
+    builder.WebHost.UseUrls("http://localhost:5087");
+}
+
+// Varsayilan EventLog provider'i bu ortamda yetki hatasi uretebildigi icin
+// explicit olarak guvenli provider'lara dusuyoruz.
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.AddDebug();
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var localConnectionString = builder.Configuration.GetConnectionString("LocalDefaultConnection");
+var localConnectionString = builder.Configuration.GetConnectionString("LocalDefaultConnection")
+    ?? "Data Source=HastaneRandevuSistemi.local.db";
+var databaseProvider = builder.Configuration["DatabaseProvider"];
+
+if (string.IsNullOrWhiteSpace(databaseProvider))
+{
+    databaseProvider = string.IsNullOrWhiteSpace(connectionString) ? "Sqlite" : "Postgres";
+}
+
+if (databaseProvider.Equals("Postgres", StringComparison.OrdinalIgnoreCase)
+    && string.IsNullOrWhiteSpace(connectionString)
+    && !string.IsNullOrWhiteSpace(localConnectionString))
+{
+    // Yerel calismada Supabase kapali olsa bile uygulamayi dusurmeyelim.
+    databaseProvider = "Sqlite";
+}
 
 if ((databaseProvider.Equals("LocalDb", StringComparison.OrdinalIgnoreCase)
     || databaseProvider.Equals("Sqlite", StringComparison.OrdinalIgnoreCase))
@@ -53,6 +80,9 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 
 builder.Services.AddScoped<HastaneRandevuSistemi.Services.EmailService>();
 builder.Services.AddControllersWithViews();
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "DataProtection-Keys")))
+    .SetApplicationName("HastaneRandevuSistemi");
 
 var app = builder.Build();
 

@@ -1,0 +1,55 @@
+@model HastaneRandevuSistemi.ViewModels.PrescriptionDraftViewModel
+
+@{
+    ViewData["Title"] = "Reçete Oluştur";
+}
+
+<div class="container py-4">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4 p-md-5">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center">
+                <div>
+                    <span class="text-uppercase text-muted small fw-bold">Dijital Reçete</span>
+                    <h2 class="fw-bold mb-1">@Model.PatientName @Model.PatientSurname</h2>
+                    <p class="mb-0 text-muted">@Model.DepartmentName - @Model.DoctorName</p>
+                </div>
+                <a asp-controller="Home" asp-action="DoctorDashboard" class="btn btn-outline-primary rounded-pill px-4">Panele Dön</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <form asp-action="Prescription" method="post" class="row g-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="AppointmentId" />
+                <input type="hidden" asp-for="DoctorName" />
+                <input type="hidden" asp-for="DepartmentName" />
+                <input type="hidden" asp-for="PatientName" />
+                <input type="hidden" asp-for="PatientSurname" />
+
+                <div class="col-md-6">
+                    <label asp-for="Diagnosis" class="form-label"></label>
+                    <input asp-for="Diagnosis" class="form-control" placeholder="Örn. Üst sol azı dişinde ağrı" />
+                    <span asp-validation-for="Diagnosis" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-6">
+                    <label asp-for="Medications" class="form-label"></label>
+                    <textarea asp-for="Medications" class="form-control" rows="3" placeholder="Örn. Ağrı kesici, antibiyotik..."></textarea>
+                    <span asp-validation-for="Medications" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Notes" class="form-label"></label>
+                    <textarea asp-for="Notes" class="form-control" rows="4" placeholder="Kullanım talimatları, kontrol notları..."></textarea>
+                    <span asp-validation-for="Notes" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 d-flex gap-2 justify-content-end">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Önizle ve Yazdır</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

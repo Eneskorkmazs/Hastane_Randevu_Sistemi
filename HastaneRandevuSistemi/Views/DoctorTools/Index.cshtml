@@ -1,0 +1,90 @@
+@using HastaneRandevuSistemi.Models
+@{
+    ViewData["Title"] = "Doktor Araçları";
+    var recentAppointments = ViewBag.RecentAppointments as IReadOnlyList<Appointment> ?? Array.Empty<Appointment>();
+    var doctorName = ViewBag.DoctorName as string ?? string.Empty;
+    var departmentName = ViewBag.DepartmentName as string ?? string.Empty;
+}
+
+<div class="container py-4">
+    <div class="patient-hero mb-4">
+        <div>
+            <span class="eyebrow text-white-50">Doktor Paneli</span>
+            <h1 class="mb-2">@doctorName</h1>
+            <p class="mb-0">@departmentName bölümünde takvim, randevu ve reçete işlemlerini tek ekrandan yönetin.</p>
+        </div>
+        <div class="patient-hero-actions">
+            <a asp-controller="Home" asp-action="DoctorDashboard" class="btn btn-light text-primary fw-bold rounded-pill px-4">
+                <i class="fa-solid fa-chart-line me-2"></i>Panelim
+            </a>
+            <a asp-action="Schedule" class="btn btn-outline-light rounded-pill px-4">
+                <i class="fa-solid fa-calendar-days me-2"></i>Takvimim
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-2">Çalışma Takvimi</h4>
+                    <p class="text-muted">Müsait gün ve saatlerinizi görüntüleyin, hastaya uygun slotları yönetin.</p>
+                    <a asp-action="Schedule" class="btn btn-primary rounded-pill">Takvimi Aç</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-2">Dijital Reçete</h4>
+                    <p class="text-muted">Son randevulardan reçete oluşturun ve yazdırılabilir önizleme alın.</p>
+                    <a asp-controller="Appointment" asp-action="Index" class="btn btn-outline-primary rounded-pill">Randevuları Gör</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="h5 fw-bold mb-1">Son Randevular</h3>
+                    <p class="text-muted small mb-0">Reçete veya durum takibi için en son kayıtlar.</p>
+                </div>
+            </div>
+
+            @if (!recentAppointments.Any())
+            {
+                <div class="alert alert-light border mb-0">Henüz gösterilecek randevu bulunmuyor.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Hasta</th>
+                                <th>Durum</th>
+                                <th class="text-end">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in recentAppointments)
+                            {
+                                <tr>
+                                    <td>@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td>@item.PatientName @item.PatientSurname</td>
+                                    <td><span class="badge rounded-pill bg-light text-dark border">@item.Status</span></td>
+                                    <td class="text-end">
+                                        <a asp-action="Prescription" asp-route-appointmentId="@item.Id" class="btn btn-sm btn-primary rounded-pill">Reçete Oluştur</a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

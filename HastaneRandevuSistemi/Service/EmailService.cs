@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Mail;
 
 namespace HastaneRandevuSistemi.Services
@@ -6,29 +6,49 @@ namespace HastaneRandevuSistemi.Services
     public class EmailService
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<EmailService> _logger;
 
-        public EmailService(IConfiguration configuration)
+        public EmailService(IConfiguration configuration, ILogger<EmailService> logger)
         {
             _configuration = configuration;
+            _logger = logger;
         }
 
-        public async Task SendEmailAsync(string toEmail, string subject, string body)
+        public async Task<bool> SendEmailAsync(string toEmail, string subject, string body)
         {
+            if (string.IsNullOrWhiteSpace(toEmail))
+            {
+                _logger.LogWarning("E-posta gonderimi atlandi: alici adresi bos.");
+                return false;
+            }
+
             try
             {
-                var smtpClient = new SmtpClient(_configuration["EmailSettings:Host"])
+                var host = _configuration["EmailSettings:Host"];
+                var port = _configuration.GetValue<int?>("EmailSettings:Port") ?? 587;
+                var fromEmail = _configuration["EmailSettings:Mail"];
+                var displayName = _configuration["EmailSettings:DisplayName"] ?? fromEmail;
+                var password = _configuration["EmailSettings:Password"];
+                var enableSsl = _configuration.GetValue("EmailSettings:EnableSsl", true);
+
+                if (string.IsNullOrWhiteSpace(host) || string.IsNullOrWhiteSpace(fromEmail) || string.IsNullOrWhiteSpace(password))
                 {
-                    Port = int.Parse(_configuration["EmailSettings:Port"]),
-                    Credentials = new NetworkCredential(
-                        _configuration["EmailSettings:Mail"],
-                        _configuration["EmailSettings:Password"]
-                    ),
-                    EnableSsl = true,
+                    _logger.LogWarning("E-posta ayarlari eksik oldugu icin gonderim atlandi. Host/Mail/Password kontrol edin.");
+                    return false;
+                }
+
+                using var smtpClient = new SmtpClient(host)
+                {
+                    Port = port,
+                    Credentials = new NetworkCredential(fromEmail, password),
+                    EnableSsl = enableSsl,
+                    DeliveryMethod = SmtpDeliveryMethod.Network,
+                    Timeout = 10000
                 };
 
-                var mailMessage = new MailMessage
+                using var mailMessage = new MailMessage
                 {
-                    From = new MailAddress(_configuration["EmailSettings:Mail"], _configuration["EmailSettings:DisplayName"]),
+                    From = new MailAddress(fromEmail, displayName),
                     Subject = subject,
                     Body = body,
                     IsBodyHtml = true,
@@ -37,11 +57,12 @@ namespace HastaneRandevuSistemi.Services
                 mailMessage.To.Add(toEmail);
 
                 await smtpClient.SendMailAsync(mailMessage);
+                return true;
             }
             catch (Exception ex)
             {
-                // Hata durumunda loglama yapılabilir veya sessizce geçilebilir
-                throw new InvalidOperationException($"E-posta gönderilemedi: {ex.Message}");
+                _logger.LogError(ex, "E-posta gonderimi basarisiz oldu. Alici: {Recipient}", toEmail);
+                return false;
             }
         }
     }
