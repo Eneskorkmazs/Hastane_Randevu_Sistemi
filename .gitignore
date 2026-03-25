@@ -24,3 +24,5 @@ appsettings.Local.json
 *.db
 *.db-shm
 *.db-wal
+DataProtection-Keys/
+HastaneRandevuSistemi/DataProtection-Keys/
