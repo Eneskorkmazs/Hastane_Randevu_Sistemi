@@ -64,7 +64,6 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
   - gelecek tarihli onaylı randevular için `Tamamla` yerine `Bekleniyor` gösterimi eklendi,
   - zamanı geçen randevuların otomatik olarak `Tamamlandı` durumuna dönmesi sağlandı,
   - otomatik tamamlanan randevular için geçmiş olsun mesajı içeren bildirim desteği eklendi.
-- Diş Hastalıkları bölümü için yeni doktor kaydı eklendi.
 
 ## Teknolojiler
 - .NET 8
