@@ -14,8 +14,15 @@ namespace HastaneRandevuSistemi.ViewModels
         public int CompletedAppointmentsCount { get; set; }
         public int CancelledAppointmentsCount { get; set; }
         public int UnreadNotificationsCount { get; set; }
+        public IReadOnlyList<DepartmentFeeItem> DepartmentFees { get; set; } = Array.Empty<DepartmentFeeItem>();
         public IReadOnlyList<Appointment> PendingAppointments { get; set; } = Array.Empty<Appointment>();
         public IReadOnlyList<Appointment> RecentAppointments { get; set; } = Array.Empty<Appointment>();
         public IReadOnlyList<Notification> RecentNotifications { get; set; } = Array.Empty<Notification>();
+    }
+
+    public class DepartmentFeeItem
+    {
+        public string DepartmentName { get; set; } = string.Empty;
+        public decimal Fee { get; set; }
     }
 }

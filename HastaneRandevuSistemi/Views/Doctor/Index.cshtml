@@ -39,8 +39,7 @@
                                     </div>
                                     <div>
                                         <div class="fw-bold text-dark fs-6 lh-sm">
-                                            @* Ünvan zaten Name içinde olduğu için sadece Name ve Surname basıyoruz *@
-                                            @item.Name @item.Surname
+                                            @($"{item.Title} {item.Name} {item.Surname}".Trim())
                                         </div>
                                     </div>
                                 </div>

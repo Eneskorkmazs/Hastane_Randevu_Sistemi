@@ -12,6 +12,30 @@ namespace HastaneRandevuSistemi.Controllers
     [Authorize(Roles = "Hasta")]
     public class PatientController : Controller
     {
+        private static readonly IReadOnlyDictionary<string, decimal> DepartmentPriceMap =
+            new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Diş Sağlığı ve Hastalıkları"] = 1250m,
+                ["Dahiliye (İç Hastalıkları)"] = 1100m,
+                ["Kardiyoloji"] = 2200m,
+                ["Nöroloji"] = 2100m,
+                ["Ortopedi ve Travmatoloji"] = 1850m,
+                ["Göz Hastalıkları"] = 1450m,
+                ["Kulak Burun Boğaz"] = 1400m,
+                ["Genel Cerrahi"] = 2300m,
+                ["Dermatoloji"] = 1200m,
+                ["Pediatri"] = 1150m,
+                ["Psikiyatri"] = 1600m,
+                ["Üroloji"] = 1750m,
+                ["Fizik Tedavi ve Rehabilitasyon"] = 1350m,
+                ["Kadın Hastalıkları ve Doğum"] = 1900m,
+                ["Göğüs Hastalıkları"] = 1550m,
+                ["Enfeksiyon Hastalıkları"] = 1300m,
+                ["Beyin ve Sinir Cerrahisi"] = 2750m
+            };
+
+        private const decimal DefaultDepartmentFee = 1350m;
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<AppUser> _userManager;
 
@@ -50,6 +74,18 @@ namespace HastaneRandevuSistemi.Controllers
                 .ThenByDescending(a => a.Id)
                 .ToList();
 
+            var departments = await _context.Departments
+                .OrderBy(d => d.Name)
+                .ToListAsync();
+
+            var departmentFees = departments
+                .Select(d => new DepartmentFeeItem
+                {
+                    DepartmentName = d.Name,
+                    Fee = DepartmentPriceMap.TryGetValue(d.Name, out var fee) ? fee : DefaultDepartmentFee
+                })
+                .ToList();
+
             var model = new PatientDashboardViewModel
             {
                 FullName = $"{user.Name} {user.Surname}".Trim(),
@@ -62,6 +98,7 @@ namespace HastaneRandevuSistemi.Controllers
                 CompletedAppointmentsCount = appointments.Count(a => a.Status == AppointmentStatus.Tamamlandi),
                 CancelledAppointmentsCount = appointments.Count(a => a.Status == AppointmentStatus.Iptal),
                 UnreadNotificationsCount = notifications.Count(n => !n.IsRead),
+                DepartmentFees = departmentFees,
                 PendingAppointments = pendingAppointments.Take(5).ToList(),
                 RecentAppointments = appointments.Take(5).ToList(),
                 RecentNotifications = notifications.Take(5).ToList()

@@ -65,6 +65,20 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
   - zamanı geçen randevuların otomatik olarak `Tamamlandı` durumuna dönmesi sağlandı,
   - otomatik tamamlanan randevular için geçmiş olsun mesajı içeren bildirim desteği eklendi.
 
+### Hafta 6
+- Hafta 6 kapsamındaki tamamlanan güncellemeler:
+- Güvenlik ve bakım iyileştirmeleri yapıldı:
+  - repoda tutulan hassas bağlantı ve e-posta ayarları temizlendi,
+  - giriş formunda antiforgery koruması yeniden etkinleştirildi,
+  - parola politikası güçlendirildi.
+- Oturum ve arayüz davranışı iyileştirildi:
+  - giriş/kayıt/şifre sıfırlama ekranlarında rol bazlı üst panel gösterimi baskılandı,
+  - kimlik ekranlarında oturum menüsü ile yetkili panel bağlantıları artık görünmüyor.
+- Yönetim tarafında veri bütünlüğü güçlendirildi:
+  - doktor düzenleme akışında `UserId` bağının korunması sağlandı,
+  - seed kullanıcı şifreleri yapılandırma temelli hale getirildi,
+  - geliştirme ortamı için kontrollü fallback mantığı eklendi.
+
 ## Teknolojiler
 - .NET 8
 - ASP.NET Core MVC
@@ -79,6 +93,7 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - [Hafta 3 Raporu PDF](Reports/Hafta3_Raporu.pdf)
 - [Hafta 4 Raporu PDF](Reports/Hafta4_Raporu.pdf)
 - [Hafta 5 Raporu PDF](Reports/Hafta5_Raporu.pdf)
+- [Hafta 6 Raporu HTML](Reports/Hafta6_Raporu.html)
 
 ## Varsayılan Roller
 - `Admin`

@@ -41,6 +41,27 @@ namespace HastaneRandevuSistemi.Models
         public AppointmentStatus Status { get; set; } = AppointmentStatus.Bekliyor;
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
+        public bool IsCollected { get; set; }
+        public DateTime? CollectedDate { get; set; }
+
+        public bool AdminAccessRequested { get; set; }
+        public DateTime? AdminAccessRequestedDate { get; set; }
+
+        [StringLength(450)]
+        public string? AdminAccessRequestedByUserId { get; set; }
+
+        [StringLength(200)]
+        public string? AdminAccessRequestedByName { get; set; }
+
+        public bool AdminAccessGranted { get; set; }
+        public DateTime? AdminAccessGrantedDate { get; set; }
+
+        [StringLength(450)]
+        public string? AdminAccessGrantedByUserId { get; set; }
+
+        [StringLength(200)]
+        public string? AdminAccessGrantedByName { get; set; }
+
         [StringLength(450)]
         public string? ApprovedByUserId { get; set; }
 

@@ -1,0 +1,137 @@
+﻿<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hastane Randevu Sistemi - Ilk 5 Hafta Genel Rapor</title>
+  <style>
+    :root {
+      --ink: #1f2937;
+      --muted: #4b5563;
+      --line: #d1d5db;
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --accent: #0f766e;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      color: var(--ink);
+      background: var(--bg);
+      line-height: 1.5;
+      padding: 28px;
+    }
+    .page {
+      max-width: 980px;
+      margin: 0 auto;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 28px;
+    }
+    h1 { margin: 0 0 6px; font-size: 28px; }
+    h2 {
+      margin-top: 26px;
+      margin-bottom: 8px;
+      font-size: 20px;
+      border-left: 5px solid var(--accent);
+      padding-left: 10px;
+    }
+    .meta {
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 18px;
+    }
+    ul { margin-top: 8px; }
+    li { margin: 6px 0; }
+    .summary {
+      margin-top: 16px;
+      padding: 14px 16px;
+      background: #ecfeff;
+      border: 1px solid #99f6e4;
+      border-radius: 10px;
+    }
+    .footer {
+      margin-top: 24px;
+      font-size: 12px;
+      color: var(--muted);
+      border-top: 1px dashed var(--line);
+      padding-top: 10px;
+    }
+    @media print {
+      body { padding: 0; background: #fff; }
+      .page { border: none; border-radius: 0; padding: 0; }
+      h2 { break-after: avoid; }
+      ul { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <h1>Hastane Randevu Sistemi</h1>
+    <div class="meta">Ilk 5 Hafta Genel Rapor | Tarih: 27 Mart 2026</div>
+
+    <h2>Hafta 1</h2>
+    <ul>
+      <li><code>AppUser</code> modeli T.C., telefon, dogum tarihi, cinsiyet ve adres alanlariyla genisletildi.</li>
+      <li>Kayit ekrani ve <code>RegisterViewModel</code> yeni alanlari destekleyecek sekilde guncellendi.</li>
+      <li>Yeni kayit olan kullanicilarin hasta paneline dogrudan yonlendirilmesi saglandi.</li>
+      <li>Ana hasta akisina yonelik bildirim servisi ve temel profil altyapisi eklendi.</li>
+    </ul>
+
+    <h2>Hafta 2</h2>
+    <ul>
+      <li>Hasta paneli (<code>Dashboard</code>, <code>Profile</code>, <code>Notifications</code>) devreye alindi.</li>
+      <li>Randevular hasta kullanicisi ile iliskilendirildi ve gecmis listeleme destegi eklendi.</li>
+      <li>Uygun durumlarda randevu iptal akisi hasta tarafinda kullanilabilir hale getirildi.</li>
+      <li>Randevu olusturma, onay, tamamlama ve iptal hareketleri icin bildirim kayitlari olusturuldu.</li>
+    </ul>
+
+    <h2>Hafta 3</h2>
+    <ul>
+      <li>Rol bazli guvenlik akislari (admin/doktor yetkileri) guclendirildi.</li>
+      <li>Doktor dashboard'unda bugun/gelecek hafta ozetleri ve durum bazli kartlar gelistirildi.</li>
+      <li>Admin dashboard metrikleri bolum/doktor/randevu trendi odaginda detaylandirildi.</li>
+      <li>Kullanici deneyimi tarafinda validasyon mesajlari ve bildirim gorunurlugu iyilestirildi.</li>
+      <li>Teknik altyapida hata geri bildirimlerinin standardizasyonu desteklendi.</li>
+    </ul>
+
+    <h2>Hafta 4</h2>
+    <ul>
+      <li>Admin dashboard'una haftalik trend, poliklinik yogunluk ve iptal metrikleri eklendi.</li>
+      <li>Tarih araligi, poliklinik ve durum filtreleri iceren raporlama ekrani eklendi.</li>
+      <li>Yonetim ozeti yazdirilabilir formatta sunulabilir hale getirildi.</li>
+      <li>Rol bazli hedeflenebilen duyuru ve bilgilendirme modulu eklendi.</li>
+      <li>Randevu durum senkronizasyonu icin zaman bazli kontrol altyapisi guclendirildi.</li>
+    </ul>
+
+    <h2>Hafta 5</h2>
+    <ul>
+      <li>Randevu listesinde gelismis arama/filtreleme (poliklinik, siralama, gelecek randevular) eklendi.</li>
+      <li>Liste ekranina hizli ozet kartlari entegre edildi.</li>
+      <li>Randevu alma surecine doktora gore en yakin uygun saat onerileri eklendi.</li>
+      <li>Hasta paneli sayaçlari bekleyen/tamamlanan/iptal kategorileriyle netlestirildi.</li>
+      <li>Durum akisinda gelecekteki onayli randevular icin "Bekleniyor" gosterimi iyilestirildi.</li>
+      <li>Zamani gecen randevularin otomatik tamamlanmasi ve bilgilendirme destegi eklendi.</li>
+    </ul>
+
+    <section class="summary">
+      <strong>Genel Degerlendirme:</strong> Ilk 5 haftada kimlik/profil altyapisindan hasta ve doktor panellerine,
+      yonetsel raporlamadan randevu durum otomasyonuna kadar uctan uca saglikli bir urun temelinin olusturuldugu;
+      kullanici deneyimi, gozlemlenebilirlik ve operasyonel kontrol alanlarinda sistematik iyilestirme yapildigi gorulmektedir.
+    </section>
+
+    <h2>Hafta 5 Sonrasi Ek Calismalar (Onceden Yapilanlar)</h2>
+    <ul>
+      <li>Doktor araclari genisletildi: takvim gorunumu, randevu odakli recete taslagi ve recete onizleme akislari eklendi.</li>
+      <li>Hesap yonetimine sifre sifirlama sureci eklendi: <code>ForgotPassword</code> ve <code>ResetPassword</code> ekranlariyla e-posta tabanli sifirlama desteklendi.</li>
+      <li><code>EmailService</code> uzerinden SMTP ayarlariyla uygulama ici e-posta gonderim altyapisi devreye alindi.</li>
+      <li>Veritabani tarafinda Postgres uyumlulugu ve tarih/saat kolonlarina yonelik migration duzeltmeleri eklendi.</li>
+      <li>Randevu otomasyonu ve takvim paneli iyilestirmeleriyle doktor deneyimi daha akici hale getirildi.</li>
+    </ul>
+
+    <div class="footer">Kaynak: Proje README kapsam notlari (Hafta 1-5) + kod tabanindaki hafta 5 sonrasi ek gelistirmeler.</div>
+  </main>
+</body>
+</html>

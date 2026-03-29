@@ -103,7 +103,17 @@ namespace HastaneRandevuSistemi.Controllers
             {
                 try
                 {
-                    _context.Update(doctor);
+                    var existingDoctor = await _context.Doctors.FindAsync(id);
+                    if (existingDoctor == null)
+                    {
+                        return NotFound();
+                    }
+
+                    existingDoctor.Name = doctor.Name;
+                    existingDoctor.Surname = doctor.Surname;
+                    existingDoctor.Title = doctor.Title;
+                    existingDoctor.DepartmentId = doctor.DepartmentId;
+
                     await _context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)

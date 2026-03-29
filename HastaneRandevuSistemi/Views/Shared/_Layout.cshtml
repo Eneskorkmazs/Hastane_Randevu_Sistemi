@@ -7,8 +7,24 @@
 
 @{
     var unreadNotificationCount = 0;
+    var accessRequestBadgeCount = 0;
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+    var isAccountAuthScreen =
+        string.Equals(currentController, "Account", StringComparison.OrdinalIgnoreCase)
+        && (
+            string.Equals(currentAction, "Login", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(currentAction, "Register", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(currentAction, "ForgotPassword", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(currentAction, "ForgotPasswordConfirmation", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(currentAction, "ResetPassword", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(currentAction, "ResetPasswordConfirmation", StringComparison.OrdinalIgnoreCase)
+        );
+    var isAuthenticated = !isAccountAuthScreen && User.Identity?.IsAuthenticated == true;
+    var isDoctor = !isAccountAuthScreen && User.IsInRole("Doktor");
+    var isPatient = !isAccountAuthScreen && User.IsInRole("Hasta");
+    var isAdmin = !isAccountAuthScreen && User.IsInRole("Admin");
+    var isSignedIn = !isAccountAuthScreen && SignInManager.IsSignedIn(User);
 
     string GetNavLinkClass(string controller, params string[] actions)
     {
@@ -18,7 +34,7 @@
         return isActive ? "nav-link nav-link-premium is-active" : "nav-link nav-link-premium";
     }
 
-    if (SignInManager.IsSignedIn(User) && User.IsInRole("Hasta"))
+    if (isSignedIn && isPatient)
     {
         var currentUserForCount = await UserManager.GetUserAsync(User);
         if (currentUserForCount != null)
@@ -26,6 +42,29 @@
             unreadNotificationCount = await DbContext.Notifications
                 .CountAsync(n => n.UserId == currentUserForCount.Id && !n.IsRead);
         }
+    }
+
+    if (isSignedIn && isDoctor)
+    {
+        var currentDoctorUser = await UserManager.GetUserAsync(User);
+        if (currentDoctorUser != null)
+        {
+            var doctorId = await DbContext.Doctors
+                .Where(d => d.UserId == currentDoctorUser.Id || (d.Name == currentDoctorUser.Name && d.Surname == currentDoctorUser.Surname))
+                .Select(d => (int?)d.Id)
+                .FirstOrDefaultAsync();
+
+            if (doctorId.HasValue)
+            {
+                accessRequestBadgeCount = await DbContext.Appointments
+                    .CountAsync(a => a.DoctorId == doctorId.Value && a.AdminAccessRequested && !a.AdminAccessGranted);
+            }
+        }
+    }
+    else if (isSignedIn && isAdmin)
+    {
+        accessRequestBadgeCount = await DbContext.Appointments
+            .CountAsync(a => a.AdminAccessRequested && !a.AdminAccessGranted);
     }
 }
 
@@ -46,13 +85,13 @@
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow fixed-top" style="background: linear-gradient(90deg, #004e92 0%, #000428 100%);">
             <div class="container">
-                @if (User.IsInRole("Doktor"))
+                @if (isDoctor)
                 {
                     <a class="navbar-brand fw-bold" asp-area="" asp-controller="Home" asp-action="DoctorDashboard">
                         <i class="fa-solid fa-user-md me-2"></i> HRS <span class="fw-light small">Doktor Paneli</span>
                     </a>
                 }
-                else if (User.IsInRole("Hasta"))
+                else if (isPatient)
                 {
                     <a class="navbar-brand fw-bold" asp-area="" asp-controller="Patient" asp-action="Dashboard">
                         <i class="fa-solid fa-heart-pulse me-2"></i> HRS <span class="fw-light small">Hasta Paneli</span>
@@ -73,7 +112,7 @@
                 <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1 ms-auto mb-2 mb-lg-0">
 
-                        @if (!User.IsInRole("Doktor"))
+                        @if (!isDoctor)
                         {
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Home", "Index")" asp-area="" asp-controller="Home" asp-action="Index">
@@ -82,7 +121,7 @@
                             </li>
                         }
 
-                        @if (User.IsInRole("Doktor"))
+                        @if (isDoctor)
                         {
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Home", "DoctorDashboard")" asp-controller="Home" asp-action="DoctorDashboard">
@@ -104,9 +143,18 @@
                                     <i class="fa-solid fa-suitcase-medical me-1"></i> Araçlarım
                                 </a>
                             </li>
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("Appointment", "DoctorAccessRequests")" asp-controller="Appointment" asp-action="DoctorAccessRequests">
+                                    <i class="fa-solid fa-user-shield me-1"></i> Erisim Istekleri
+                                    @if (accessRequestBadgeCount > 0)
+                                    {
+                                        <span class="badge rounded-pill bg-danger text-white ms-1 nav-badge-premium">@accessRequestBadgeCount</span>
+                                    }
+                                </a>
+                            </li>
                         }
 
-                        @if (User.IsInRole("Hasta"))
+                        @if (isPatient)
                         {
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Patient", "Dashboard")" asp-controller="Patient" asp-action="Dashboard">
@@ -123,7 +171,7 @@
                             </li>
                         }
 
-                        @if (User.IsInRole("Hasta") || User.Identity?.IsAuthenticated != true)
+                        @if (isPatient || !isAuthenticated)
                         {
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Appointment", "Create")" asp-controller="Appointment" asp-action="Create">
@@ -132,26 +180,32 @@
                             </li>
                         }
 
-                        @if (User.Identity?.IsAuthenticated == true)
+                        @if (isAuthenticated)
                         {
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Appointment", "Index")" asp-controller="Appointment" asp-action="Index">
-                                    @if (User.IsInRole("Hasta"))
+                                    @if (isPatient)
                                     {
                                         <span><i class="fa-solid fa-calendar-days me-1"></i> Randevularım</span>
                                     }
                                     else
                                     {
-                                        <span><i class="fa-solid fa-list-check me-1"></i> Randevu Listesi</span>
+                                        <span>
+                                            <i class="fa-solid fa-list-check me-1"></i> Randevu Listesi
+                                            @if (accessRequestBadgeCount > 0)
+                                            {
+                                                <span class="badge rounded-pill bg-danger text-white ms-1 nav-badge-premium">@accessRequestBadgeCount</span>
+                                            }
+                                        </span>
                                     }
                                 </a>
                             </li>
                         }
 
-                        @if (User.IsInRole("Admin"))
+                        @if (isAdmin)
                         {
                             <li class="nav-item dropdown">
-                                <a class="@(string.Equals(currentController, "Doctor", StringComparison.OrdinalIgnoreCase) || string.Equals(currentController, "Department", StringComparison.OrdinalIgnoreCase) || (string.Equals(currentController, "Home", StringComparison.OrdinalIgnoreCase) && (string.Equals(currentAction, "AdminReport", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "CreateAnnouncement", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "AdminDashboard", StringComparison.OrdinalIgnoreCase))) ? "nav-link nav-link-premium dropdown-toggle is-active" : "nav-link nav-link-premium dropdown-toggle")" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="@(string.Equals(currentController, "Doctor", StringComparison.OrdinalIgnoreCase) || string.Equals(currentController, "Department", StringComparison.OrdinalIgnoreCase) || (string.Equals(currentController, "Home", StringComparison.OrdinalIgnoreCase) && (string.Equals(currentAction, "AdminReport", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "AdminAccounting", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "CreateAnnouncement", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "AdminDashboard", StringComparison.OrdinalIgnoreCase))) ? "nav-link nav-link-premium dropdown-toggle is-active" : "nav-link nav-link-premium dropdown-toggle")" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fa-solid fa-briefcase-medical me-1"></i> Yönetim
                                 </a>
                                 <ul class="dropdown-menu border-0 shadow-lg p-2" aria-labelledby="navbarDropdown">
@@ -171,6 +225,11 @@
                                         </a>
                                     </li>
                                     <li>
+                                        <a class="dropdown-item rounded" asp-controller="Home" asp-action="AdminAccounting">
+                                            <i class="fa-solid fa-wallet text-success me-2"></i> Muhasebe
+                                        </a>
+                                    </li>
+                                    <li>
                                         <a class="dropdown-item rounded" asp-controller="Home" asp-action="CreateAnnouncement">
                                             <i class="fa-solid fa-bullhorn text-info me-2"></i> Duyuru Gönder
                                         </a>
@@ -187,7 +246,7 @@
                     </ul>
 
                     <ul class="navbar-nav ms-3">
-                        @if (SignInManager.IsSignedIn(User))
+                        @if (isSignedIn)
                         {
                             var currentUser = await UserManager.GetUserAsync(User);
 
@@ -197,11 +256,11 @@
                                 <a class="btn btn-outline-light dropdown-toggle rounded-pill px-3" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fa-solid fa-circle-user me-2"></i> @displayName
                                     <br><small style="font-size:0.7em; opacity:0.8;">
-                                        @(User.IsInRole("Admin") ? "Admin" : User.IsInRole("Doktor") ? "Doktor" : "Hasta")
+                                        @(isAdmin ? "Admin" : isDoctor ? "Doktor" : "Hasta")
                                     </small>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow mt-2">
-                                    @if (User.IsInRole("Hasta"))
+                                    @if (isPatient)
                                     {
                                         <li>
                                             <a class="dropdown-item" asp-controller="Patient" asp-action="Dashboard">
@@ -223,7 +282,7 @@
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
                                     }
-                                    @if (User.IsInRole("Doktor"))
+                                    @if (isDoctor)
                                     {
                                         <li>
                                             <a class="dropdown-item" asp-controller="Home" asp-action="DoctorDashboard">
@@ -243,6 +302,15 @@
                                         <li>
                                             <a class="dropdown-item" asp-controller="Appointment" asp-action="Index">
                                                 <i class="fa-solid fa-list-check me-2"></i> Randevular
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Appointment" asp-action="DoctorAccessRequests">
+                                                <i class="fa-solid fa-user-shield me-2"></i> Erisim Istekleri
+                                                @if (accessRequestBadgeCount > 0)
+                                                {
+                                                    <span class="badge rounded-pill bg-danger text-white ms-2">@accessRequestBadgeCount</span>
+                                                }
                                             </a>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>

@@ -56,6 +56,18 @@ namespace HastaneRandevuSistemi.Data
                 .Property(a => a.CreatedDate)
                 .HasColumnType(dateTimeColumnType);
 
+            modelBuilder.Entity<Appointment>()
+                .Property(a => a.CollectedDate)
+                .HasColumnType(dateTimeColumnType);
+
+            modelBuilder.Entity<Appointment>()
+                .Property(a => a.AdminAccessRequestedDate)
+                .HasColumnType(dateTimeColumnType);
+
+            modelBuilder.Entity<Appointment>()
+                .Property(a => a.AdminAccessGrantedDate)
+                .HasColumnType(dateTimeColumnType);
+
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany()

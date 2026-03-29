@@ -1,0 +1,356 @@
+@model HastaneRandevuSistemi.ViewModels.AdminAccountingViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Muhasebe";
+    var departmentOptions = ViewData["DepartmentOptions"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
+    var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+
+    string CleanDoctorName(string? doctorName)
+    {
+        if (string.IsNullOrWhiteSpace(doctorName))
+        {
+            return "-";
+        }
+
+        var normalized = doctorName.Trim();
+        var duplicatePrefixes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ["Uzm. Dr. Uzm. Dr."] = "Uzm. Dr.",
+            ["Prof. Dr. Prof. Dr."] = "Prof. Dr.",
+            ["Doç. Dr. Doç. Dr."] = "Doç. Dr.",
+            ["Op. Dr. Op. Dr."] = "Op. Dr.",
+            ["Dr. Dr."] = "Dr."
+        };
+
+        foreach (var prefix in duplicatePrefixes)
+        {
+            if (normalized.StartsWith(prefix.Key, StringComparison.OrdinalIgnoreCase))
+            {
+                return prefix.Value + normalized.Substring(prefix.Key.Length);
+            }
+        }
+
+        return normalized;
+    }
+}
+
+<div class="container py-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <span class="text-uppercase small fw-bold text-success">Admin Finans</span>
+            <h1 class="h3 fw-bold mb-1">Muhasebe Merkezi</h1>
+            <p class="text-muted mb-0">Gelir, tahsilat ve bölüm bazlı yoğunluğu sade bir görünümle takip edin.</p>
+        </div>
+        <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Dön</a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Başlangıç</label>
+                    <input type="date" name="fromDate" value="@Model.FromDate.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bitiş</label>
+                    <input type="date" name="toDate" value="@Model.ToDate.ToString("yyyy-MM-dd")" class="form-control" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Bölüm</label>
+                    <select name="departmentId" class="form-select">
+                        <option value="">Tüm Bölümler</option>
+                        @foreach (var item in departmentOptions)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex gap-2">
+                    <a asp-action="AdminAccounting" class="btn btn-outline-secondary rounded-pill w-100">Temizle</a>
+                    <button type="submit" class="btn btn-success rounded-pill w-100">Uygula</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small">Toplam Potansiyel Gelir</div>
+                    <div class="display-6 fw-bold text-dark">@Model.EstimatedRevenue.ToString("C0", trCulture)</div>
+                    <small class="text-muted">@Model.TotalAppointments randevu</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small">Tahsil Edilen</div>
+                    <div class="display-6 fw-bold text-success">@Model.CollectedRevenue.ToString("C0", trCulture)</div>
+                    <small class="text-muted">@Model.CompletedAppointments randevu ödendi</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small">Açık Bakiye</div>
+                    <div class="display-6 fw-bold text-warning">@Model.PendingRevenue.ToString("C0", trCulture)</div>
+                    <small class="text-muted">@Model.PendingAppointments randevuda ödeme bekleniyor</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small">İptal Kaybı</div>
+                    <div class="display-6 fw-bold text-danger">@Model.CancelledRevenue.ToString("C0", trCulture)</div>
+                    <small class="text-muted">@Model.CancelledAppointments randevu iptal edildi</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Bölüm Özeti</h5>
+                            <p class="text-muted small mb-0">Bölümlerin randevu ve gelir durumunu hızlıca karşılaştırın.</p>
+                        </div>
+                    </div>
+
+                    @if (!Model.DepartmentBreakdown.Any())
+                    {
+                        <div class="text-muted">Bu aralık için veri bulunamadı.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Bölüm</th>
+                                        <th>Randevu</th>
+                                        <th>Tahsil Edilen</th>
+                                        <th>Açık Bakiye</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.DepartmentBreakdown)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@item.DepartmentName</td>
+                                            <td>@item.AppointmentCount</td>
+                                            <td class="text-success fw-semibold">@item.CollectedRevenue.ToString("C0", trCulture)</td>
+                                            <td class="text-warning fw-semibold">@item.PendingRevenue.ToString("C0", trCulture)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-1">Kısa Özet</h5>
+                    <p class="text-muted small mb-3">Bu tarih aralığında öne çıkan bilgiler.</p>
+
+                    <div class="summary-list">
+                        <div class="summary-row">
+                            <span>Ortalama randevu tutarı</span>
+                            <strong>@Model.AverageTicket.ToString("C0", trCulture)</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>En yoğun bölüm</span>
+                            <strong>@Model.TopDepartmentByAppointments</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>En yoğun doktor</span>
+                            <strong>@CleanDoctorName(Model.TopDoctorByAppointments)</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>En yüksek gelirli bölüm</span>
+                            <strong>@Model.TopDepartmentByRevenue</strong>
+                        </div>
+                        <div class="summary-row">
+                            <span>En yüksek gelirli doktor</span>
+                            <strong>@CleanDoctorName(Model.TopDoctorByRevenue)</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model.SelectedDepartmentSummary != null)
+    {
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                    <div>
+                        <h5 class="fw-bold mb-1">@Model.SelectedDepartmentSummary.DepartmentName Özeti</h5>
+                        <p class="text-muted small mb-0">Seçili bölüm için özet görünüm.</p>
+                    </div>
+                    <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.SelectedDepartmentSummary.DoctorCount doktor</span>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="simple-box">
+                            <span>Randevu</span>
+                            <strong>@Model.SelectedDepartmentSummary.AppointmentCount</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="simple-box">
+                            <span>Hasta</span>
+                            <strong>@Model.SelectedDepartmentSummary.UniquePatientCount</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="simple-box">
+                            <span>Tahsilat</span>
+                            <strong>@Model.SelectedDepartmentSummary.CollectedRevenue.ToString("C0", trCulture)</strong>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="simple-box">
+                            <span>Yoğun Doktor</span>
+                            <strong>@CleanDoctorName(Model.SelectedDepartmentSummary.TopDoctorName)</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h5 class="fw-bold mb-1">Son İşlemler</h5>
+                    <p class="text-muted small mb-0">En güncel ödeme ve randevu kayıtları.</p>
+                </div>
+            </div>
+
+            @if (!Model.RecentTransactions.Any())
+            {
+                <div class="text-muted">Kayıt bulunamadı.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Hasta</th>
+                                <th>Bölüm</th>
+                                <th>Durum</th>
+                                <th class="text-end">Tutar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.RecentTransactions)
+                            {
+                                var rowClass = item.StatusLabel switch
+                                {
+                                    "Odeme Yapildi" => "text-success",
+                                    "Iptal / Kayip" => "text-danger",
+                                    "Odeme Bekliyor" => "text-warning",
+                                    _ => "text-secondary"
+                                };
+
+                                <tr>
+                                    <td>
+                                        <div>@item.AppointmentDate.ToString("dd.MM.yyyy")</div>
+                                        <small class="text-muted">@item.AppointmentDate.ToString("HH:mm")</small>
+                                    </td>
+                                    <td class="fw-semibold">@item.PatientName</td>
+                                    <td>@item.DepartmentName</td>
+                                    <td><span class="@rowClass fw-semibold">@item.StatusLabel</span></td>
+                                    <td class="text-end fw-semibold">@item.Amount.ToString("C0", trCulture)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .summary-list {
+        display: grid;
+        gap: 0.85rem;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-bottom: 0.85rem;
+        border-bottom: 1px solid #eef1f4;
+    }
+
+    .summary-row:last-child {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+
+    .summary-row span {
+        color: #667085;
+    }
+
+    .summary-row strong {
+        color: #1f2937;
+        text-align: right;
+    }
+
+    .simple-box {
+        height: 100%;
+        padding: 1rem;
+        border: 1px solid #eef1f4;
+        border-radius: 16px;
+        background: #fafbfc;
+    }
+
+    .simple-box span {
+        display: block;
+        color: #667085;
+        font-size: 0.85rem;
+        margin-bottom: 0.35rem;
+    }
+
+    .simple-box strong {
+        color: #1f2937;
+        font-size: 1.1rem;
+        line-height: 1.4;
+    }
+</style>

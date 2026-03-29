@@ -1,4 +1,5 @@
-﻿using HastaneRandevuSistemi.Models;
+using System.Data;
+using HastaneRandevuSistemi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,9 @@ namespace HastaneRandevuSistemi.Data
             var context = service.GetRequiredService<ApplicationDbContext>();
             var userManager = service.GetRequiredService<UserManager<AppUser>>();
             var roleManager = service.GetRequiredService<RoleManager<IdentityRole>>();
+            var configuration = service.GetRequiredService<IConfiguration>();
+            var environment = service.GetRequiredService<IHostEnvironment>();
+            var logger = service.GetRequiredService<ILoggerFactory>().CreateLogger("DbSeeder");
 
             var provider = context.Database.ProviderName ?? string.Empty;
             if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
@@ -23,9 +27,10 @@ namespace HastaneRandevuSistemi.Data
             }
 
             await EnsureRolesAsync(roleManager);
-            await EnsureAdminAsync(userManager);
+            await EnsureAccountingColumnsAsync(context);
+            await EnsureAdminAsync(userManager, configuration, environment, logger);
             await NormalizeDepartmentsAsync(context);
-            await SeedDepartmentsAndDoctorsAsync(context, userManager);
+            await SeedDepartmentsAndDoctorsAsync(context, userManager, configuration, environment, logger);
 
             await context.SaveChangesAsync();
         }
@@ -42,10 +47,146 @@ namespace HastaneRandevuSistemi.Data
             }
         }
 
-        private static async Task EnsureAdminAsync(UserManager<AppUser> userManager)
+        private static async Task EnsureAccountingColumnsAsync(ApplicationDbContext context)
+        {
+            var provider = context.Database.ProviderName ?? string.Empty;
+
+            if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!await ColumnExistsAsync(context, "Appointments", "IsCollected"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""IsCollected"" INTEGER NOT NULL DEFAULT 0;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "CollectedDate"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""CollectedDate"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "AdminAccessRequested"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""AdminAccessRequested"" INTEGER NOT NULL DEFAULT 0;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "AdminAccessRequestedDate"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""AdminAccessRequestedDate"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "AdminAccessRequestedByUserId"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""AdminAccessRequestedByUserId"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "AdminAccessRequestedByName"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""AdminAccessRequestedByName"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "AdminAccessGranted"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""AdminAccessGranted"" INTEGER NOT NULL DEFAULT 0;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "AdminAccessGrantedDate"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""AdminAccessGrantedDate"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "AdminAccessGrantedByUserId"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""AdminAccessGrantedByUserId"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "AdminAccessGrantedByName"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""AdminAccessGrantedByName"" TEXT NULL;");
+                }
+
+                return;
+            }
+
+            if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""IsCollected"" boolean NOT NULL DEFAULT FALSE;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""CollectedDate"" timestamp without time zone NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessRequested"" boolean NOT NULL DEFAULT FALSE;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessRequestedDate"" timestamp without time zone NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessRequestedByUserId"" character varying(450) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessRequestedByName"" character varying(200) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessGranted"" boolean NOT NULL DEFAULT FALSE;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessGrantedDate"" timestamp without time zone NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessGrantedByUserId"" character varying(450) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessGrantedByName"" character varying(200) NULL;");
+            }
+        }
+
+        private static async Task<bool> ColumnExistsAsync(
+            ApplicationDbContext context,
+            string tableName,
+            string columnName)
+        {
+            await using var connection = context.Database.GetDbConnection();
+            if (connection.State != ConnectionState.Open)
+            {
+                await connection.OpenAsync();
+            }
+
+            await using var command = connection.CreateCommand();
+            command.CommandText = $@"PRAGMA table_info(""{tableName}"");";
+
+            await using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                if (string.Equals(reader["name"]?.ToString(), columnName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static async Task EnsureAdminAsync(
+            UserManager<AppUser> userManager,
+            IConfiguration configuration,
+            IHostEnvironment environment,
+            ILogger logger)
         {
             const string adminEmail = "admin@havatakip.com.tr";
             if (await userManager.FindByEmailAsync(adminEmail) != null)
+            {
+                return;
+            }
+
+            var adminPassword = ResolveSeedPassword(
+                configuration["SeedSettings:AdminPassword"],
+                environment,
+                "DevAdmin123!",
+                logger,
+                "Admin");
+
+            if (string.IsNullOrWhiteSpace(adminPassword))
             {
                 return;
             }
@@ -59,7 +200,7 @@ namespace HastaneRandevuSistemi.Data
                 EmailConfirmed = true
             };
 
-            var createAdminResult = await userManager.CreateAsync(admin, "Admin123!");
+            var createAdminResult = await userManager.CreateAsync(admin, adminPassword);
             if (createAdminResult.Succeeded)
             {
                 await userManager.AddToRoleAsync(admin, "Admin");
@@ -123,8 +264,25 @@ namespace HastaneRandevuSistemi.Data
             await context.SaveChangesAsync();
         }
 
-        private static async Task SeedDepartmentsAndDoctorsAsync(ApplicationDbContext context, UserManager<AppUser> userManager)
+        private static async Task SeedDepartmentsAndDoctorsAsync(
+            ApplicationDbContext context,
+            UserManager<AppUser> userManager,
+            IConfiguration configuration,
+            IHostEnvironment environment,
+            ILogger logger)
         {
+            var doctorPassword = ResolveSeedPassword(
+                configuration["SeedSettings:DoctorPassword"],
+                environment,
+                "DevDoctor123!",
+                logger,
+                "Doktor");
+
+            if (string.IsNullOrWhiteSpace(doctorPassword))
+            {
+                return;
+            }
+
             var hospitalData = new Dictionary<string, List<string>>
             {
                 { "Diş Sağlığı ve Hastalıkları", new List<string> { "Uzm. Dr. Elif Yılmaz", "Uzm. Dr. Mehmet Korkmaz" } },
@@ -133,11 +291,11 @@ namespace HastaneRandevuSistemi.Data
                 { "Nöroloji", new List<string> { "Prof. Dr. Gazi Yaşargil", "Uzm. Dr. Serdar Dağ" } },
                 { "Ortopedi ve Travmatoloji", new List<string> { "Op. Dr. Feridun Kunak", "Prof. Dr. Burhan Uslu" } },
                 { "Göz Hastalıkları", new List<string> { "Op. Dr. Kudret Göz", "Uzm. Dr. Levent Akçay" } },
-                { "Kulak Burun Boğaz", new List<string> { "Op. Dr. Aytuğ Altundağ", "Prof. Dr. İbrahim Saraçoğlu" } },
+                { "Kulak Burun Boğaz", new List<string> { "Op. Dr. Aytuğ Altundağ", "Prof. Dr. İbrahim Saraçoğlu", "Uzm. Dr. Deniz Erdem" } },
                 { "Genel Cerrahi", new List<string> { "Prof. Dr. Münci Kalayoğlu", "Op. Dr. Ender Saraç" } },
                 { "Dermatoloji", new List<string> { "Uzm. Dr. Nihat Hatipoğlu", "Dr. Şeyma Subaşı" } },
                 { "Pediatri", new List<string> { "Uzm. Dr. Osman Müftüoğlu", "Dr. Sami Ulus" } },
-                { "Psikiyatri", new List<string> { "Prof. Dr. İlber Ortaylı", "Dr. Gülseren Budayıcıoğlu" } },
+                { "Psikiyatri", new List<string> { "Prof. Dr. İlber Ortaylı", "Dr. Gülseren Budayıcıoğlu", "Prof. Dr. Ahmet Korkmaz" } },
                 { "Üroloji", new List<string> { "Op. Dr. Haydar Dümen", "Prof. Dr. Kemal Özkan" } },
                 { "Fizik Tedavi ve Rehabilitasyon", new List<string> { "Uzm. Dr. Halit Yerebakan", "Dr. Ferhat Göçer" } },
                 { "Kadın Hastalıkları ve Doğum", new List<string> { "Op. Dr. Banu Çiftçi", "Prof. Dr. Teksen Çamlıbel" } },
@@ -173,7 +331,7 @@ namespace HastaneRandevuSistemi.Data
                             EmailConfirmed = true
                         };
 
-                        var createResult = await userManager.CreateAsync(user, "Doktor123!");
+                        var createResult = await userManager.CreateAsync(user, doctorPassword);
                         if (!createResult.Succeeded)
                         {
                             continue;
@@ -293,6 +451,32 @@ namespace HastaneRandevuSistemi.Data
                 .Replace("'", string.Empty)
                 .Replace("`", string.Empty)
                 .Trim();
+        }
+
+        private static string? ResolveSeedPassword(
+            string? configuredPassword,
+            IHostEnvironment environment,
+            string developmentFallback,
+            ILogger logger,
+            string accountType)
+        {
+            if (!string.IsNullOrWhiteSpace(configuredPassword))
+            {
+                return configuredPassword;
+            }
+
+            if (environment.IsDevelopment())
+            {
+                logger.LogWarning(
+                    "{AccountType} seed sifresi konfigurasyonda bulunamadi. Gelistirme ortami icin gecici varsayilan kullanilacak.",
+                    accountType);
+                return developmentFallback;
+            }
+
+            logger.LogWarning(
+                "{AccountType} seed sifresi konfigurasyonda bulunamadigi icin varsayilan hesap olusturma atlandi.",
+                accountType);
+            return null;
         }
     }
 }

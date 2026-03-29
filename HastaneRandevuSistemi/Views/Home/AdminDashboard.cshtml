@@ -64,6 +64,49 @@
         </div>
     </div>
 
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
+                <div>
+                    <p class="text-muted x-small fw-bold mb-1">AKTIF RANDEVU</p>
+                    <h2 class="fw-bold mb-0">@Model.ActiveAppointments</h2>
+                    <small class="text-muted">İptal edilmeyen toplam kayıt</small>
+                </div>
+                <div class="stat-icon bg-primary-soft text-primary"><i class="fa-solid fa-calendar-check fs-4"></i></div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
+                <div>
+                    <p class="text-muted x-small fw-bold mb-1">BUGÜN KALAN</p>
+                    <h2 class="fw-bold mb-0">@Model.RemainingTodayAppointments</h2>
+                    <small class="text-muted">Bugün henüz saati gelmemişler</small>
+                </div>
+                <div class="stat-icon bg-info-soft text-info"><i class="fa-solid fa-hourglass-half fs-4"></i></div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
+                <div>
+                    <p class="text-muted x-small fw-bold mb-1">ÖDEME BEKLEYEN</p>
+                    <h2 class="fw-bold mb-0">@Model.PendingPaymentAppointments</h2>
+                    <small class="text-muted">Geçmiş ama tahsil edilmemiş randevu</small>
+                </div>
+                <div class="stat-icon bg-warning-soft text-warning"><i class="fa-solid fa-wallet fs-4"></i></div>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
+                <div>
+                    <p class="text-muted x-small fw-bold mb-1">TEKIL HASTA</p>
+                    <h2 class="fw-bold mb-0">@Model.UniquePatientCount</h2>
+                    <small class="text-muted">Sistemde randevu oluşturan hasta</small>
+                </div>
+                <div class="stat-icon bg-success-soft text-success"><i class="fa-solid fa-users fs-4"></i></div>
+            </div>
+        </div>
+    </div>
+
     <div class="row g-4">
         <div class="col-12 col-lg-4">
             <div class="card border-0 shadow-sm rounded-5 h-100">
@@ -215,6 +258,7 @@
                     <a asp-controller="Department" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">Bölüm Ekle</a>
                     <a asp-controller="Home" asp-action="CreateAnnouncement" class="btn btn-outline-dark rounded-pill fw-bold px-4">Duyuru Gönder</a>
                     <a asp-controller="Home" asp-action="AdminReport" class="btn btn-outline-dark rounded-pill fw-bold px-4">Rapor Al</a>
+                    <a asp-controller="Home" asp-action="AdminAccounting" class="btn btn-outline-dark rounded-pill fw-bold px-4">Muhasebe</a>
                     <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm">Yeni Randevu</a>
                 </div>
             </div>

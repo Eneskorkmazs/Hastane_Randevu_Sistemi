@@ -1,0 +1,107 @@
+@model IEnumerable<HastaneRandevuSistemi.Models.Appointment>
+
+@{
+    ViewData["Title"] = "Erisim Istekleri";
+}
+
+<div class="container mt-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h2 class="fw-bold text-primary"><i class="fa-solid fa-user-shield me-2"></i>Erisim Istekleri</h2>
+            <p class="text-muted mb-0">Admin tarafindan istenen randevu erisimlerini burada izin vererek ya da reddederek yonetin.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-controller="Home" asp-action="DoctorDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Don</a>
+            <a asp-controller="Appointment" asp-action="Index" class="btn btn-outline-primary rounded-pill px-4">Randevular</a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body py-5 text-center">
+                <div class="text-muted mb-3"><i class="fa-regular fa-folder-open fa-4x"></i></div>
+                <h4>Bekleyen erisim talebi bulunmuyor.</h4>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-light text-secondary">
+                        <tr>
+                            <th class="py-3 ps-4">Randevu</th>
+                            <th>Hasta</th>
+                            <th>Talep</th>
+                            <th>Durum</th>
+                            <th class="text-end pe-4">Karar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var isPending = item.AdminAccessRequested && !item.AdminAccessGranted;
+                            var statusClass = item.AdminAccessGranted ? "bg-success" : "bg-warning text-dark";
+                            var statusText = item.AdminAccessGranted ? "Erisim Izni Verildi" : "Doktor Karari Bekleniyor";
+
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold">@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</div>
+                                    <div class="small text-muted">@item.Doctor?.Department?.Name</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@item.PatientName @item.PatientSurname</div>
+                                    <div class="small text-muted">@($"{item.Doctor?.Title} {item.Doctor?.Name} {item.Doctor?.Surname}".Trim())</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@item.AdminAccessRequestedByName</div>
+                                    <div class="small text-muted">
+                                        @(item.AdminAccessRequestedDate?.ToString("dd.MM.yyyy HH:mm") ?? item.AdminAccessGrantedDate?.ToString("dd.MM.yyyy HH:mm"))
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge rounded-pill @statusClass">@statusText</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    @if (isPending)
+                                    {
+                                        <form asp-action="GrantAdminAccess" asp-route-id="@item.Id" method="post" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-success rounded-pill">Izin Ver</button>
+                                        </form>
+                                        <form asp-action="DenyAdminAccess" asp-route-id="@item.Id" method="post" class="d-inline ms-1">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">Izin Verme</button>
+                                        </form>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-secondary border rounded-pill">Islem Tamamlandi</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

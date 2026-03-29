@@ -353,7 +353,11 @@
                 });
             }
 
-            if (roleField && roleField.value && credentialsPanel) {
+            const hasLoginError = @(ViewData.ModelState.IsValid ? "false" : "true");
+
+            if (hasLoginError === "true") {
+                resetRoleSelection();
+            } else if (roleField && roleField.value && credentialsPanel) {
                 applyRole(roleField.value);
             }
         })();

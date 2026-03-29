@@ -8,13 +8,18 @@ namespace HastaneRandevuSistemi.Models
         public int TotalDoctors { get; set; }      // Toplam Doktor
         public int TotalDepartments { get; set; }  // Toplam Bölüm
         public int TotalAppointments { get; set; } // Toplam Randevu
+        public int ActiveAppointments { get; set; } // Iptal olmayan aktif kayitlar
         public int PendingAppointments { get; set; } // Bekleyen (Onaylanmamış)
         public int TodaysAppointments { get; set; }  // Bugünkü Randevular
+        public int RemainingTodayAppointments { get; set; } // Bugün kalan randevular
+        public int PendingPaymentAppointments { get; set; } // Gecmis ama odemesi alinmayanlar
+        public int UniquePatientCount { get; set; } // Tekil hasta sayisi
 
         public int ThisWeekAppointments { get; set; }  // Bu Haftaki Randevular
         public int ApprovedAppointments { get; set; }  // Onaylanan Randevular
         public int CompletedAppointments { get; set; } // Tamamlanan Randevular
         public int CancelledAppointments { get; set; } // Iptal edilen randevular
+        public int PendingAccessRequestCount { get; set; }
 
         public IReadOnlyList<Appointment> UpcomingAppointments { get; set; } = Array.Empty<Appointment>();
         public IReadOnlyList<Notification> LatestNotifications { get; set; } = Array.Empty<Notification>();
