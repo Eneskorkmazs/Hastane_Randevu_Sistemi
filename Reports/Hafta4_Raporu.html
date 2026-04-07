@@ -1,131 +1,342 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="tr">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hafta 4 Raporu</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hastane Randevu Sistemi - Hafta 4 Raporu</title>
     <style>
         @page {
             size: A4;
-            margin: 2.5cm;
+            margin: 16mm;
+        }
+
+        :root {
+            --ink: #1f2937;
+            --muted: #5b6472;
+            --line: #d9e1ea;
+            --accent: #0b5cad;
+            --soft: #eef6ff;
+            --paper: #ffffff;
+            --bg: #f4f7fb;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            background: #f4f4f4;
-            color: #111;
-            font-family: "Times New Roman", serif;
-            font-size: 12pt;
+            padding: 24px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
             line-height: 1.6;
         }
 
-        .page {
-            width: 210mm;
-            min-height: 297mm;
+        .report {
+            max-width: 920px;
             margin: 0 auto;
-            padding: 2.5cm;
-            box-sizing: border-box;
-            background: #fff;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, .08);
         }
 
-        h1, h2, h3 {
-            margin-top: 0;
-            text-align: center;
+        .hero {
+            padding: 32px;
+            background: linear-gradient(135deg, #eff7ff 0%, #fff 60%, #edf5ff 100%);
+            border-bottom: 1px solid var(--line);
         }
 
-        h1 {
-            font-size: 18pt;
-            margin-bottom: 10px;
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .meta-card {
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .92);
+            font-size: 14px;
+        }
+
+        .meta-card strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--accent);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .section {
+            padding: 26px 32px 0;
         }
 
         h2 {
-            font-size: 14pt;
-            margin-bottom: 24px;
-            font-weight: normal;
+            margin: 0 0 12px;
+            font-size: 22px;
         }
 
         h3 {
-            text-align: left;
-            font-size: 13pt;
-            margin: 24px 0 8px;
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: var(--accent);
         }
 
         p {
             margin: 0 0 12px;
-            text-align: justify;
         }
 
-        ul {
-            margin: 0 0 12px 20px;
+        .summary {
+            padding: 16px 18px;
+            border-left: 5px solid var(--accent);
+            border-radius: 12px;
+            background: var(--soft);
         }
 
-        li {
-            margin-bottom: 6px;
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 10px;
         }
 
-        .meta {
-            margin-bottom: 24px;
+        .card {
+            padding: 14px 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
         }
 
-        .meta p {
-            margin: 4px 0;
+        .card h4 {
+            margin: 0 0 6px;
+            font-size: 15px;
+            color: var(--accent);
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+
+        .tag-new {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .tag-mod {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .file-table th {
+            background: var(--soft);
+            color: var(--accent);
+            padding: 8px 12px;
             text-align: left;
+            border-bottom: 2px solid var(--line);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .file-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        .file-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .closing {
+            margin-top: 16px;
+            padding: 18px;
+            border: 1px dashed #b9c7d8;
+            border-radius: 14px;
+            background: #f8fafc;
+        }
+
+        .readme-box {
+            margin-top: 14px;
+            padding: 14px 18px;
+            border: 1px solid #93c5fd;
+            border-radius: 12px;
+            background: #eff6ff;
+            font-size: 14px;
+        }
+
+        .readme-box a {
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .footer {
+            padding: 24px 32px 30px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                background: #fff;
+            }
+
+            .report {
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
         }
     </style>
 </head>
+
 <body>
-    <div class="page">
-        <h1>Hastane Randevu Sistemi</h1>
-        <h2>Hafta 4 Raporu</h2>
+    <main class="report">
+        <section class="hero">
+            <h1>Hastane Randevu Sistemi — Hafta 4 Raporu</h1>
+            <p>Projenin dördüncü haftasında gerçekleştirilen geliştirmelerin özeti.</p>
+            <div class="meta">
+                <div class="meta-card"><strong>Proje</strong>Hastane Randevu Sistemi</div>
+                <div class="meta-card"><strong>Hafta</strong>4 — Raporlama &amp; Duyuru Modülü</div>
+                <div class="meta-card"><strong>GitHub</strong><a
+                        href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi"
+                        target="_blank">Eneskorkmazs/Hastane_Randevu_Sistemi</a></div>
+            </div>
+        </section>
 
-        <div class="meta">
-            <p><strong>Hazırlayan:</strong> Enes Korkmaz</p>
-            <p><strong>Konu:</strong> Yönetim ekranı ve raporlama modülü</p>
-        </div>
+        <section class="section">
+            <h2>Genel Değerlendirme</h2>
+            <div class="summary">Dördüncü haftada yönetim paneli daha görünür ve raporlamaya uygun hale getirildi.
+                Randevu, bildirim ve raporlama verileri birbirini beslemeye başladı; durum senkronizasyon altyapısı
+                güçlendirildi.</div>
+        </section>
 
-        <h3>Genel Çalışmalar</h3>
-        <p>
-            Dördüncü hafta içinde yönetim paneli daha görünür, takip edilebilir ve rapor üretmeye
-            uygun hale getirildi. Admin kullanıcısının sistemi izlemesi için özet kartlar, haftalık
-            trendler ve poliklinik yoğunluk görünümleri geliştirildi. Bu kapsam daha sonra bildirim
-            ve durum yönetimi tarafındaki yeni kurallarla desteklenerek yönetim deneyimi güçlendirildi.
-        </p>
+        <section class="section">
+            <h2>Bu Hafta Yapılan Çalışmalar</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>📊 Gelişmiş Admin Dashboard</h4>
+                    <p>Haftalık trend gösterimi, poliklinik yoğunluk kartları ve iptal edilen randevu metrikleri
+                        eklendi.</p>
+                </div>
+                <div class="card">
+                    <h4>📋 Raporlama Ekranı</h4>
+                    <p>Tarih aralığı, poliklinik ve durum filtreleri içeren yönetim raporu ekranı geliştirildi;
+                        yazdırılabilir özet formatı eklendi.</p>
+                </div>
+                <div class="card">
+                    <h4>📢 Duyuru Modülü</h4>
+                    <p>Tüm kullanıcılar veya rol bazlı hedefleme ile duyuru gönderimi desteklendi; bildirim kutusuna
+                        anlık akış eklendi.</p>
+                </div>
+                <div class="card">
+                    <h4>⚙️ Durum Senkronizasyonu</h4>
+                    <p>Randevu durumlarının farklı ekranlarda tutarlı görünmesi için zaman bazlı kontrol ve merkezi
+                        senkron altyapısı güçlendirildi.</p>
+                </div>
+            </div>
+        </section>
 
-        <h3>Yapılan Geliştirmeler</h3>
-        <ul>
-            <li>Admin dashboard'u haftalık trend verileri ile detaylandırıldı.</li>
-            <li>Poliklinik yoğunluğu ve iptal edilen randevular için yeni metrik alanları eklendi.</li>
-            <li>Tarih aralığı, poliklinik ve durum filtreleri içeren yeni yönetim raporu ekranı geliştirildi.</li>
-            <li>Tüm kullanıcılar veya belirli roller için duyuru oluşturma ve bildirim gönderme desteği eklendi.</li>
-            <li>Randevu durumlarının yönetim ekranlarında daha tutarlı görünmesi için zaman bazlı kontrol mantıkları güçlendirildi.</li>
-            <li>Geçmiş randevuların tamamlanma akışı ile bildirim üretimi arasındaki ilişki netleştirildi.</li>
-            <li>Yönetici ve doktor tarafında durum verilerinin raporlara daha doğru yansıması için ortak senkron mantığına altyapı hazırlandı.</li>
-            <li>Randevu statülerinin farklı ekranlarda aynı kurala göre güncellenebilmesi için merkezi bir durum senkronizasyon yaklaşımı benimsendi.</li>
-        </ul>
+        <section class="section" style="padding-top:22px;">
+            <h2>Değişen / Eklenen Dosyalar</h2>
+            <table class="file-table">
+                <thead>
+                    <tr>
+                        <th>Durum</th>
+                        <th>Dosya</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Views/Home/AdminReport.cshtml</td>
+                        <td>Yönetim raporu ekranı — filtreli ve yazdırılabilir</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Views/Home/CreateAnnouncement.cshtml</td>
+                        <td>Duyuru oluşturma formu</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Controllers/HomeController.cs</td>
+                        <td>AdminReport ve CreateAnnouncement aksiyonları</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Home/AdminDashboard.cshtml</td>
+                        <td>Trend ve yoğunluk kartları eklendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Services/AppointmentStatusSync.cs</td>
+                        <td>Merkezi durum senkronizasyon servisi</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
 
-        <h3>Teknik Değerlendirme</h3>
-        <p>
-            Haftanın ilk hedefi yönetim görünürlüğünü artırmak olsa da süreç içinde sadece ekran eklemekle
-            yetinilmedi. Randevu, bildirim ve raporlama verilerinin birbirini beslemesi sağlandı. Böylece
-            yönetim ekranlarında görülen özetler ile kullanıcı tarafındaki işlem sonuçları arasında daha
-            güvenilir bir ilişki kurulmuş oldu. Özellikle daha sonra eklenen otomatik tamamlanma ve bildirim
-            kuralları için gerekli temel yapı bu hafta içindeki düzenlemelerle güçlendirildi.
-        </p>
+        <section class="section" style="padding-top:22px;padding-bottom:24px;">
+            <h2>Proje Kaynakları</h2>
+            <div class="readme-box">
+                📄 <strong>README:</strong> <a
+                    href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi/blob/main/HastaneRandevuSistemi%20(2)/HastaneRandevuSistemi/README.md"
+                    target="_blank">README.md — GitHub</a>
+                &nbsp;|&nbsp; 🔗 <strong>Depo:</strong> <a
+                    href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi"
+                    target="_blank">github.com/Eneskorkmazs/Hastane_Randevu_Sistemi</a>
+            </div>
+        </section>
 
-        <h3>Bugün Eklenen Net Güncellemeler</h3>
-        <ul>
-            <li>Randevu statülerinin tüm ana ekranlarda ortak bir senkron mantığı ile güncellenmesi sağlandı.</li>
-            <li>Zamanı geçen randevuların manuel takibe bağlı kalmaması için merkezi otomasyon altyapısı güçlendirildi.</li>
-            <li>Yönetim ve doktor ekranlarında görülen özet verilerin gerçek durumla daha uyumlu olması hedeflendi.</li>
-        </ul>
+        <section class="section">
+            <h2>Sonuç</h2>
+            <div class="closing">Dördüncü hafta sonunda sistem yalnızca işlem yapan değil, verileri anlamlı biçimde
+                gösteren bir yapıya kavuştu. Admin görünürlüğü ve kontrol seviyesi artırıldı; bildirim ve durum yönetimi
+                olgunlaştırıldı.</div>
+        </section>
 
-        <h3>Sonuç</h3>
-        <p>
-            Dördüncü hafta sonunda sistem yalnızca işlem yapan değil, ürettiği verileri anlamlı
-            biçimde gösteren bir yapıya kavuşmuştur. Özellikle admin tarafında görünürlük ve kontrol
-            seviyesi belirgin şekilde artırılmış, bildirim ve durum yönetimi de bu yapıyı destekleyecek
-            şekilde olgunlaştırılmıştır.
-        </p>
-    </div>
+        <div class="footer">Bu rapor, proje kaynak kodu ve haftalık notlar referans alınarak hazırlanmıştır.</div>
+    </main>
 </body>
+
 </html>

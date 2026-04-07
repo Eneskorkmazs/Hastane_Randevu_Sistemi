@@ -1,135 +1,337 @@
-﻿<!DOCTYPE html>
+﻿<!doctype html>
 <html lang="tr">
+
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hafta 5 Raporu</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hastane Randevu Sistemi - Hafta 5 Raporu</title>
     <style>
         @page {
             size: A4;
-            margin: 2.5cm;
+            margin: 16mm;
+        }
+
+        :root {
+            --ink: #1f2937;
+            --muted: #5b6472;
+            --line: #d9e1ea;
+            --accent: #0b5cad;
+            --soft: #eef6ff;
+            --paper: #ffffff;
+            --bg: #f4f7fb;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
-            background: #f4f4f4;
-            color: #111;
-            font-family: "Times New Roman", serif;
-            font-size: 12pt;
+            padding: 24px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
             line-height: 1.6;
         }
 
-        .page {
-            width: 210mm;
-            min-height: 297mm;
+        .report {
+            max-width: 920px;
             margin: 0 auto;
-            padding: 2.5cm;
-            box-sizing: border-box;
-            background: #fff;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, .08);
         }
 
-        h1, h2, h3 {
-            margin-top: 0;
-            text-align: center;
+        .hero {
+            padding: 32px;
+            background: linear-gradient(135deg, #eff7ff 0%, #fff 60%, #edf5ff 100%);
+            border-bottom: 1px solid var(--line);
         }
 
-        h1 {
-            font-size: 18pt;
-            margin-bottom: 10px;
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .meta-card {
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, .92);
+            font-size: 14px;
+        }
+
+        .meta-card strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--accent);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .section {
+            padding: 26px 32px 0;
         }
 
         h2 {
-            font-size: 14pt;
-            margin-bottom: 24px;
-            font-weight: normal;
+            margin: 0 0 12px;
+            font-size: 22px;
         }
 
         h3 {
-            text-align: left;
-            font-size: 13pt;
-            margin: 24px 0 8px;
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: var(--accent);
         }
 
         p {
             margin: 0 0 12px;
-            text-align: justify;
         }
 
-        ul {
-            margin: 0 0 12px 20px;
+        .summary {
+            padding: 16px 18px;
+            border-left: 5px solid var(--accent);
+            border-radius: 12px;
+            background: var(--soft);
         }
 
-        li {
-            margin-bottom: 6px;
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 10px;
         }
 
-        .meta {
-            margin-bottom: 24px;
+        .card {
+            padding: 14px 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
         }
 
-        .meta p {
-            margin: 4px 0;
+        .card h4 {
+            margin: 0 0 6px;
+            font-size: 15px;
+            color: var(--accent);
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+
+        .tag-new {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .tag-mod {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .file-table th {
+            background: var(--soft);
+            color: var(--accent);
+            padding: 8px 12px;
             text-align: left;
+            border-bottom: 2px solid var(--line);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: .04em;
+        }
+
+        .file-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        .file-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .closing {
+            margin-top: 16px;
+            padding: 18px;
+            border: 1px dashed #b9c7d8;
+            border-radius: 14px;
+            background: #f8fafc;
+        }
+
+        .readme-box {
+            margin-top: 14px;
+            padding: 14px 18px;
+            border: 1px solid #93c5fd;
+            border-radius: 12px;
+            background: #eff6ff;
+            font-size: 14px;
+        }
+
+        .readme-box a {
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .footer {
+            padding: 24px 32px 30px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                background: #fff;
+            }
+
+            .report {
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
         }
     </style>
 </head>
+
 <body>
-    <div class="page">
-        <h1>Hastane Randevu Sistemi</h1>
-        <h2>Hafta 5 Raporu</h2>
+    <main class="report">
+        <section class="hero">
+            <h1>Hastane Randevu Sistemi — Hafta 5 Raporu</h1>
+            <p>Projenin beşinci haftasında gerçekleştirilen geliştirmelerin özeti.</p>
+            <div class="meta">
+                <div class="meta-card"><strong>Proje</strong>Hastane Randevu Sistemi</div>
+                <div class="meta-card"><strong>Hafta</strong>5 — Filtreleme &amp; Otomasyon</div>
+                <div class="meta-card"><strong>GitHub</strong><a
+                        href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi"
+                        target="_blank">Eneskorkmazs/Hastane_Randevu_Sistemi</a></div>
+            </div>
+        </section>
 
-        <div class="meta">
-            <p><strong>Hazırlayan:</strong> Enes Korkmaz</p>
-            <p><strong>Konu:</strong> Gelişmiş filtreleme ve randevu deneyimi iyileştirmeleri</p>
-        </div>
+        <section class="section">
+            <h2>Genel Değerlendirme</h2>
+            <div class="summary">Beşinci hafta randevu listeleme ve oluşturma deneyimi daha pratik hale getirildi.
+                Arama, filtreleme, slot önerileri ve durum otomasyonu ile sistem hem kullanıcı dostu hem de daha akıllı
+                bir yapıya kavuştu.</div>
+        </section>
 
-        <h3>Genel Çalışmalar</h3>
-        <p>
-            Beşinci hafta içinde randevu listeleme ve oluşturma deneyimi daha pratik hale getirildi.
-            Kullanıcının aradığı randevuya daha hızlı ulaşabilmesi ve uygun slotları daha kolay seçebilmesi
-            için arama, filtreleme ve öneri mekanizmaları geliştirildi. Son güncellemelerle birlikte bu
-            hafta kapsamı hasta paneli, durum otomasyonu ve kullanıcı bildirimleri yönünde de genişletildi.
-        </p>
+        <section class="section">
+            <h2>Bu Hafta Yapılan Çalışmalar</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🔍 Gelişmiş Filtreleme</h4>
+                    <p>Randevu listesinde poliklinik, sıralama ve sadece gelecek randevular filtreleri eklendi; hızlı
+                        özet kartlar listenin üstüne eklendi.</p>
+                </div>
+                <div class="card">
+                    <h4>⏰ Slot Önerileri</h4>
+                    <p>Doktora göre en yakın uygun saat önerileri oluşturuldu. Hızlı slot seçimi ile randevu alma akışı
+                        sadeleştirildi.</p>
+                </div>
+                <div class="card">
+                    <h4>🤖 Durum Otomasyonu</h4>
+                    <p>Zamanı geçen randevular otomatik "Tamamlandı" durumuna alınıyor; otomatik tamamlanan randevular
+                        için hastaya geçmiş olsun bildirimi gönderiliyor.</p>
+                </div>
+                <div class="card">
+                    <h4>🏥 Hasta Paneli</h4>
+                    <p>Bekleyen, tamamlanan ve iptal sayaçlar filtreli liste ile ilişkilendirildi. Gelecek tarihli
+                        onaylı randevularda "Tamamla" yerine "Bekleniyor" gösterimi eklendi.</p>
+                </div>
+            </div>
+        </section>
 
-        <h3>Yapılan Geliştirmeler</h3>
-        <ul>
-            <li>Randevu listesi için gelişmiş arama ve filtreleme seçenekleri eklendi.</li>
-            <li>Poliklinik, sıralama ve sadece gelecek randevular filtreleri desteklendi.</li>
-            <li>Liste ekranına hızlı özet kartları eklendi.</li>
-            <li>Doktora göre en yakın uygun saat önerileri oluşturuldu.</li>
-            <li>Hızlı slot seçimi ile randevu alma akışı sadeleştirildi.</li>
-            <li>Hasta panelindeki bekleyen, tamamlanan ve iptal edilen sayaçlar filtreli liste ekranları ile ilişkilendirildi.</li>
-            <li>Gerçekleşmemiş randevular hasta panelinde bekleyen randevular başlığı altında daha anlaşılır biçimde gösterildi.</li>
-            <li>Gelecek tarihli onaylı randevular için "Tamamla" aksiyonu pasifleştirilip "Bekleniyor" ifadesi kullanılmaya başlandı.</li>
-            <li>Randevu saati geçen kayıtların otomatik olarak "Tamamlandı" durumuna dönüşmesi sağlandı.</li>
-            <li>Otomatik tamamlanan randevular için hastaya bilgilendirme ve geçmiş olsun mesajı içeren bildirim desteği eklendi.</li>
-            <li>Doktor ve hasta ekranlarında zamanı gelmemiş randevular için yanlış işlem yapılmasını önleyen yeni buton kuralları eklendi.</li>
-        </ul>
+        <section class="section" style="padding-top:22px;">
+            <h2>Değişen / Eklenen Dosyalar</h2>
+            <table class="file-table">
+                <thead>
+                    <tr>
+                        <th>Durum</th>
+                        <th>Dosya</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Appointment/Index.cshtml</td>
+                        <td>Filtreleme, sıralama, özet kartlar eklendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Controllers/AppointmentController.cs</td>
+                        <td>Slot önerileri ve durum otomasyon mantığı</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Services/AppointmentStatusSync.cs</td>
+                        <td>Otomatik tamamlama ve bildirim akışı</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Patient/Dashboard.cshtml</td>
+                        <td>Sayaçlar ve filtreli liste ilişkilendirmesi</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
 
-        <h3>Kullanıcı Deneyimi Etkisi</h3>
-        <p>
-            Yapılan güncellemelerle kullanıcı artık yalnızca randevu oluşturmakla kalmamakta, randevusunun
-            mevcut durumunu daha doğru yorumlayabilmektedir. Bekleyen randevuların ayrı görünmesi, süresi geçen
-            kayıtların otomatik tamamlanması ve bildirim akışının güçlendirilmesi hasta tarafındaki belirsizliği
-            önemli ölçüde azaltmıştır. Özellikle otomatik durum güncellemesi ve geçmiş olsun bildirimleri,
-            randevu sonrasında manuel takip ihtiyacını azaltarak sistemin daha akıllı davranmasını sağlamıştır.
-        </p>
+        <section class="section" style="padding-top:22px;padding-bottom:24px;">
+            <h2>Proje Kaynakları</h2>
+            <div class="readme-box">
+                📄 <strong>README:</strong> <a
+                    href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi/blob/main/HastaneRandevuSistemi%20(2)/HastaneRandevuSistemi/README.md"
+                    target="_blank">README.md — GitHub</a>
+                &nbsp;|&nbsp; 🔗 <strong>Depo:</strong> <a
+                    href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi"
+                    target="_blank">github.com/Eneskorkmazs/Hastane_Randevu_Sistemi</a>
+            </div>
+        </section>
 
-        <h3>Bugün Eklenen Net Güncellemeler</h3>
-        <ul>
-            <li>Randevu saati geçen kayıtların otomatik olarak <strong>Tamamlandı</strong> durumuna geçmesi sağlandı.</li>
-            <li>Otomatik tamamlanan randevular için hastaya <strong>geçmiş olsun</strong> mesajı içeren bildirim desteği eklendi.</li>
-            <li>Gelecek tarihli onaylı randevularda yanlış işlem yapılmaması için <strong>Bekleniyor</strong> gösterimi eklendi.</li>
-            <li>Hasta panelindeki bekleyen randevu kartları ve sayaçları yeni akışa göre güncellendi.</li>
-        </ul>
+        <section class="section">
+            <h2>Sonuç</h2>
+            <div class="closing">Beşinci hafta sonunda sistem kullanım kolaylığı açısından daha olgun bir seviyeye
+                geldi. Randevu arama, durum takibi ve oluşturma süreçleri daha hızlı ve kullanıcı dostu hale getirildi;
+                zaman bazlı otomasyon sayesinde manuel takibe bağımlılık azaldı.</div>
+        </section>
 
-        <h3>Sonuç</h3>
-        <p>
-            Beşinci hafta sonunda sistem kullanım kolaylığı açısından daha olgun bir seviyeye geldi.
-            Özellikle randevu arama, durum takibi ve oluşturma süreçleri daha hızlı, anlaşılır ve kullanıcı
-            dostu hale getirildi. Zaman bazlı otomasyonlar sayesinde sistemin manuel takibe olan bağımlılığı
-            da azaltılmış oldu.
-        </p>
-    </div>
+        <div class="footer">Bu rapor, proje kaynak kodu ve haftalık notlar referans alınarak hazırlanmıştır.</div>
+    </main>
 </body>
+
 </html>
