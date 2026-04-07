@@ -39,7 +39,6 @@ namespace HastaneRandevuSistemi.Controllers
 
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationDbContext _context;
-        // UserManager'ı ekledik ki doktorun kim olduğunu bulabilelim
         private readonly UserManager<AppUser> _userManager;
 
         public HomeController(ILogger<HomeController> logger, ApplicationDbContext context, UserManager<AppUser> userManager)
@@ -142,7 +141,7 @@ namespace HastaneRandevuSistemi.Controllers
                 PendingPayments = pendingPayments
             };
 
-            return View(model); // Views/Home/AdminDashboard.cshtml sayfasına gider
+            return View(model);
         }
 
         [Authorize(Roles = "Admin")]
@@ -477,7 +476,7 @@ namespace HastaneRandevuSistemi.Controllers
             var now = DateTime.Now;
             var allRevenueAppointments = await _context.Appointments
                 .Include(a => a.Doctor)
-                .ThenInclude(d => d.Department)
+                .ThenInclude(d => d!.Department)
                 .Where(a => a.Status != AppointmentStatus.Iptal && !a.IsCollected && a.AppointmentDate <= now)
                 .OrderByDescending(a => a.AppointmentDate)
                 .ToListAsync();
@@ -688,7 +687,7 @@ namespace HastaneRandevuSistemi.Controllers
                 TotalDepartments = 0
             };
 
-            return View(model); // Views/Home/DoctorDashboard.cshtml sayfasına gider
+            return View(model);
         }
 
         public IActionResult Privacy()

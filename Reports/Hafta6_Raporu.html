@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="tr">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hastane Randevu Sistemi - Hafta 6 Raporu</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 16mm;
+        }
+
+        :root {
+            --ink: #1f2937;
+            --muted: #5b6472;
+            --line: #d9e1ea;
+            --accent: #0b5cad;
+            --soft: #eef6ff;
+            --paper: #ffffff;
+            --bg: #f4f7fb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        .report {
+            max-width: 920px;
+            margin: 0 auto;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+        }
+
+        .hero {
+            padding: 32px;
+            background: linear-gradient(135deg, #eff7ff 0%, #ffffff 60%, #edf5ff 100%);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .meta-card {
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.92);
+            font-size: 14px;
+        }
+
+        .meta-card strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--accent);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .section {
+            padding: 26px 32px 0;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            font-size: 22px;
+        }
+
+        h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: var(--accent);
+        }
+
+        p {
+            margin: 0 0 12px;
+        }
+
+        .summary {
+            padding: 16px 18px;
+            border-left: 5px solid var(--accent);
+            border-radius: 12px;
+            background: var(--soft);
+        }
+
+        .task-list {
+            margin: 0;
+            padding: 0 0 0 20px;
+        }
+
+        .task-list li {
+            margin-bottom: 6px;
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+
+        .tag-new {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .tag-mod {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .tag-fix {
+            background: #fef9c3;
+            color: #854d0e;
+        }
+
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .file-table th {
+            background: var(--soft);
+            color: var(--accent);
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 2px solid var(--line);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .file-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+        }
+
+        .file-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 10px;
+        }
+
+        .card {
+            padding: 14px 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .card h4 {
+            margin: 0 0 6px;
+            font-size: 15px;
+            color: var(--accent);
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .closing {
+            margin-top: 16px;
+            padding: 18px;
+            border: 1px dashed #b9c7d8;
+            border-radius: 14px;
+            background: #f8fafc;
+        }
+
+        .footer {
+            padding: 24px 32px 30px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        /* README link-box */
+        .readme-box {
+            margin-top: 14px;
+            padding: 14px 18px;
+            border: 1px solid #93c5fd;
+            border-radius: 12px;
+            background: #eff6ff;
+            font-size: 14px;
+        }
+
+        .readme-box a {
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .readme-box a:hover {
+            text-decoration: underline;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                background: #fff;
+            }
+
+            .report {
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 0;
+            }
+
+            .meta,
+            .card-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero,
+            .section,
+            .footer {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <main class="report">
+
+        <!-- HERO -->
+        <section class="hero">
+            <h1>Hastane Randevu Sistemi — Hafta 6 Raporu</h1>
+            <p>
+                Bu rapor, projenin 6. haftasında gerçekleştirilen geliştirmeleri, eklenen
+                özellikleri ve teknik değişiklikleri özetlemektedir.
+            </p>
+            <div class="meta">
+                <div class="meta-card">
+                    <strong>Proje</strong>
+                    Hastane Randevu Sistemi
+                </div>
+                <div class="meta-card">
+                    <strong>Hafta</strong>
+                    6 (7 Nisan 2026)
+                </div>
+                <div class="meta-card">
+                    <strong>GitHub</strong>
+                    <a href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi" target="_blank">
+                        Eneskorkmazs / Hastane_Randevu_Sistemi
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- ÖZET -->
+        <section class="section">
+            <h2>Genel Değerlendirme</h2>
+            <div class="summary">
+                Altıncı haftada admin finansal takip altyapısı (Tahsilat sayfası) oluşturuldu,
+                doktorların günlük takvim detaylarını görebildiği yeni bir ekran eklendi ve
+                randevulara ücret/fiyat alanı entegre edildi. Ayrıca proje GitHub deposu
+                güncel hale getirildi ve README dosyası 6. hafta ile zenginleştirildi.
+            </div>
+        </section>
+
+        <!-- YAPILAN ÇALIŞMALAR -->
+        <section class="section">
+            <h2>Bu Hafta Yapılan Çalışmalar</h2>
+
+            <div class="card-grid">
+                <div class="card">
+                    <h4>💰 Admin Tahsilat Sayfası</h4>
+                    <p>
+                        Yeni <em>Tahsilat</em> ekranı eklendi. Admin; tarih aralığı, poliklinik
+                        ve doktora göre filtreleyerek tahsilat listesini inceleyebilir, toplam
+                        ve ortalama ücret gibi özet metrikler anlık olarak güncellenmektedir.
+                    </p>
+                </div>
+                <div class="card">
+                    <h4>📅 Doktor Günlük Takvim Detayı</h4>
+                    <p>
+                        Doktor takviminde herhangi bir güne tıklandığında <em>DayDetails</em>
+                        ekranı açılır. Bu ekranda o güne ait randevular liste hâlinde görüntülenir;
+                        tatil ve özel günler için mesaj desteği eklenmiştir.
+                    </p>
+                </div>
+                <div class="card">
+                    <h4>🗃️ Randevu Fiyat Alanı</h4>
+                    <p>
+                        <code>Appointment</code> modeline <code>Price</code> (decimal) alanı
+                        eklendi. İlgili migration (<em>AddAppointmentPrice_Final</em>) çalıştırıldı
+                        ve veritabanı şeması güncellendi.
+                    </p>
+                </div>
+                <div class="card">
+                    <h4>🔌 Randevu API Katmanı</h4>
+                    <p>
+                        <code>Api/AppointmentApiController</code> oluşturuldu. Dış servis
+                        tüketimi ve ilerideki mobil/entegrasyon ihtiyaçları için temel REST
+                        uç noktaları tanımlandı.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- DEĞİŞEN DOSYALAR -->
+        <section class="section" style="padding-top:22px;">
+            <h2>Değişen / Eklenen Dosyalar</h2>
+            <table class="file-table">
+                <thead>
+                    <tr>
+                        <th>Durum</th>
+                        <th>Dosya</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Views/Home/Tahsilat.cshtml</td>
+                        <td>Admin tahsilat / ödeme yönetim ekranı</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Views/DoctorTools/DayDetails.cshtml</td>
+                        <td>Doktor takvimi günlük detay görünümü</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Views/Appointment/Details.cshtml</td>
+                        <td>Randevu bireysel detay sayfası</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Controllers/Api/AppointmentApiController.cs</td>
+                        <td>REST API katmanı — randevu uç noktaları</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Models/MedicalReport.cs</td>
+                        <td>Tıbbi rapor modeli</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Migrations/…AddAppointmentPrice_Final</td>
+                        <td>Randevu fiyat alanı migration</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Models/Appointment.cs</td>
+                        <td>Price (decimal) alanı eklendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Controllers/AppointmentController.cs</td>
+                        <td>Fiyat ve detay akışı güncellendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Controllers/HomeController.cs</td>
+                        <td>Tahsilat ve günlük detay rotaları eklendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Controllers/DoctorToolsController.cs</td>
+                        <td>Günlük takvim detay aksiyonu eklendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Home/AdminDashboard.cshtml</td>
+                        <td>Tahsilat bağlantısı ve metrik kartları eklendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Models/DashboardViewModel.cs</td>
+                        <td>Toplam tahsilat alanı eklendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Data/ApplicationDbContext.cs</td>
+                        <td>MedicalReport ve fiyat alanı konfigürasyonu</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Shared/_Layout.cshtml</td>
+                        <td>Tahsilat navlink eklendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>README.md</td>
+                        <td>Hafta 6 özeti ve rapor linki eklendi</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- README / GITHUB LİNKİ -->
+        <section class="section" style="padding-top:22px; padding-bottom:24px;">
+            <h2>Proje Kaynakları</h2>
+            <div class="readme-box">
+                📄 <strong>README:</strong>
+                <a href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi/blob/main/HastaneRandevuSistemi%20(2)/HastaneRandevuSistemi/README.md"
+                    target="_blank">
+                    README.md — GitHub
+                </a>
+                &nbsp;|&nbsp;
+                🔗 <strong>Depo:</strong>
+                <a href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi" target="_blank">
+                    github.com/Eneskorkmazs/Hastane_Randevu_Sistemi
+                </a>
+                &nbsp;|&nbsp;
+                📊 <strong>Önceki Rapor (1–5. Hafta):</strong>
+                <a href="Ilk5Hafta_Genel_Rapor.html" target="_blank">
+                    Ilk5Hafta_Genel_Rapor.html
+                </a>
+            </div>
+        </section>
+
+        <!-- SONUÇ -->
+        <section class="section">
+            <h2>Sonuç</h2>
+            <div class="closing">
+                Altıncı haftanın sonunda proje, finansal takip ve günlük doktor planlaması gibi
+                yeni iş gereksinimlerini karşılamaya başlamıştır. Randevu fiyatlandırma altyapısı
+                ve API katmanı, ilerleyen haftalarda entegrasyon ve raporlama işlemlerini
+                kolaylaştıracak bir zemin sağlamaktadır.
+            </div>
+        </section>
+
+        <div class="footer">
+            Bu rapor, 7 Nisan 2026 tarihinde proje kaynak kodu ve commit geçmişi
+            referans alınarak hazırlanmıştır.
+        </div>
+    </main>
+</body>
+
+</html>

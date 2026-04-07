@@ -65,6 +65,19 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
   - zamanı geçen randevuların otomatik olarak `Tamamlandı` durumuna dönmesi sağlandı,
   - otomatik tamamlanan randevular için geçmiş olsun mesajı içeren bildirim desteği eklendi.
 
+### Hafta 6
+- Admin Tahsilat sayfası eklendi:
+  - tarih aralığı, poliklinik ve doktor filtreli ödeme/tahsilat listesi,
+  - toplam ve ortalama ücret özet kartları.
+- Doktor takviminde günlük detay ekranı eklendi (`DayDetails`):
+  - seçilen güne ait tüm randevuları listeler,
+  - tatil ve özel günlere özel mesaj desteği.
+- `Appointment` modeline `Price` (decimal) alanı eklendi; ilgili migration çalıştırıldı.
+- REST API katmanı oluşturuldu: `Api/AppointmentApiController`.
+- `MedicalReport` modeli eklendi.
+- Randevu bireysel detay sayfası eklendi (`Views/Appointment/Details.cshtml`).
+- Admin Dashboard'a tahsilat bağlantısı ve toplam ücret metriği eklendi.
+
 ## Teknolojiler
 - .NET 8
 - ASP.NET Core MVC
@@ -79,6 +92,8 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - [Hafta 3 Raporu PDF](Reports/Hafta3_Raporu.pdf)
 - [Hafta 4 Raporu PDF](Reports/Hafta4_Raporu.pdf)
 - [Hafta 5 Raporu PDF](Reports/Hafta5_Raporu.pdf)
+- [İlk 5 Hafta Genel Raporu HTML](Reports/Ilk5Hafta_Genel_Rapor.html) · [PDF](Reports/Ilk5Hafta_Genel_Rapor.pdf)
+- [Hafta 6 Raporu HTML](Reports/Hafta6_Raporu.html) · [PDF](Reports/Hafta6_Raporu.pdf)
 
 ## Varsayılan Roller
 - `Admin`
