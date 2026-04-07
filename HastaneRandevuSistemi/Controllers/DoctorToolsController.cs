@@ -143,6 +143,35 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> DayDetails(string date)
+        {
+            if (!DateTime.TryParse(date, out var parsedDate))
+            {
+                return RedirectToAction(nameof(Schedule));
+            }
+
+            var doctor = await GetCurrentDoctorAsync();
+            if (doctor == null) return NotFound();
+
+            var availabilityPlan = await GetDoctorAvailabilityPlanAsync(doctor.Id);
+            var map = BuildHolidayMap(parsedDate.Year);
+            var isHoliday = map.TryGetValue(DateOnly.FromDateTime(parsedDate), out var holidayLabel);
+
+            var appointments = await _context.Appointments
+                .Include(a => a.PatientUser)
+                .Where(a => a.DoctorId == doctor.Id && a.AppointmentDate.Date == parsedDate.Date)
+                .OrderBy(a => a.AppointmentDate)
+                .ToListAsync();
+
+            ViewBag.SelectedDate = parsedDate;
+            ViewBag.IsHoliday = isHoliday;
+            ViewBag.HolidayLabel = holidayLabel;
+            ViewBag.IsWorkingDay = availabilityPlan!.WorkingDays.Contains(parsedDate.DayOfWeek);
+
+            return View(appointments.Select(MapAppointment));
+        }
+
+        [HttpGet]
         public async Task<IActionResult> Prescription(int appointmentId)
         {
             var doctor = await GetCurrentDoctorAsync();

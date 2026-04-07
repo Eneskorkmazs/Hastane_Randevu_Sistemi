@@ -25,6 +25,10 @@ namespace HastaneRandevuSistemi.Models
         public IReadOnlyList<Notification> LatestNotifications { get; set; } = Array.Empty<Notification>();
         public IReadOnlyList<DepartmentStatItem> DepartmentStats { get; set; } = Array.Empty<DepartmentStatItem>();
         public IReadOnlyList<TrendPointItem> WeeklyTrend { get; set; } = Array.Empty<TrendPointItem>();
+        
+        public decimal TotalRevenue { get; set; }
+        public decimal PendingRevenue { get; set; }
+        public IReadOnlyList<HastaneRandevuSistemi.ViewModels.AccountingLedgerItem> PendingPayments { get; set; } = Array.Empty<HastaneRandevuSistemi.ViewModels.AccountingLedgerItem>();
     }
 
     public class DepartmentStatItem

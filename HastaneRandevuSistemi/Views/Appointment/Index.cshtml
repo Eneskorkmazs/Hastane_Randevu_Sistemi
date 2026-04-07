@@ -261,6 +261,12 @@
                         }
 
                         <div class="d-grid gap-2 mt-3">
+                            <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-info rounded-pill w-100">
+                                <i class="fa-solid fa-notes-medical me-2"></i>Tıbbi Dosyalar
+                            </a>
+                            <button type="button" class="btn btn-outline-primary rounded-pill w-100" data-bs-toggle="modal" data-bs-target="#qrModal-@item.Id">
+                                <i class="fa-solid fa-qrcode me-2"></i>QR Bilet Göster
+                            </button>
                             @if (isHasta)
                             {
                                 if (canPatientCancel)
@@ -423,6 +429,12 @@
                                         }
                                     </td>
                                     <td class="text-end pe-4">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info rounded-pill me-2" title="Tıbbi Dosyalar">
+                                            <i class="fa-solid fa-notes-medical"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-dark rounded-pill me-2" data-bs-toggle="modal" data-bs-target="#qrModal-@item.Id" title="QR Bilet">
+                                            <i class="fa-solid fa-qrcode"></i>
+                                        </button>
                                         @if (isHasta)
                                         {
                                             if (canPatientCancel)
@@ -516,3 +528,24 @@
     }
 }
 
+@foreach(var item in Model) {
+    <div class="modal fade" id="qrModal-@item.Id" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content rounded-4 border-0 shadow">
+          <div class="modal-header border-0 bg-light rounded-top-4">
+            <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-qrcode me-2"></i>Randevu QR Bileti</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body text-center p-4">
+            <div class="alert alert-info py-2 px-3 small border-0 text-start shadow-sm rounded-3 mb-3">
+                <strong><i class="fa-solid fa-circle-info me-1"></i>Bu QR Kod Ne İşe Yarar?</strong><br/>
+                <span class="text-muted">Hastaneye geldiğinizde, sıranızı hızlıca almak ve kaydınızı otomatik onaylatmak için bu kodu hasta kabul bankosundaki görevliye veya hastane girişindeki kiosk cihazlarına okutabilirsiniz. Böylece beklemeden doğrudan doktorunuzun kapısına yönelebilirsiniz.</span>
+            </div>
+            <img src="@Url.Action("GetQrTicket", "Appointment", new { id = item.Id })" class="img-fluid rounded shadow-sm border p-2" alt="QR Kod">
+            <h6 class="mt-3 fw-bold text-primary mb-0">@item.PatientName @item.PatientSurname</h6>
+            <div class="text-muted small">@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</div>
+          </div>
+        </div>
+      </div>
+    </div>
+}

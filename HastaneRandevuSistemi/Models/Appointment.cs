@@ -44,6 +44,9 @@ namespace HastaneRandevuSistemi.Models
         public bool IsCollected { get; set; }
         public DateTime? CollectedDate { get; set; }
 
+        [Column(TypeName = "decimal(18,2)")]
+        public decimal? Price { get; set; }
+
         public bool AdminAccessRequested { get; set; }
         public DateTime? AdminAccessRequestedDate { get; set; }
 
@@ -77,5 +80,7 @@ namespace HastaneRandevuSistemi.Models
         public string? CancelledByName { get; set; }
 
         public DateTime? CancelledDate { get; set; }
+
+        public virtual ICollection<MedicalReport> MedicalReports { get; set; } = new List<MedicalReport>();
     }
 }

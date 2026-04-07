@@ -1,0 +1,137 @@
+@model HastaneRandevuSistemi.Models.Appointment
+@{
+    ViewData["Title"] = "Randevu Detayı ve Tıbbi Dosyalar";
+    bool canManageFiles = User.IsInRole("Admin") || User.IsInRole("Doktor");
+}
+
+<div class="container mt-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4"><i class="fa-solid fa-arrow-left me-2"></i>Listeye Dön</a>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-body">
+            <h4 class="card-title fw-bold text-primary border-bottom pb-2 mb-3">Randevu Bilgileri</h4>
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <div class="text-muted small">Hasta</div>
+                    <div class="fw-bold fs-5">@Model.PatientName @Model.PatientSurname</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="text-muted small">Tarih</div>
+                    <div class="fw-bold fs-5 text-dark">@Model.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="text-muted small">Doktor & Poliklinik</div>
+                    <div class="fw-bold">@($"{Model.Doctor?.Title} {Model.Doctor?.Name} {Model.Doctor?.Surname}".Trim())</div>
+                    <div><span class="badge bg-light text-secondary border mt-1">@Model.Doctor?.Department?.Name</span></div>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <div class="text-muted small">Durum</div>
+                    <div class="mt-1">
+                        <span class="badge rounded-pill @(Model.Status switch {
+                                    AppointmentStatus.Bekliyor => "bg-warning text-dark",
+                                    AppointmentStatus.Onaylandi => "bg-success",
+                                    AppointmentStatus.Iptal => "bg-danger",
+                                    _ => "bg-primary"
+                                }) px-3 py-2">@Model.Status</span>
+                        @if (Model.IsCollected)
+                        {
+                            <span class="badge rounded-pill bg-success ms-2 px-3 py-2"><i class="fa-solid fa-check me-1"></i> Ödeme Alındı</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow border-0 rounded-4">
+        <div class="card-header bg-white border-bottom p-4">
+            <h4 class="mb-0 fw-bold text-dark"><i class="fa-solid fa-file-medical text-primary me-2"></i>Tıbbi Dosya ve Raporlar</h4>
+            <p class="text-muted small mb-0 mt-1">Hastaya ait muayene sonuçları, testler ve ek dosyalar.</p>
+        </div>
+        <div class="card-body p-4">
+            @if (canManageFiles)
+            {
+                <form asp-action="UploadReport" method="post" enctype="multipart/form-data" class="bg-light p-3 rounded-4 mb-4 border">
+                    <input type="hidden" name="appointmentId" value="@Model.Id" />
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Dosya (PDF, JPG, PNG)</label>
+                            <input type="file" name="reportFile" class="form-control" required />
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label small fw-bold">Açıklama / Not</label>
+                            <input type="text" name="notes" class="form-control" placeholder="Örn: Kan tahlil sonuçları..." />
+                        </div>
+                        <div class="col-md-2">
+                            <button type="submit" class="btn btn-primary w-100 fw-bold"><i class="fa-solid fa-cloud-arrow-up me-1"></i> Yükle</button>
+                        </div>
+                    </div>
+                </form>
+            }
+
+            @if (Model.MedicalReports != null && Model.MedicalReports.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="text-muted small border-bottom">
+                            <tr>
+                                <th>Dosya Adı</th>
+                                <th>Notlar</th>
+                                <th>Yüklenme Tarihi</th>
+                                <th class="text-end">İşlemler</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var report in Model.MedicalReports.OrderByDescending(r => r.UploadedAt))
+                            {
+                                <tr>
+                                    <td>
+                                        <a href="@report.FilePath" target="_blank" class="fw-bold text-decoration-none">
+                                            <i class="fa-solid fa-file-pdf text-danger me-2"></i>@report.FileName
+                                        </a>
+                                    </td>
+                                    <td class="text-muted">@report.Notes</td>
+                                    <td>@report.UploadedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td class="text-end">
+                                        <a href="@report.FilePath" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill me-1"><i class="fa-solid fa-eye"></i> İncele</a>
+                                        @if (canManageFiles)
+                                        {
+                                            <form asp-action="DeleteReport" asp-route-id="@report.Id" method="post" class="d-inline" onsubmit="return confirm('Bu dosyayı silmek istediğinize emin misiniz?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill"><i class="fa-solid fa-trash-can"></i> Sil</button>
+                                            </form>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5 text-muted bg-light rounded-4">
+                    <i class="fa-solid fa-folder-open fa-3x mb-3 text-secondary opacity-50"></i>
+                    <p class="mb-0">Henüz yüklenmiş bir dosya bulunmuyor.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>

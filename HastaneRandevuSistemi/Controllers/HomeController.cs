@@ -75,6 +75,41 @@ namespace HastaneRandevuSistemi.Controllers
                 .Distinct()
                 .CountAsync();
 
+            var allRevenueAppointments = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .Where(a => a.Status != AppointmentStatus.Iptal)
+                .ToListAsync();
+
+            decimal GetFee(Appointment appointment)
+            {
+                var departmentName = appointment.Doctor?.Department?.Name;
+                return departmentName != null && DepartmentPriceMap.TryGetValue(departmentName, out var fee)
+                    ? fee
+                    : DefaultAppointmentFee;
+            }
+
+            var totalRevenue = allRevenueAppointments.Where(a => a.IsCollected).Sum(GetFee);
+            var pendingRevenue = allRevenueAppointments.Where(a => !a.IsCollected && a.AppointmentDate <= now).Sum(GetFee);
+
+            var pendingPayments = allRevenueAppointments
+                .Where(a => !a.IsCollected && a.AppointmentDate <= now)
+                .OrderByDescending(a => a.AppointmentDate)
+                .Take(7)
+                .Select(a => new AccountingLedgerItem
+                {
+                    AppointmentId = a.Id,
+                    RecordedDate = a.CreatedDate,
+                    AppointmentDate = a.AppointmentDate,
+                    PatientName = $"{a.PatientName} {a.PatientSurname}".Trim(),
+                    DoctorName = a.Doctor == null ? "Bilinmeyen Doktor" : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
+                    DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
+                    StatusLabel = "Ödeme Bekliyor",
+                    Amount = GetFee(a),
+                    IsCollected = a.IsCollected,
+                    IsAppointmentFinished = true
+                }).ToList();
+
             var model = new DashboardViewModel
             {
                 TotalDoctors = await _context.Doctors.CountAsync(),
@@ -101,7 +136,10 @@ namespace HastaneRandevuSistemi.Controllers
                     .Take(7)
                     .ToListAsync(),
                 DepartmentStats = await GetDepartmentStatsAsync(),
-                WeeklyTrend = await GetWeeklyTrendAsync(today)
+                WeeklyTrend = await GetWeeklyTrendAsync(today),
+                TotalRevenue = totalRevenue,
+                PendingRevenue = pendingRevenue,
+                PendingPayments = pendingPayments
             };
 
             return View(model); // Views/Home/AdminDashboard.cshtml sayfasına gider
@@ -433,28 +471,65 @@ namespace HastaneRandevuSistemi.Controllers
             });
         }
 
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Tahsilat()
+        {
+            var now = DateTime.Now;
+            var allRevenueAppointments = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d.Department)
+                .Where(a => a.Status != AppointmentStatus.Iptal && !a.IsCollected && a.AppointmentDate <= now)
+                .OrderByDescending(a => a.AppointmentDate)
+                .ToListAsync();
+
+            decimal GetFee(Appointment appointment)
+            {
+                var departmentName = appointment.Doctor?.Department?.Name;
+                return appointment.Price ?? (departmentName != null && DepartmentPriceMap.TryGetValue(departmentName, out var fee)
+                    ? fee
+                    : DefaultAppointmentFee);
+            }
+
+            var pendingPayments = allRevenueAppointments
+                .Select(a => new AccountingLedgerItem
+                {
+                    AppointmentId = a.Id,
+                    RecordedDate = a.CreatedDate,
+                    AppointmentDate = a.AppointmentDate,
+                    PatientName = $"{a.PatientName} {a.PatientSurname}".Trim(),
+                    DoctorName = a.Doctor == null ? "Bilinmeyen Doktor" : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
+                    DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
+                    StatusLabel = "Ödeme Bekliyor",
+                    Amount = GetFee(a),
+                    IsCollected = false,
+                    IsAppointmentFinished = true
+                }).ToList();
+
+            return View(pendingPayments);
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> MarkCollected(int id, DateTime? fromDate = null, DateTime? toDate = null, int? departmentId = null)
+        public async Task<IActionResult> MarkCollected(int id, DateTime? fromDate = null, DateTime? toDate = null, int? departmentId = null, string? returnUrl = null)
         {
             var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == id);
             if (appointment == null)
             {
                 TempData["ErrorMessage"] = "Odeme islenecek kayit bulunamadi.";
-                return RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
             }
 
             if (appointment.Status == AppointmentStatus.Iptal)
             {
                 TempData["ErrorMessage"] = "Iptal edilen randevu icin odeme islenemez.";
-                return RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
             }
 
             if (appointment.AppointmentDate > DateTime.Now)
             {
                 TempData["ErrorMessage"] = "Randevu bitmeden odeme yapildi olarak isaretlenemez.";
-                return RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
             }
 
             appointment.IsCollected = true;
@@ -462,7 +537,7 @@ namespace HastaneRandevuSistemi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Odeme yapildi olarak guncellendi.";
-            return RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+            return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
         }
 
         [HttpPost]

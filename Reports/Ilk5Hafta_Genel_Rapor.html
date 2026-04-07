@@ -1,137 +1,316 @@
-﻿<!doctype html>
+<!doctype html>
 <html lang="tr">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Hastane Randevu Sistemi - Ilk 5 Hafta Genel Rapor</title>
+  <title>Hastane Randevu Sistemi - İlk 5 Hafta Genel Rapor</title>
   <style>
+    @page {
+      size: A4;
+      margin: 16mm;
+    }
+
     :root {
       --ink: #1f2937;
-      --muted: #4b5563;
-      --line: #d1d5db;
-      --bg: #f8fafc;
-      --card: #ffffff;
-      --accent: #0f766e;
+      --muted: #5b6472;
+      --line: #d9e1ea;
+      --accent: #0b5cad;
+      --soft: #eef6ff;
+      --paper: #ffffff;
+      --bg: #f4f7fb;
     }
-    * { box-sizing: border-box; }
+
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       margin: 0;
-      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-      color: var(--ink);
+      padding: 24px;
       background: var(--bg);
-      line-height: 1.5;
-      padding: 28px;
+      color: var(--ink);
+      font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+      line-height: 1.6;
     }
-    .page {
-      max-width: 980px;
+
+    .report {
+      max-width: 920px;
       margin: 0 auto;
-      background: var(--card);
+      background: var(--paper);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      overflow: hidden;
+      box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+    }
+
+    .hero {
+      padding: 32px;
+      background: linear-gradient(135deg, #eff7ff 0%, #ffffff 60%, #edf5ff 100%);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .meta {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .meta-card {
+      padding: 12px 14px;
       border: 1px solid var(--line);
       border-radius: 12px;
-      padding: 28px;
+      background: rgba(255, 255, 255, 0.92);
+      font-size: 14px;
     }
-    h1 { margin: 0 0 6px; font-size: 28px; }
+
+    .meta-card strong {
+      display: block;
+      margin-bottom: 4px;
+      color: var(--accent);
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .section {
+      padding: 26px 32px 0;
+    }
+
     h2 {
-      margin-top: 26px;
-      margin-bottom: 8px;
-      font-size: 20px;
-      border-left: 5px solid var(--accent);
-      padding-left: 10px;
+      margin: 0 0 12px;
+      font-size: 22px;
     }
-    .meta {
+
+    h3 {
+      margin: 0 0 10px;
+      font-size: 18px;
+      color: var(--accent);
+    }
+
+    p {
+      margin: 0 0 12px;
+    }
+
+    .summary {
+      padding: 16px 18px;
+      border-left: 5px solid var(--accent);
+      border-radius: 12px;
+      background: var(--soft);
+    }
+
+    .week {
+      margin-top: 16px;
+      padding: 16px 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      break-inside: avoid;
+    }
+
+    .week p:last-child {
+      margin-bottom: 0;
+    }
+
+    figure {
+      margin: 16px 0 0;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #fff;
+      break-inside: avoid;
+    }
+
+    figure img {
+      width: 100%;
+      display: block;
+      border-radius: 10px;
+      border: 1px solid #d8e3ef;
+    }
+
+    figcaption {
+      margin-top: 10px;
       color: var(--muted);
       font-size: 13px;
-      margin-bottom: 18px;
     }
-    ul { margin-top: 8px; }
-    li { margin: 6px 0; }
-    .summary {
+
+    .closing {
       margin-top: 16px;
-      padding: 14px 16px;
-      background: #ecfeff;
-      border: 1px solid #99f6e4;
-      border-radius: 10px;
+      padding: 18px;
+      border: 1px dashed #b9c7d8;
+      border-radius: 14px;
+      background: #f8fafc;
     }
+
     .footer {
-      margin-top: 24px;
+      padding: 24px 32px 30px;
       font-size: 12px;
       color: var(--muted);
-      border-top: 1px dashed var(--line);
-      padding-top: 10px;
     }
+
     @media print {
-      body { padding: 0; background: #fff; }
-      .page { border: none; border-radius: 0; padding: 0; }
-      h2 { break-after: avoid; }
-      ul { break-inside: avoid; }
+      body {
+        padding: 0;
+        background: #fff;
+      }
+
+      .report {
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+      }
+    }
+
+    @media (max-width: 720px) {
+      body {
+        padding: 0;
+      }
+
+      .meta {
+        grid-template-columns: 1fr;
+      }
+
+      .hero,
+      .section,
+      .footer {
+        padding-left: 18px;
+        padding-right: 18px;
+      }
     }
   </style>
 </head>
 <body>
-  <main class="page">
-    <h1>Hastane Randevu Sistemi</h1>
-    <div class="meta">Ilk 5 Hafta Genel Rapor | Tarih: 27 Mart 2026</div>
+  <main class="report">
+    <section class="hero">
+      <h1>Hastane Randevu Sistemi İlk 5 Hafta Genel Raporu</h1>
+      <p>
+        Bu rapor, projenin ilk beş haftasında yapılan geliştirmeleri haftalara göre toplu şekilde göstermek
+        amacıyla hazırlanmıştır. Her hafta kısa olarak açıklanmış ve uygun noktalarda projeden alınan ekran
+        görüntüleri ile desteklenmiştir.
+      </p>
 
-    <h2>Hafta 1</h2>
-    <ul>
-      <li><code>AppUser</code> modeli T.C., telefon, dogum tarihi, cinsiyet ve adres alanlariyla genisletildi.</li>
-      <li>Kayit ekrani ve <code>RegisterViewModel</code> yeni alanlari destekleyecek sekilde guncellendi.</li>
-      <li>Yeni kayit olan kullanicilarin hasta paneline dogrudan yonlendirilmesi saglandi.</li>
-      <li>Ana hasta akisina yonelik bildirim servisi ve temel profil altyapisi eklendi.</li>
-    </ul>
-
-    <h2>Hafta 2</h2>
-    <ul>
-      <li>Hasta paneli (<code>Dashboard</code>, <code>Profile</code>, <code>Notifications</code>) devreye alindi.</li>
-      <li>Randevular hasta kullanicisi ile iliskilendirildi ve gecmis listeleme destegi eklendi.</li>
-      <li>Uygun durumlarda randevu iptal akisi hasta tarafinda kullanilabilir hale getirildi.</li>
-      <li>Randevu olusturma, onay, tamamlama ve iptal hareketleri icin bildirim kayitlari olusturuldu.</li>
-    </ul>
-
-    <h2>Hafta 3</h2>
-    <ul>
-      <li>Rol bazli guvenlik akislari (admin/doktor yetkileri) guclendirildi.</li>
-      <li>Doktor dashboard'unda bugun/gelecek hafta ozetleri ve durum bazli kartlar gelistirildi.</li>
-      <li>Admin dashboard metrikleri bolum/doktor/randevu trendi odaginda detaylandirildi.</li>
-      <li>Kullanici deneyimi tarafinda validasyon mesajlari ve bildirim gorunurlugu iyilestirildi.</li>
-      <li>Teknik altyapida hata geri bildirimlerinin standardizasyonu desteklendi.</li>
-    </ul>
-
-    <h2>Hafta 4</h2>
-    <ul>
-      <li>Admin dashboard'una haftalik trend, poliklinik yogunluk ve iptal metrikleri eklendi.</li>
-      <li>Tarih araligi, poliklinik ve durum filtreleri iceren raporlama ekrani eklendi.</li>
-      <li>Yonetim ozeti yazdirilabilir formatta sunulabilir hale getirildi.</li>
-      <li>Rol bazli hedeflenebilen duyuru ve bilgilendirme modulu eklendi.</li>
-      <li>Randevu durum senkronizasyonu icin zaman bazli kontrol altyapisi guclendirildi.</li>
-    </ul>
-
-    <h2>Hafta 5</h2>
-    <ul>
-      <li>Randevu listesinde gelismis arama/filtreleme (poliklinik, siralama, gelecek randevular) eklendi.</li>
-      <li>Liste ekranina hizli ozet kartlari entegre edildi.</li>
-      <li>Randevu alma surecine doktora gore en yakin uygun saat onerileri eklendi.</li>
-      <li>Hasta paneli sayaçlari bekleyen/tamamlanan/iptal kategorileriyle netlestirildi.</li>
-      <li>Durum akisinda gelecekteki onayli randevular icin "Bekleniyor" gosterimi iyilestirildi.</li>
-      <li>Zamani gecen randevularin otomatik tamamlanmasi ve bilgilendirme destegi eklendi.</li>
-    </ul>
-
-    <section class="summary">
-      <strong>Genel Degerlendirme:</strong> Ilk 5 haftada kimlik/profil altyapisindan hasta ve doktor panellerine,
-      yonetsel raporlamadan randevu durum otomasyonuna kadar uctan uca saglikli bir urun temelinin olusturuldugu;
-      kullanici deneyimi, gozlemlenebilirlik ve operasyonel kontrol alanlarinda sistematik iyilestirme yapildigi gorulmektedir.
+      <div class="meta">
+        <div class="meta-card">
+          <strong>Proje</strong>
+          Hastane Randevu Sistemi
+        </div>
+        <div class="meta-card">
+          <strong>Kapsam</strong>
+          Hafta 1 - Hafta 5
+        </div>
+        <div class="meta-card">
+          <strong>Tarih</strong>
+          29 Mart 2026
+        </div>
+      </div>
     </section>
 
-    <h2>Hafta 5 Sonrasi Ek Calismalar (Onceden Yapilanlar)</h2>
-    <ul>
-      <li>Doktor araclari genisletildi: takvim gorunumu, randevu odakli recete taslagi ve recete onizleme akislari eklendi.</li>
-      <li>Hesap yonetimine sifre sifirlama sureci eklendi: <code>ForgotPassword</code> ve <code>ResetPassword</code> ekranlariyla e-posta tabanli sifirlama desteklendi.</li>
-      <li><code>EmailService</code> uzerinden SMTP ayarlariyla uygulama ici e-posta gonderim altyapisi devreye alindi.</li>
-      <li>Veritabani tarafinda Postgres uyumlulugu ve tarih/saat kolonlarina yonelik migration duzeltmeleri eklendi.</li>
-      <li>Randevu otomasyonu ve takvim paneli iyilestirmeleriyle doktor deneyimi daha akici hale getirildi.</li>
-    </ul>
+    <section class="section">
+      <h2>Genel Değerlendirme</h2>
+      <div class="summary">
+        İlk beş haftalık süreçte proje, temel bir kayıt ve giriş uygulamasından çıkarak hasta, doktor ve yönetim
+        tarafları olan daha düzenli bir hastane randevu sistemine doğru ilerlemiştir. Kullanıcı bilgileri,
+        panel yapısı, raporlama mantığı ve randevu akışları adım adım güçlendirilmiştir.
+      </div>
+    </section>
 
-    <div class="footer">Kaynak: Proje README kapsam notlari (Hafta 1-5) + kod tabanindaki hafta 5 sonrasi ek gelistirmeler.</div>
+    <section class="section">
+      <h2>Haftalara Göre Yapılan Çalışmalar</h2>
+
+      <article class="week">
+        <h3>Hafta 1</h3>
+        <p>
+          İlk haftada sistemin kullanıcı altyapısı oluşturuldu. Kayıt ekranı genişletilerek ad, soyad, T.C.,
+          telefon, doğum tarihi, cinsiyet ve adres gibi alanlar sisteme eklendi. Böylece uygulama, sadece basit
+          bir üye kaydı mantığından çıkarak hasta bilgilerini tutabilen daha anlamlı bir yapıya kavuştu.
+        </p>
+      </article>
+
+      <figure>
+        <img src="assets/register.png" alt="Hafta 1 ile ilgili kayıt ekranı" />
+        <figcaption>
+          Hafta 1 ile ilgili görsel: Kayıt ekranı. İlk hafta eklenen kullanıcı bilgileri ve hasta kaydı mantığı
+          bu ekranda doğrudan görülmektedir.
+        </figcaption>
+      </figure>
+
+      <article class="week">
+        <h3>Hafta 2</h3>
+        <p>
+          İkinci haftada hasta paneli tarafında ilerleme sağlandı. Dashboard, profil ve bildirim alanları ile
+          kullanıcı, sisteme girdikten sonra kendi bilgilerini ve hareketlerini görebileceği bir yapıyla
+          karşılaşmaya başladı. Randevuların hasta ile ilişkilendirilmesi de bu sürecin önemli parçalarından biri oldu.
+        </p>
+      </article>
+
+      <article class="week">
+        <h3>Hafta 3</h3>
+        <p>
+          Üçüncü haftada rol bazlı düzen daha belirgin hale getirildi. Hasta, doktor ve admin tarafları için
+          erişim mantığı daha kontrollü hale getirilirken, giriş akışında da farklı kullanıcı tiplerine uygun
+          bir düzen oluşturuldu. Bu hafta kullanıcı deneyimi ve güvenlik mantığı birlikte geliştirildi.
+        </p>
+      </article>
+
+      <figure>
+        <img src="assets/login.png" alt="Hafta 3 ile ilgili giriş ekranı" />
+        <figcaption>
+          Hafta 3 ile ilgili görsel: Giriş ekranı. Rol seçimine uygun yapısı ve kullanıcı tipine göre ilerleyen
+          oturum akışı, üçüncü haftadaki geliştirmeleri desteklemektedir.
+        </figcaption>
+      </figure>
+
+      <article class="week">
+        <h3>Hafta 4</h3>
+        <p>
+          Dördüncü haftada yönetim tarafı daha detaylı hale getirildi. Admin paneline raporlama, filtreleme,
+          durum takibi ve yönetsel özet ekranları eklendi. Bu hafta ile birlikte proje, sadece kayıt ve randevu
+          oluşturan bir sistem olmaktan çıkarak takip ve kontrol yapılabilen bir yapıya doğru ilerledi.
+        </p>
+      </article>
+
+      <article class="week">
+        <h3>Hafta 5</h3>
+        <p>
+          Beşinci haftada randevu akışlarının kullanılabilirliği artırıldı. Arama, filtreleme, sıralama ve özet
+          kartlar sayesinde ekranlar daha rahat takip edilebilir hale getirildi. Bekleyen, tamamlanan ve iptal edilen
+          randevuların daha net ayrılması da sistemin genel düzenini güçlendirdi.
+        </p>
+      </article>
+
+      <figure>
+        <img src="assets/home.png" alt="Hafta 5 sonrası genel proje arayüzü" />
+        <figcaption>
+          Hafta 5 sonrası genel görünüm: Ana sayfa. İlk beş haftanın sonunda projenin kullanıcıya yansıyan genel
+          arayüz kalitesi ve sistemin temel sunum yapısı bu ekranla desteklenmektedir.
+        </figcaption>
+      </figure>
+    </section>
+
+    <section class="section">
+      <h2>Sonuç</h2>
+      <div class="closing">
+        İlk beş haftanın sonunda proje daha düzenli, daha kullanışlı ve sonraki haftalarda geliştirilmeye uygun
+        bir temel üzerine oturtulmuştur. Kullanıcı kaydı, rol bazlı giriş yapısı, hasta paneli ve yönetsel akışlar
+        birlikte değerlendirildiğinde, projenin omurgasının bu süreçte oluştuğu görülmektedir.
+      </div>
+    </section>
+
+    <div class="footer">
+      Bu rapor, proje içeriği, hafta bazlı notlar ve uygulamadan alınan ekran görüntüleri kullanılarak hazırlanmıştır.
+    </div>
   </main>
 </body>
 </html>

@@ -1,0 +1,78 @@
+@model IEnumerable<HastaneRandevuSistemi.ViewModels.AccountingLedgerItem>
+@{
+    ViewData["Title"] = "Tahsilat Merkezi";
+}
+
+<div class="container-fluid px-md-5 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+        <h2 class="fw-bold text-success mb-0"><i class="fa-solid fa-hand-holding-dollar me-2"></i>Tahsilat Merkezi</h2>
+        <a asp-controller="Home" asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill">Admin Panele Dön</a>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-4">Bekleyen Tüm Ödemeler</h5>
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5 text-muted bg-light rounded-4">
+                    <i class="fa-solid fa-check-circle fa-3x mb-3 text-success opacity-50"></i>
+                    <p class="mb-0">Tahsilat bekleyen işlem bulunmuyor.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-secondary small">HASTA</th>
+                                <th class="text-secondary small">DOKTOR & BÖLÜM</th>
+                                <th class="text-secondary small">TARİH</th>
+                                <th class="text-secondary small text-end">TUTAR</th>
+                                <th class="text-secondary small text-end">İŞLEM</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var payment in Model)
+                            {
+                                <tr>
+                                    <td class="fw-bold">@payment.PatientName</td>
+                                    <td>
+                                        <div>@payment.DoctorName</div>
+                                        <div class="small text-muted">@payment.DepartmentName</div>
+                                    </td>
+                                    <td>@payment.AppointmentDate.ToString("dd MMM yyyy HH:mm")</td>
+                                    <td class="text-end fw-bold text-dark">@payment.Amount.ToString("C2")</td>
+                                    <td class="text-end">
+                                        <form asp-controller="Home" asp-action="MarkCollected" method="post" class="d-inline-block">
+                                            <input type="hidden" name="id" value="@payment.AppointmentId" />
+                                            <input type="hidden" name="returnUrl" value="@Url.Action("Tahsilat")" />
+                                            <button type="submit" class="btn btn-success fw-bold px-4 rounded-pill shadow-sm">
+                                                <i class="fa-solid fa-check me-2"></i>Tahsil Et
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

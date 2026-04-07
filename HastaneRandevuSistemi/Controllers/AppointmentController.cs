@@ -51,13 +51,16 @@ namespace HastaneRandevuSistemi.Controllers
 
         private readonly ApplicationDbContext _context;
         private readonly UserManager<AppUser> _userManager;
+        private readonly EmailService _emailService;
 
         public AppointmentController(
             ApplicationDbContext context,
-            UserManager<AppUser> userManager)
+            UserManager<AppUser> userManager,
+            EmailService emailService)
         {
             _context = context;
             _userManager = userManager;
+            _emailService = emailService;
         }
 
         private async Task<(string? UserId, string DisplayName)> GetCurrentActorAsync()
@@ -931,6 +934,152 @@ namespace HastaneRandevuSistemi.Controllers
             });
 
             await _context.SaveChangesAsync();
+
+            try
+            {
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user != null && !string.IsNullOrWhiteSpace(user.Email))
+                {
+                    var emailBody = $@"
+<div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;'>
+    <h2 style='color: #2c3e50;'>Hastane Randevu Sistemi</h2>
+    <h3 style='color: #34495e;'>{title}</h3>
+    <p style='font-size: 16px; color: #555;'>{message}</p>
+    <hr style='border: 0; border-top: 1px solid #ddd; margin: 20px 0;'/>
+    <p style='font-size: 12px; color: #aaa;'>Sağlıklı günler dileriz.</p>
+</div>";
+                    await _emailService.SendEmailAsync(user.Email, title, emailBody);
+                }
+            }
+            catch
+            {
+                // Mail gonderimi basarisiz olursa akisi bolmemek icin sessizce gec
+            }
+        }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin,Doktor,Hasta")]
+        public async Task<IActionResult> GetQrTicket(int id)
+        {
+            var appointment = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .FirstOrDefaultAsync(a => a.Id == id);
+                
+            if (appointment == null) return NotFound();
+            
+            var deptName = appointment.Doctor?.Department?.Name ?? "Belirtilmemiş";
+            var qrText = $"Randevu No: {appointment.Id}\nHasta: {appointment.PatientName} {appointment.PatientSurname}\nTarih: {appointment.AppointmentDate:dd.MM.yyyy HH:mm}\nPoliklinik: {deptName}\nDurum: {appointment.Status}";
+            using var qrGenerator = new QRCoder.QRCodeGenerator();
+            var qrCodeData = qrGenerator.CreateQrCode(qrText, QRCoder.QRCodeGenerator.ECCLevel.Q);
+            var qrCode = new QRCoder.PngByteQRCode(qrCodeData);
+            var qrCodeImage = qrCode.GetGraphic(10);
+            return File(qrCodeImage, "image/png");
+        }
+        [HttpGet]
+        [Authorize(Roles = "Admin,Doktor,Hasta")]
+        public async Task<IActionResult> Details(int id)
+        {
+            var appointment = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .Include(a => a.MedicalReports)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (appointment == null) return NotFound();
+
+            var isHasta = User.IsInRole("Hasta");
+            var isDoctor = User.IsInRole("Doktor");
+
+            if (isHasta && appointment.PatientUserId != _userManager.GetUserId(User))
+            {
+                var user = await _userManager.GetUserAsync(User);
+                if (user != null && (appointment.PatientName != user.Name || appointment.PatientSurname != user.Surname))
+                {
+                    return Forbid();
+                }
+            }
+
+            if (isDoctor && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
+            {
+                return Forbid();
+            }
+
+            return View(appointment);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Doktor")]
+        public async Task<IActionResult> UploadReport(int appointmentId, IFormFile reportFile, string notes)
+        {
+            var appointment = await _context.Appointments.FindAsync(appointmentId);
+            if (appointment == null) return NotFound();
+
+            if (User.IsInRole("Doktor") && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
+                return Forbid();
+
+            var rootPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "reports");
+            if (!System.IO.Directory.Exists(rootPath)) System.IO.Directory.CreateDirectory(rootPath);
+            
+            if (reportFile != null && reportFile.Length > 0)
+            {
+                var ext = System.IO.Path.GetExtension(reportFile.FileName).ToLower();
+                var allowed = new[] { ".pdf", ".jpeg", ".jpg", ".png", ".doc", ".docx" };
+                if (!allowed.Contains(ext))
+                {
+                    TempData["ErrorMessage"] = "Gecersiz dosya turu.";
+                    return RedirectToAction("Details", new { id = appointmentId });
+                }
+
+                var fileName = Guid.NewGuid().ToString() + ext;
+                var fullPath = System.IO.Path.Combine(rootPath, fileName);
+                
+                using (var stream = new System.IO.FileStream(fullPath, System.IO.FileMode.Create))
+                {
+                    await reportFile.CopyToAsync(stream);
+                }
+                
+                _context.MedicalReports.Add(new MedicalReport
+                {
+                    AppointmentId = appointmentId,
+                    FileName = reportFile.FileName,
+                    FilePath = "/uploads/reports/" + fileName,
+                    Notes = notes,
+                    UploadedAt = DateTime.Now
+                });
+                await _context.SaveChangesAsync();
+
+                if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
+                {
+                    await CreateNotificationAsync(appointment.PatientUserId, "Yeni Dosya Eklendi", $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuza laboratuvar/test sonuclari eklendi.", "Dosya", $"/Appointment/Details/{appointment.Id}");
+                }
+
+                TempData["SuccessMessage"] = "Dosya basariyla eklendi.";
+            }
+
+            return RedirectToAction("Details", new { id = appointmentId });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Doktor")]
+        public async Task<IActionResult> DeleteReport(int id)
+        {
+            var report = await _context.MedicalReports.Include(r => r.Appointment).FirstOrDefaultAsync(r => r.Id == id);
+            if (report == null) return NotFound();
+
+            if (User.IsInRole("Doktor") && report.Appointment != null && !await IsCurrentDoctorOwnerAsync(report.Appointment!.DoctorId))
+                return Forbid();
+
+            var physicalPath = System.IO.Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", report.FilePath.TrimStart('/'));
+            if (System.IO.File.Exists(physicalPath)) System.IO.File.Delete(physicalPath);
+            
+            _context.MedicalReports.Remove(report);
+            await _context.SaveChangesAsync();
+            
+            TempData["SuccessMessage"] = "Dosya silindi.";
+            return RedirectToAction("Details", new { id = report.AppointmentId });
         }
     }
 }

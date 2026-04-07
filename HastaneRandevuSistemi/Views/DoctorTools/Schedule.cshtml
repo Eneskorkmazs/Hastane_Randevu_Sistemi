@@ -111,7 +111,7 @@
     </div>
 
     <div class="row g-4 align-items-start">
-        <div class="col-xl-8">
+        <div class="col-12">
             <div class="calendar-panel card border-0 shadow-sm rounded-4">
                 <div class="card-body p-3 p-lg-4">
                     <div class="calendar-weekdays">
@@ -156,95 +156,6 @@
                                 </button>
                             }
                         }
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-xl-4">
-            <div class="stack-grid">
-                <div class="side-card card border-0 shadow-sm rounded-4">
-                    <div class="card-body p-4">
-                        <div class="side-card-title">Secili Gun</div>
-                        <h3 class="selected-day-date" id="selectedDayDate">@(initialDay?.DateLabel ?? "Takvim verisi bulunamadi")</h3>
-                        <div class="chip-row mb-3">
-                            <span class="chip" id="selectedDayWorkState">@((initialDay?.IsWorkingDay ?? false) ? "Calisma gunu" : "Bos gun")</span>
-                            <span class="chip chip-muted" id="selectedDayCount">@((initialDay?.AppointmentCount ?? 0) > 0 ? $"{initialDay!.AppointmentCount} randevu" : "Randevu yok")</span>
-                            <span class="chip chip-holiday" id="selectedDayHoliday" style="@((initialDay?.IsHoliday == true || initialDay?.IsSunday == true) ? "display:inline-flex;" : "display:none;")">
-                                @if (initialDay?.IsHoliday == true)
-                                {
-                                    @initialDay.HolidayLabel
-                                }
-                                else if (initialDay?.IsSunday == true)
-                                {
-                                    @:Pazar tatili
-                                }
-                            </span>
-                        </div>
-
-                        <div class="empty-state" id="selectedDayEmptyState" style="@((initialAppointments.Count > 0) ? "display:none;" : "display:block;")">
-                            Bu gun icin planlanmis randevu bulunmuyor.
-                        </div>
-
-                        <div class="appointment-list" id="selectedDayAppointments">
-                            @foreach (var appointment in initialAppointments)
-                            {
-                                <div class="appointment-item">
-                                    <div>
-                                        <div class="item-time">@appointment.TimeLabel</div>
-                                        <div class="item-name">@appointment.PatientName</div>
-                                    </div>
-                                    <span class="badge rounded-pill @appointment.StatusClass">@appointment.StatusText</span>
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-
-                <div class="side-card card border-0 shadow-sm rounded-4">
-                    <div class="card-body p-4">
-                        <div class="side-card-title">Dijital Recete - Ilerleyen Haftalar</div>
-                        <div class="slot-list">
-                            @foreach (var week in Model.PrescriptionWeeks)
-                            {
-                                <div class="slot-item d-flex justify-content-between align-items-center">
-                                    <span>@week.WeekLabel</span>
-                                    @if (week.UpcomingCount > 0)
-                                    {
-                                        <span class="badge rounded-pill bg-success">@week.UpcomingCount aday</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge rounded-pill bg-secondary">islem yok</span>
-                                    }
-                                </div>
-                            }
-                        </div>
-                    </div>
-                </div>
-
-                <div class="side-card card border-0 shadow-sm rounded-4">
-                    <div class="card-body p-4">
-                        <div class="side-card-title">Yaklasan Randevular</div>
-                        <div class="upcoming-list">
-                            @if (!Model.UpcomingAppointments.Any())
-                            {
-                                <div class="slot-item slot-empty">Yaklasan randevu yok.</div>
-                            }
-                            else
-                            {
-                                foreach (var item in Model.UpcomingAppointments.Take(6))
-                                {
-                                    <div class="upcoming-item">
-                                        <div>
-                                            <div class="item-time">@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</div>
-                                            <div class="item-name">@item.PatientName</div>
-                                        </div>
-                                        <span class="badge rounded-pill @item.StatusClass">@item.StatusText</span>
-                                    </div>
-                                }
-                            }
-                        </div>
                     </div>
                 </div>
             </div>
@@ -356,64 +267,14 @@
     (() => {
         const calendarDays = @Html.Raw(calendarDayMapJson);
         const buttons = Array.from(document.querySelectorAll('.calendar-day-button'));
-        const selectedDayDate = document.getElementById('selectedDayDate');
-        const selectedDayWorkState = document.getElementById('selectedDayWorkState');
-        const selectedDayCount = document.getElementById('selectedDayCount');
-        const selectedDayHoliday = document.getElementById('selectedDayHoliday');
-        const selectedDayAppointments = document.getElementById('selectedDayAppointments');
-        const selectedDayEmptyState = document.getElementById('selectedDayEmptyState');
+
 
         const renderDay = (dayKey) => {
-            const day = calendarDays[dayKey];
-            if (!day) {
-                return;
-            }
-
-            buttons.forEach((button) => {
-                const isSelected = button.dataset.dayKey === dayKey;
-                button.classList.toggle('selected', isSelected);
-                button.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-            });
-
-            selectedDayDate.textContent = day.DateLabel;
-            selectedDayWorkState.textContent = day.IsWorkingDay ? 'Calisma gunu' : 'Bos gun';
-            selectedDayCount.textContent = day.AppointmentCount > 0 ? `${day.AppointmentCount} randevu` : 'Randevu yok';
-
-            if (day.IsHoliday) {
-                selectedDayHoliday.textContent = day.HolidayLabel;
-                selectedDayHoliday.style.display = 'inline-flex';
-            } else if (day.IsSunday) {
-                selectedDayHoliday.textContent = 'Pazar tatili';
-                selectedDayHoliday.style.display = 'inline-flex';
-            } else {
-                selectedDayHoliday.style.display = 'none';
-            }
-
-            if (!day.Appointments || day.Appointments.length === 0) {
-                selectedDayAppointments.innerHTML = '';
-                selectedDayEmptyState.style.display = 'block';
-                return;
-            }
-
-            selectedDayEmptyState.style.display = 'none';
-            selectedDayAppointments.innerHTML = day.Appointments.map((appointment) => `
-                <div class="appointment-item">
-                    <div>
-                        <div class="item-time">${appointment.TimeLabel}</div>
-                        <div class="item-name">${appointment.PatientName}</div>
-                    </div>
-                    <span class="badge rounded-pill ${appointment.StatusClass}">${appointment.StatusText}</span>
-                </div>
-            `).join('');
+            window.location.href = '/DoctorTools/DayDetails?date=' + dayKey;
         };
 
         buttons.forEach((button) => {
             button.addEventListener('click', () => renderDay(button.dataset.dayKey));
         });
-
-        const initial = buttons.find((button) => button.classList.contains('selected')) || buttons[0];
-        if (initial) {
-            renderDay(initial.dataset.dayKey);
-        }
     })();
 </script>

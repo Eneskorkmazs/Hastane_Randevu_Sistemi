@@ -18,8 +18,15 @@
             <h6 class="text-primary fw-bold text-uppercase ls-2 small mb-1">Sistem Genel Bakış</h6>
             <h1 class="display-5 fw-bold text-dark mb-0">Yönetim Merkezi</h1>
         </div>
-        <div class="text-md-end">
-            <span class="badge bg-white text-dark border px-4 py-2 rounded-pill shadow-sm">
+        <div class="text-md-end d-flex align-items-center gap-3">
+            <div class="bg-success text-white px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2">
+                <i class="fa-solid fa-vault fs-5"></i>
+                <div class="text-start">
+                    <div class="small opacity-75 lh-1" style="font-size: 0.7rem;">TOPLAM KASA</div>
+                    <div class="fw-bold lh-1 fs-5">@Model.TotalRevenue.ToString("C2")</div>
+                </div>
+            </div>
+            <span class="badge bg-white text-dark border px-4 py-2 rounded-pill shadow-sm d-flex align-items-center h-100">
                 <i class="fa-solid fa-clock me-2 text-primary"></i>@DateTime.Now.ToString("dd MMMM yyyy")
             </span>
         </div>
@@ -88,9 +95,9 @@
         <div class="col-12 col-md-6 col-xl-3">
             <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
                 <div>
-                    <p class="text-muted x-small fw-bold mb-1">ÖDEME BEKLEYEN</p>
-                    <h2 class="fw-bold mb-0">@Model.PendingPaymentAppointments</h2>
-                    <small class="text-muted">Geçmiş ama tahsil edilmemiş randevu</small>
+                    <p class="text-muted x-small fw-bold mb-1">ALINACAK ÖDEME</p>
+                    <h2 class="fw-bold mb-0">@Model.PendingRevenue.ToString("C0")</h2>
+                    <small class="text-muted">@Model.PendingPaymentAppointments adet bekleyen ödeme</small>
                 </div>
                 <div class="stat-icon bg-warning-soft text-warning"><i class="fa-solid fa-wallet fs-4"></i></div>
             </div>
@@ -167,6 +174,62 @@
                                     }
                                 </div>
                             }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mt-1">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 mb-3">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0 text-success"><i class="fa-solid fa-money-bill-wave me-2"></i>Bekleyen Ödemeler (Hızlı Tahsilat)</h5>
+                        <a asp-action="AdminAccounting" class="btn btn-sm btn-outline-success rounded-pill px-3">Tüm Muhasebe</a>
+                    </div>
+                    @if (!Model.PendingPayments.Any())
+                    {
+                        <div class="text-muted">Sırada bekleyen ödeme işlemi bulunmuyor.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th class="text-secondary small">HASTA</th>
+                                        <th class="text-secondary small">DOKTOR & BÖLÜM</th>
+                                        <th class="text-secondary small">TARİH</th>
+                                        <th class="text-secondary small text-end">TUTAR</th>
+                                        <th class="text-secondary small text-end">İŞLEM</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var payment in Model.PendingPayments)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@payment.PatientName</td>
+                                            <td>
+                                                <div>@payment.DoctorName</div>
+                                                <div class="small text-muted">@payment.DepartmentName</div>
+                                            </td>
+                                            <td>@payment.AppointmentDate.ToString("dd MMM yyyy HH:mm")</td>
+                                            <td class="text-end fw-bold text-dark">@payment.Amount.ToString("C2")</td>
+                                            <td class="text-end">
+                                                <form asp-controller="Home" asp-action="MarkCollected" method="post" class="d-inline-block">
+                                                    <input type="hidden" name="id" value="@payment.AppointmentId" />
+                                                    <input type="hidden" name="returnUrl" value="@Url.Action("AdminDashboard")" />
+                                                    <button type="submit" class="btn btn-sm btn-success rounded-pill shadow-sm px-3 fw-bold">
+                                                        <i class="fa-solid fa-check me-1"></i> Ödeme Al
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
                         </div>
                     }
                 </div>

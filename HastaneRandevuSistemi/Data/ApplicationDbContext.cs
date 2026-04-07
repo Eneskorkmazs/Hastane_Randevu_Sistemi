@@ -14,6 +14,7 @@ namespace HastaneRandevuSistemi.Data
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
+        public DbSet<MedicalReport> MedicalReports { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -77,6 +78,16 @@ namespace HastaneRandevuSistemi.Data
             modelBuilder.Entity<Notification>()
                 .Property(n => n.CreatedDate)
                 .HasColumnType(dateTimeColumnType);
+
+            modelBuilder.Entity<MedicalReport>()
+                .Property(m => m.UploadedAt)
+                .HasColumnType(dateTimeColumnType);
+
+            modelBuilder.Entity<MedicalReport>()
+                .HasOne(m => m.Appointment)
+                .WithMany(a => a.MedicalReports)
+                .HasForeignKey(m => m.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }
