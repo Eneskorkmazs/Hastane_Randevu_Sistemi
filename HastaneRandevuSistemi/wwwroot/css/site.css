@@ -1,17 +1,45 @@
-﻿/* =========================================
-   1. GENEL AYARLAR & YAPI (LAYOUT)
-   ========================================= */
+:root {
+    --bg-body: #0b0f19;
+    --bg-surface: #151c2c;
+    --bg-navbar: linear-gradient(135deg, #0b1120 0%, #151c2c 100%);
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --accent-primary: #38bdf8;
+    --accent-hover: #7dd3fc;
+    --border-color: #1e293b;
+    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --input-bg: #1e293b;
+    --footer-bg: #0b0f19;
+    --transition-speed: 0.3s;
+}
+
+[data-theme="light"] {
+    --bg-body: #f4f7f9;
+    --bg-surface: #ffffff;
+    --bg-navbar: linear-gradient(90deg, #004e92 0%, #000428 100%);
+    --text-primary: #333333;
+    --text-secondary: #adb5bd;
+    --accent-primary: #004e92;
+    --accent-hover: #003a6d;
+    --border-color: #dee2e6;
+    --card-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --input-bg: #ffffff;
+    --transition-speed: 0.3s;
+    --footer-bg: #212529;
+}
+
 html, body {
     height: 100%;
     margin: 0;
+    transition: background-color var(--transition-speed), color var(--transition-speed);
 }
 
 body {
     display: flex;
     flex-direction: column;
     font-family: 'Poppins', sans-serif;
-    background-color: #f4f7f9;
-    color: #333;
+    background-color: var(--bg-body);
+    color: var(--text-primary);
 }
 
 main {
@@ -33,13 +61,24 @@ html {
    2. NAVBAR & FOOTER OZELLESTIRMELERI
    ========================================= */
 .navbar-custom {
-    background: linear-gradient(90deg, #004e92 0%, #000428 100%);
+    background: var(--bg-navbar) !important;
     padding-top: 1rem;
     padding-bottom: 1rem;
 }
-
 .navbar-custom .navbar-nav {
     gap: 0.3rem;
+}
+.navbar-custom .navbar-collapse {
+    align-items: center;
+    gap: 0.75rem;
+}
+.navbar-custom .nav-main-links {
+    justify-content: center;
+    flex-wrap: wrap;
+    row-gap: 0.35rem;
+}
+.navbar-custom .nav-main-links .nav-link-premium {
+    white-space: nowrap;
 }
 
 .nav-link-premium {
@@ -120,18 +159,57 @@ html {
     box-shadow: 0 0 0 4px rgba(220, 53, 69, 0.15);
 }
 
+.navbar-custom .dropdown-menu {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+}
+
+.nav-user-actions {
+    gap: 0.45rem;
+    flex-shrink: 0;
+}
+
+.nav-user-dropdown {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.nav-user-role {
+    font-size: 0.72rem;
+    opacity: 0.85;
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    border-radius: 999px;
+    padding: 0.1rem 0.45rem;
+    line-height: 1.3;
+}
+
+.nav-logout-link {
+    border: none;
+    box-shadow: 0 10px 24px rgba(220, 53, 69, 0.28);
+}
+
+.nav-profile-link,
+.nav-logout-link {
+    white-space: nowrap;
+}
+
 .navbar-custom .dropdown-menu .dropdown-item {
+    color: var(--text-primary);
     transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
 }
 
 .navbar-custom .dropdown-menu .dropdown-item:hover {
+    background-color: rgba(56, 189, 248, 0.1);
+    color: var(--accent-primary);
     transform: translateX(4px);
 }
 
 .footer-custom {
     flex-shrink: 0;
-    background-color: #212529;
-    color: #adb5bd;
+    background-color: var(--footer-bg);
+    color: var(--text-secondary);
     font-size: 0.9rem;
     width: 100%;
 }
@@ -170,22 +248,34 @@ html {
 /* =========================================
    3. KARTLAR & PANEL TASARIMLARI
    ========================================= */
-.main-gradient {
-    background: linear-gradient(135deg, #004e92 0%, #000428 100%);
+[data-theme="dark"] .stat-card, [data-theme="dark"] .admin-stat-card, [data-theme="dark"] .card {
+    background-color: var(--bg-surface) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
 }
 
-/* Stat ve Aksiyon Kartlari */
+.stat-card, .admin-stat-card, .card {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
 
+.stat-card:hover, .admin-stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
+}
 
-    .stat-card:hover, .admin-stat-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important;
-    }
+[data-theme="dark"] .stat-card:hover, [data-theme="dark"] .admin-stat-card:hover {
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
+}
 
-    .admin-stat-card:hover {
-        transform: translateX(10px); /* Desktop icin yana kayma */
-        background-color: #f8faff !important;
-    }
+.admin-stat-card:hover {
+    transform: translateX(10px);
+    background-color: #f8faff !important;
+}
+
+[data-theme="dark"] .admin-stat-card:hover {
+    background-color: var(--bg-surface) !important;
+    border-color: var(--accent-primary) !important;
+}
 
 .icon-shape, .stat-icon {
     display: inline-flex;
@@ -210,25 +300,32 @@ html {
 /* =========================================
    4. FORM ELEMANLARI & BUTONLAR
    ========================================= */
+.form-control, .form-select {
+    background-color: var(--input-bg) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+    transition: all 0.2s ease;
+}
+
 .form-control:focus, .form-select:focus {
-    background-color: #fff !important;
-    border-color: #004e92 !important;
-    box-shadow: 0 0 0 0.25rem rgba(0, 78, 146, 0.1) !important;
+    background-color: var(--input-bg) !important;
+    border-color: var(--accent-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(56, 189, 248, 0.15) !important;
 }
 
 /* Focus None (Bazi durumlarda golgeyi tamamen kaldirmak icin) */
 .focus-none:focus {
-    border-color: #dee2e6;
+    border-color: var(--border-color);
     box-shadow: none !important;
 }
 
 textarea.form-control {
-    border-radius: 20px !important;
+    border-radius: 12px !important;
 }
 
 .btn-white {
     background-color: #fff;
-    color: #d97706;
+    color: #4b5563;
 }
 
     .btn-white:hover {
@@ -295,16 +392,133 @@ textarea.form-control {
     animation: fadeIn 0.3s;
 }
 
+[data-theme="dark"] .dropdown-menu {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--card-shadow);
+}
+
 @keyframes fadeIn {
     from {
         opacity: 0;
-        transform: translateY(-10px);
+        transform: translateY(-10px) scale(0.95);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
     }
+}
+
+/* Modal and Other Bootstrap Overrides */
+.modal-content {
+    background-color: var(--bg-surface);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+}
+
+.modal-header, .modal-footer {
+    border-color: var(--border-color);
+}
+
+.table {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.table thead th {
+    background-color: rgba(0,0,0,0.05);
+    border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .table thead th {
+    background-color: rgba(255,255,255,0.05);
+}
+
+.list-group-item {
+    background-color: var(--bg-surface);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+[data-theme="dark"] .bg-light,
+[data-theme="dark"] .card-footer.bg-light,
+[data-theme="dark"] .alert-light,
+[data-theme="dark"] .accordion-button.bg-light,
+[data-theme="dark"] .list-group-item.bg-light,
+[data-theme="dark"] .modal-header.bg-light,
+[data-theme="dark"] .modal-footer.bg-light,
+[data-theme="dark"] .bg-white {
+    background-color: var(--bg-surface) !important;
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .text-dark {
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .border-light {
+    border-color: var(--border-color) !important;
+}
+
+[data-theme="dark"] .btn-light {
+    background-color: #243146;
+    border-color: #243146;
+    color: #f8fafc;
+}
+
+[data-theme="dark"] .btn-light:hover,
+[data-theme="dark"] .btn-light:focus {
+    background-color: #2f3f5d;
+    border-color: #2f3f5d;
+    color: #ffffff;
+}
+
+[data-theme="dark"] .btn-outline-dark {
+    color: #dbe4f0;
+    border-color: #3b4a63;
+}
+
+[data-theme="dark"] .btn-outline-dark:hover,
+[data-theme="dark"] .btn-outline-dark:focus {
+    background-color: var(--accent-primary);
+    border-color: var(--accent-primary);
+    color: #ffffff;
+}
+
+[data-theme="dark"] .table thead th {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-bottom-color: var(--border-color);
+}
+
+/* Theme Toggle Button Style */
+#theme-toggle {
+    cursor: pointer;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#theme-toggle:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: rotate(15deg);
+}
+
+[data-theme="dark"] .fa-moon {
+    display: none;
+}
+
+[data-theme="light"] .fa-sun {
+    display: none;
 }
 
 /* =========================================
@@ -333,12 +547,44 @@ textarea.form-control {
         width: 100%;
     }
 
+    .nav-user-actions {
+        margin-top: 0.75rem;
+        margin-left: 0 !important;
+        align-items: stretch !important;
+        width: 100%;
+    }
+
+    .nav-user-actions .nav-item {
+        width: 100%;
+    }
+
+    .nav-user-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .nav-user-dropdown {
+        width: 100%;
+        justify-content: center;
+    }
+
     .display-2 {
         font-size: 3.5rem;
     }
 
     .admin-stat-card:hover {
         transform: translateY(-5px); /* Mobilde yana degil yukari kaysin */
+    }
+}
+
+@media (max-width: 1200px) {
+    .nav-link-premium {
+        padding: 0.62rem 0.78rem !important;
+        font-size: 0.92rem;
+    }
+
+    .navbar-brand small {
+        display: none;
     }
 }
 

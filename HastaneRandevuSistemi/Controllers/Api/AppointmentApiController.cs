@@ -8,6 +8,9 @@ namespace HastaneRandevuSistemi.Controllers.Api
 {
     [Route("api/[controller]")]
     [ApiController]
+    [IgnoreAntiforgeryToken]
+    [ResponseCache(Location = ResponseCacheLocation.None, NoStore = true)]
+    [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     public class AppointmentApiController : ControllerBase
     {
         private readonly ApplicationDbContext _context;

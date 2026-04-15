@@ -1,4 +1,4 @@
-@model HastaneRandevuSistemi.ViewModels.LoginViewModel
+﻿@model HastaneRandevuSistemi.ViewModels.LoginViewModel
 
 @{
     ViewData["Title"] = "Giriş Yap";
@@ -32,7 +32,7 @@
 
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap mb-3">
-                        <label class="form-label fw-semibold mb-0">Giriş türü seçin</label>
+                        <label class="form-label fw-semibold mb-0">Giriş türünü seçin</label>
                         <button type="button" id="changeRoleBtn" class="btn btn-link p-0 text-decoration-none fw-semibold d-none">
                             Seçimi değiştir
                         </button>
@@ -86,7 +86,7 @@
                         <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
                             <div class="form-check">
                                 <input class="form-check-input" asp-for="RememberMe" />
-                                <label class="form-check-label" asp-for="RememberMe">Beni Hatırla</label>
+                                <label class="form-check-label" asp-for="RememberMe">Beni hatırla</label>
                             </div>
                             <a asp-action="ForgotPassword" class="small fw-semibold text-decoration-none">Şifremi unuttum</a>
                         </div>
@@ -154,23 +154,23 @@
     }
 
     .patient-card {
-        border-color: #aab9c8;
-        background: linear-gradient(135deg, #f7fbff 0%, #e8f0f7 100%);
+        border-color: #0e4b80;
+        background: linear-gradient(135deg, #0f4f88 0%, #0b3b66 100%);
     }
 
     .patient-card.active {
-        border-color: #0b3b66;
-        box-shadow: 0 0 0 4px rgba(11, 59, 102, 0.12);
+        border-color: #7cc7ff;
+        box-shadow: 0 0 0 4px rgba(124, 199, 255, 0.24);
     }
 
     .doctor-card {
-        border-color: #0b3b66;
-        background: linear-gradient(135deg, #f3f8fd 0%, #dfe9f4 100%);
+        border-color: #1f2f47;
+        background: linear-gradient(135deg, #334155 0%, #0f172a 100%);
     }
 
     .doctor-card.active {
-        border-color: #031c33;
-        box-shadow: 0 0 0 4px rgba(3, 28, 51, 0.14);
+        border-color: #93c5fd;
+        box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.2);
     }
 
     .entry-card.hidden-choice {
@@ -194,16 +194,16 @@
         display: grid;
         place-items: center;
         font-size: 1.6rem;
-        background: rgba(255, 255, 255, 0.85);
+        background: rgba(255, 255, 255, 0.18);
         flex-shrink: 0;
     }
 
     .entry-emoji.patient {
-        color: #0b3b66;
+        color: #dbeafe;
     }
 
     .entry-emoji.doctor {
-        color: #031c33;
+        color: #e2e8f0;
     }
 
     .entry-card strong {
@@ -216,6 +216,15 @@
         display: flex;
         flex-direction: column;
         gap: 0.25rem;
+        color: #f8fafc;
+    }
+
+    .entry-content strong {
+        color: #f8fafc;
+    }
+
+    .entry-content small {
+        color: rgba(255, 255, 255, 0.84);
     }
 
     .entry-selected {
@@ -223,8 +232,8 @@
         align-self: flex-start;
         padding: 0.18rem 0.55rem;
         border-radius: 999px;
-        background: rgba(11, 59, 102, 0.12);
-        color: #0b3b66;
+        background: rgba(255, 255, 255, 0.18);
+        color: #f8fafc;
         font-weight: 700;
         font-size: 0.72rem;
         letter-spacing: 0.02em;
@@ -355,11 +364,16 @@
 
             const hasLoginError = @(ViewData.ModelState.IsValid ? "false" : "true");
 
-            if (hasLoginError === "true") {
-                resetRoleSelection();
+            if (hasLoginError) {
+                // If there's an error, don't reset everything, just keep the current view
+                if (roleField && roleField.value) {
+                    applyRole(roleField.value);
+                }
             } else if (roleField && roleField.value && credentialsPanel) {
                 applyRole(roleField.value);
             }
         })();
     </script>
 }
+
+

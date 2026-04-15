@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace HastaneRandevuSistemi.ViewModels
 {
@@ -35,3 +35,4 @@ namespace HastaneRandevuSistemi.ViewModels
         public DateTime PrescriptionDate { get; set; } = DateTime.Now;
     }
 }
+

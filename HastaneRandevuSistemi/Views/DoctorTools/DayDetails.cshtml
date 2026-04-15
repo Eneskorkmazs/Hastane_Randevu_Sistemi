@@ -1,22 +1,73 @@
-@model IEnumerable<HastaneRandevuSistemi.ViewModels.DoctorCalendarAppointmentViewModel>
+﻿@model IEnumerable<HastaneRandevuSistemi.ViewModels.DoctorCalendarAppointmentViewModel>
 @{
     var date = (DateTime)ViewBag.SelectedDate;
-    ViewData["Title"] = $"{date:dd.MM.yyyy} Randevuları";
+    ViewData["Title"] = $"{date:dd.MM.yyyy} Randevulari";
     bool isHoliday = ViewBag.IsHoliday ?? false;
     string? holidayLabel = ViewBag.HolidayLabel as string;
     bool isWorkingDay = ViewBag.IsWorkingDay ?? false;
+
+    string GetHolidayTheme(string? label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            return "theme-holiday";
+        }
+
+        if (label.Contains("Cocuk", StringComparison.OrdinalIgnoreCase) || label.Contains("Çocuk", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-joy";
+        }
+
+        if (label.Contains("Cumhuriyet", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-republic";
+        }
+
+        if (label.Contains("Genclik", StringComparison.OrdinalIgnoreCase) || label.Contains("Gençlik", StringComparison.OrdinalIgnoreCase) || label.Contains("Spor", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-energy";
+        }
+
+        if (label.Contains("Zafer", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-victory";
+        }
+
+        if (label.Contains("Demokrasi", StringComparison.OrdinalIgnoreCase) || label.Contains("Milli Birlik", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-unity";
+        }
+
+        if (label.Contains("Emek", StringComparison.OrdinalIgnoreCase) || label.Contains("Dayanisma", StringComparison.OrdinalIgnoreCase) || label.Contains("Dayanışma", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-solidarity";
+        }
+
+        if (label.Contains("Yilbasi", StringComparison.OrdinalIgnoreCase) || label.Contains("Yılbaşı", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-newyear";
+        }
+
+        return "theme-holiday";
+    }
 }
 
-<div class="container mt-5">
+<div class="container mt-5 doctor-day-details">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <a asp-controller="DoctorTools" asp-action="Schedule" class="btn btn-outline-secondary rounded-pill px-4"><i class="fa-solid fa-arrow-left me-2"></i>Takvime Dön</a>
     </div>
 
     @if (isHoliday)
     {
-        <div class="alert alert-warning shadow-sm rounded-4 text-center p-4 mb-4">
-            <h4 class="alert-heading fw-bold mb-2"><i class="fa-solid fa-holly-berry me-2"></i>Bugün Özel Bir Gün!</h4>
-            <p class="mb-0 fs-5 text-dark">Bugün resmi tatil / özel gün: <strong>@holidayLabel</strong>. İyi tatiller dileriz!</p>
+        <div class="holiday-banner holiday-banner-rich @GetHolidayTheme(holidayLabel) shadow-sm rounded-4 mb-4">
+            <div class="p-4 p-lg-5">
+                <div class="holiday-kicker">Özel Gün</div>
+                <h2 class="fw-bold mb-3">Bugün Özel Bir Gün</h2>
+                <div class="holiday-message-row">
+                    <p class="mb-0 fs-5 text-dark opacity-75">Resmi tatil / özel gün: <strong>@holidayLabel</strong>.</p>
+                    <img src="~/images/turkish-flag-banner.png" alt="Türk bayrağı" class="holiday-flag-image" />
+                </div>
+            </div>
         </div>
     }
     else if (!isWorkingDay)
@@ -66,3 +117,59 @@
         </div>
     </div>
 </div>
+
+<style>
+    .doctor-day-details .holiday-banner-rich {
+        border: 0;
+        color: #11263f;
+        background: linear-gradient(135deg, #fffaf3 0%, #fff1dc 100%);
+    }
+    .doctor-day-details .holiday-banner-rich.theme-joy {
+        background: linear-gradient(135deg, #fff8f0 0%, #ffd8d5 52%, #ffe2ef 100%);
+    }
+    .doctor-day-details .holiday-banner-rich.theme-republic {
+        background: linear-gradient(135deg, #fff7f7 0%, #ffd4d9 48%, #f7b4b8 100%);
+    }
+    .doctor-day-details .holiday-banner-rich.theme-energy {
+        background: linear-gradient(135deg, #f4fbff 0%, #d7f0ff 48%, #b9e0ff 100%);
+    }
+    .doctor-day-details .holiday-banner-rich.theme-victory {
+        background: linear-gradient(135deg, #fff9ee 0%, #ffe6a9 48%, #ffd369 100%);
+    }
+    .doctor-day-details .holiday-banner-rich.theme-unity {
+        background: linear-gradient(135deg, #f8f7ff 0%, #e1e3ff 52%, #ccd3ff 100%);
+    }
+    .doctor-day-details .holiday-banner-rich.theme-solidarity {
+        background: linear-gradient(135deg, #fff8ef 0%, #ffe3c5 48%, #ffd09c 100%);
+    }
+    .doctor-day-details .holiday-banner-rich.theme-newyear {
+        background: linear-gradient(135deg, #f6f5ff 0%, #dcd8ff 48%, #c8d4ff 100%);
+    }
+    .doctor-day-details .holiday-kicker {
+        display: inline-flex;
+        padding: 0.4rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.65);
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+    }
+    .doctor-day-details .holiday-message-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    .doctor-day-details .holiday-flag-image {
+        width: 84px;
+        max-width: 100%;
+        height: auto;
+        border-radius: 0.5rem;
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+    }
+</style>
+
+

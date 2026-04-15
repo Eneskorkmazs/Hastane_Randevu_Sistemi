@@ -1,4 +1,4 @@
-@model HastaneRandevuSistemi.Models.Appointment
+﻿@model HastaneRandevuSistemi.Models.Appointment
 @{
     ViewData["Title"] = "Randevu Detayı ve Tıbbi Dosyalar";
     bool canManageFiles = User.IsInRole("Admin") || User.IsInRole("Doktor");
@@ -22,6 +22,12 @@
 
     <div class="mb-3 d-flex justify-content-between align-items-center">
         <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4"><i class="fa-solid fa-arrow-left me-2"></i>Listeye Dön</a>
+        @if (User.IsInRole("Hasta"))
+        {
+            <a asp-controller="Patient" asp-action="MedicalHistory" class="btn btn-outline-primary rounded-pill px-4">
+                <i class="fa-solid fa-notes-medical me-2"></i>Tibbi Gecmisim
+            </a>
+        }
     </div>
 
     <div class="card shadow-sm border-0 rounded-4 mb-4">
@@ -135,3 +141,4 @@
         </div>
     </div>
 </div>
+

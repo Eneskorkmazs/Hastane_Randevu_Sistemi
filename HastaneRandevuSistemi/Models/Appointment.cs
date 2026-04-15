@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HastaneRandevuSistemi.Models
@@ -81,6 +81,20 @@ namespace HastaneRandevuSistemi.Models
 
         public DateTime? CancelledDate { get; set; }
 
+        public DateTime? ReminderSentAt { get; set; }
+
+        [StringLength(180, ErrorMessage = "Tanı en fazla 180 karakter olabilir.")]
+        public string? PrescriptionDiagnosis { get; set; }
+
+        [StringLength(400, ErrorMessage = "İlaçlar en fazla 400 karakter olabilir.")]
+        public string? PrescriptionMedications { get; set; }
+
+        [StringLength(500, ErrorMessage = "Notlar en fazla 500 karakter olabilir.")]
+        public string? PrescriptionNotes { get; set; }
+
+        public DateTime? PrescriptionCreatedAt { get; set; }
+
         public virtual ICollection<MedicalReport> MedicalReports { get; set; } = new List<MedicalReport>();
     }
 }
+

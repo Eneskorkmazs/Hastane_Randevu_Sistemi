@@ -8,6 +8,7 @@ using HastaneRandevuSistemi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using System.Globalization;
 
 namespace HastaneRandevuSistemi.Controllers
 {
@@ -49,6 +50,7 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         // 1. ANA SAYFA (VİTRİN) - Herkes Görebilir
+        [ResponseCache(Duration = 180, Location = ResponseCacheLocation.Any, VaryByHeader = "Accept-Encoding")]
         public IActionResult Index()
         {
             return View();
@@ -231,7 +233,7 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> AdminAccounting(DateTime? fromDate = null, DateTime? toDate = null, int? departmentId = null)
+        public async Task<IActionResult> AdminAccounting(DateTime? fromDate = null, DateTime? toDate = null, int? departmentId = null, int? doctorId = null)
         {
             await AppointmentStatusSync.CompleteExpiredAppointmentsAsync(_context);
 
@@ -252,6 +254,11 @@ namespace HastaneRandevuSistemi.Controllers
                 appointmentsQuery = appointmentsQuery.Where(a => a.Doctor != null && a.Doctor.DepartmentId == departmentId.Value);
             }
 
+            if (doctorId.HasValue)
+            {
+                appointmentsQuery = appointmentsQuery.Where(a => a.Doctor != null && a.Doctor.Id == doctorId.Value);
+            }
+
             var appointments = await appointmentsQuery
                 .OrderByDescending(a => a.CreatedDate)
                 .ToListAsync();
@@ -263,6 +270,20 @@ namespace HastaneRandevuSistemi.Controllers
                     Value = d.Id.ToString(),
                     Text = d.Name,
                     Selected = departmentId.HasValue && d.Id == departmentId.Value
+                })
+                .ToListAsync();
+
+            ViewData["DoctorOptions"] = await _context.Doctors
+                .Include(d => d.Department)
+                .Where(d => !departmentId.HasValue || d.DepartmentId == departmentId.Value)
+                .OrderBy(d => d.Department != null ? d.Department.Name : string.Empty)
+                .ThenBy(d => d.Name)
+                .ThenBy(d => d.Surname)
+                .Select(d => new SelectListItem
+                {
+                    Value = d.Id.ToString(),
+                    Text = $"{d.Title} {d.Name} {d.Surname}".Trim() + (d.Department != null ? $" - {d.Department.Name}" : string.Empty),
+                    Selected = doctorId.HasValue && d.Id == doctorId.Value
                 })
                 .ToListAsync();
 
@@ -291,12 +312,23 @@ namespace HastaneRandevuSistemi.Controllers
                 .Sum(GetFee);
 
             var departmentBreakdown = appointments
-                .GroupBy(a => a.Doctor?.Department?.Name ?? "Bilinmeyen")
+                .GroupBy(a => new
+                {
+                    DepartmentId = a.Doctor != null ? (int?)a.Doctor.DepartmentId : null,
+                    DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen"
+                })
                 .Select(g => new AccountingDepartmentItem
                 {
-                    DepartmentName = g.Key,
+                    DepartmentId = g.Key.DepartmentId,
+                    DepartmentName = g.Key.DepartmentName,
+                    DoctorCount = g.Where(x => x.Doctor != null).Select(x => x.Doctor!.Id).Distinct().Count(),
                     AppointmentCount = g.Count(),
+                    UniquePatientCount = g
+                        .Select(x => x.PatientUserId ?? $"{x.PatientName}|{x.PatientSurname}|{x.PatientPhone}")
+                        .Distinct()
+                        .Count(),
                     CompletedCount = g.Count(x => x.IsCollected),
+                    CancelledCount = g.Count(x => x.Status == AppointmentStatus.Iptal),
                     EstimatedRevenue = g.Where(x => x.Status != AppointmentStatus.Iptal).Sum(GetFee),
                     CollectedRevenue = g.Where(x => x.IsCollected).Sum(GetFee),
                     PendingRevenue = g.Where(x => !x.IsCollected && x.Status != AppointmentStatus.Iptal).Sum(GetFee)
@@ -308,6 +340,8 @@ namespace HastaneRandevuSistemi.Controllers
             var doctorBreakdown = appointments
                 .GroupBy(a => new
                 {
+                    DoctorId = a.Doctor != null ? (int?)a.Doctor.Id : null,
+                    DepartmentId = a.Doctor != null ? (int?)a.Doctor.DepartmentId : null,
                     DoctorName = a.Doctor == null
                         ? "Bilinmeyen Doktor"
                         : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
@@ -315,17 +349,32 @@ namespace HastaneRandevuSistemi.Controllers
                 })
                 .Select(g => new AccountingDoctorItem
                 {
+                    DoctorId = g.Key.DoctorId,
+                    DepartmentId = g.Key.DepartmentId,
                     DoctorName = g.Key.DoctorName,
                     DepartmentName = g.Key.DepartmentName,
                     AppointmentCount = g.Count(),
+                    UniquePatientCount = g
+                        .Select(x => x.PatientUserId ?? $"{x.PatientName}|{x.PatientSurname}|{x.PatientPhone}")
+                        .Distinct()
+                        .Count(),
                     CompletedCount = g.Count(x => x.IsCollected),
+                    CancelledCount = g.Count(x => x.Status == AppointmentStatus.Iptal),
                     EstimatedRevenue = g.Where(x => x.Status != AppointmentStatus.Iptal).Sum(GetFee),
-                    CollectedRevenue = g.Where(x => x.IsCollected).Sum(GetFee)
+                    CollectedRevenue = g.Where(x => x.IsCollected).Sum(GetFee),
+                    PendingRevenue = g.Where(x => !x.IsCollected && x.Status != AppointmentStatus.Iptal).Sum(GetFee),
+                    CancelledRevenue = g.Where(x => x.Status == AppointmentStatus.Iptal).Sum(GetFee)
                 })
                 .OrderByDescending(x => x.CollectedRevenue)
                 .ThenByDescending(x => x.AppointmentCount)
-                .Take(10)
                 .ToList();
+
+            foreach (var item in departmentBreakdown)
+            {
+                item.RevenueSharePercent = collectedRevenue <= 0
+                    ? 0
+                    : Math.Round((item.CollectedRevenue / collectedRevenue) * 100m, 1);
+            }
 
             AccountingSelectedDepartmentSummary? selectedDepartmentSummary = null;
             IReadOnlyList<AccountingMonthlyDepartmentStat> monthlyDepartmentStats = Array.Empty<AccountingMonthlyDepartmentStat>();
@@ -414,37 +463,110 @@ namespace HastaneRandevuSistemi.Controllers
                 .ThenByDescending(x => x.AppointmentCount)
                 .FirstOrDefault();
 
+            var holidayMap = BuildHolidayMap(appointments.Select(a => a.AppointmentDate.Year).ToArray());
+
             var recentTransactions = appointments
                 .Take(12)
-                .Select(a => new AccountingLedgerItem
+                .Select(a =>
                 {
-                    AppointmentId = a.Id,
-                    RecordedDate = a.CreatedDate,
-                    AppointmentDate = a.AppointmentDate,
-                    PatientName = $"{a.PatientName} {a.PatientSurname}".Trim(),
-                    DoctorName = a.Doctor == null
-                        ? "Bilinmeyen Doktor"
-                        : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
-                    DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
-                    StatusLabel = a.IsCollected ? "Odeme Yapildi" : a.Status switch
+                    var isHoliday = holidayMap.TryGetValue(DateOnly.FromDateTime(a.AppointmentDate), out var holidayLabel);
+
+                    return new AccountingLedgerItem
                     {
-                        AppointmentStatus.Iptal => "Iptal / Kayip",
-                        AppointmentStatus.Onaylandi => "Odeme Bekliyor",
-                        _ => "Planlandi"
-                    },
-                    Amount = GetFee(a),
-                    IsCollected = a.IsCollected,
-                    IsAppointmentFinished = a.AppointmentDate <= DateTime.Now
+                        AppointmentId = a.Id,
+                        RecordedDate = a.CreatedDate,
+                        AppointmentDate = a.AppointmentDate,
+                        PatientName = $"{a.PatientName} {a.PatientSurname}".Trim(),
+                        DoctorName = a.Doctor == null
+                            ? "Bilinmeyen Doktor"
+                            : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
+                        DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
+                        StatusLabel = a.IsCollected ? "Ödeme Yapıldı" : isHoliday
+                            ? $"Resmi Tatil ({holidayLabel})"
+                            : a.Status switch
+                            {
+                                AppointmentStatus.Iptal when !string.IsNullOrWhiteSpace(a.PatientUserId)
+                                    && a.CancelledByUserId == a.PatientUserId
+                                    && (a.CancelledByName ?? string.Empty).Contains("Admin tarafindan odemesi geri iade edildi", StringComparison.OrdinalIgnoreCase)
+                                        => "Admin tarafindan odemesi geri iade edildi / Iptal edildi",
+                                AppointmentStatus.Iptal when !string.IsNullOrWhiteSpace(a.PatientUserId)
+                                    && a.CancelledByUserId == a.PatientUserId => "Odeme iadesi yapildi / Iptal edildi",
+                                AppointmentStatus.Iptal => "İptal / Kayıp",
+                                AppointmentStatus.Onaylandi => "Ödeme Bekliyor",
+                                _ => "Planlandı"
+                            },
+                        Amount = GetFee(a),
+                        IsCollected = a.IsCollected,
+                        IsAppointmentFinished = a.AppointmentDate <= DateTime.Now,
+                        IsHoliday = isHoliday,
+                        HolidayLabel = holidayLabel ?? string.Empty
+                    };
+                })
+                .ToList();
+
+            var pendingCollectionQueue = appointments
+                .Where(a => !a.IsCollected && a.Status != AppointmentStatus.Iptal && a.AppointmentDate <= DateTime.Now)
+                .OrderByDescending(a => a.AppointmentDate)
+                .Select(a =>
+                {
+                    var isHoliday = holidayMap.TryGetValue(DateOnly.FromDateTime(a.AppointmentDate), out var holidayLabel);
+
+                    return new AccountingLedgerItem
+                    {
+                        AppointmentId = a.Id,
+                        RecordedDate = a.CreatedDate,
+                        AppointmentDate = a.AppointmentDate,
+                        PatientName = $"{a.PatientName} {a.PatientSurname}".Trim(),
+                        DoctorName = a.Doctor == null
+                            ? "Bilinmeyen Doktor"
+                            : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
+                        DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
+                        StatusLabel = isHoliday ? $"Resmi Tatil ({holidayLabel})" : "Odeme Bekliyor",
+                        Amount = GetFee(a),
+                        IsCollected = false,
+                        IsAppointmentFinished = true,
+                        IsHoliday = isHoliday,
+                        HolidayLabel = holidayLabel ?? string.Empty
+                    };
                 })
                 .ToList();
 
             var billableAppointments = appointments.Count(a => a.Status != AppointmentStatus.Iptal);
+
+            var totalDays = (normalizedTo - normalizedFrom).TotalDays + 1;
+            var useDailyTrend = totalDays <= 62;
+
+            var revenueTrend = useDailyTrend
+                ? appointments
+                    .GroupBy(a => a.AppointmentDate.Date)
+                    .OrderBy(g => g.Key)
+                    .Select(g => new AccountingTrendPoint
+                    {
+                        Label = g.Key.ToString("dd MMM", new CultureInfo("tr-TR")),
+                        AppointmentCount = g.Count(),
+                        CollectedRevenue = g.Where(x => x.IsCollected).Sum(GetFee),
+                        PendingRevenue = g.Where(x => !x.IsCollected && x.Status != AppointmentStatus.Iptal).Sum(GetFee)
+                    })
+                    .ToList()
+                : appointments
+                    .GroupBy(a => new { a.AppointmentDate.Year, a.AppointmentDate.Month })
+                    .OrderBy(g => g.Key.Year)
+                    .ThenBy(g => g.Key.Month)
+                    .Select(g => new AccountingTrendPoint
+                    {
+                        Label = new DateTime(g.Key.Year, g.Key.Month, 1).ToString("MMM yyyy", new CultureInfo("tr-TR")),
+                        AppointmentCount = g.Count(),
+                        CollectedRevenue = g.Where(x => x.IsCollected).Sum(GetFee),
+                        PendingRevenue = g.Where(x => !x.IsCollected && x.Status != AppointmentStatus.Iptal).Sum(GetFee)
+                    })
+                    .ToList();
 
             return View(new AdminAccountingViewModel
             {
                 FromDate = normalizedFrom,
                 ToDate = normalizedTo,
                 DepartmentId = departmentId,
+                DoctorId = doctorId,
                 TotalAppointments = appointments.Count,
                 CompletedAppointments = appointments.Count(a => a.IsCollected),
                 PendingAppointments = appointments.Count(a => !a.IsCollected && a.Status != AppointmentStatus.Iptal),
@@ -466,18 +588,257 @@ namespace HastaneRandevuSistemi.Controllers
                 DepartmentBreakdown = departmentBreakdown,
                 DoctorBreakdown = doctorBreakdown,
                 RecentTransactions = recentTransactions,
-                MonthlyDepartmentStats = monthlyDepartmentStats
+                MonthlyDepartmentStats = monthlyDepartmentStats,
+                PendingCollectionQueue = pendingCollectionQueue,
+                PendingCollectionQueueTotal = pendingCollectionQueue.Where(x => !x.IsHoliday).Sum(x => x.Amount),
+                PendingCollectionQueueCount = pendingCollectionQueue.Count(x => !x.IsHoliday),
+                RevenueTrend = revenueTrend
             });
+        }
+
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AdminDoctorInsights(int? doctorId = null, string? period = null, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            await AppointmentStatusSync.CompleteExpiredAppointmentsAsync(_context);
+
+            var normalizedPeriod = string.IsNullOrWhiteSpace(period)
+                ? "monthly"
+                : period.Trim().ToLowerInvariant();
+
+            if (normalizedPeriod is not ("weekly" or "monthly" or "custom"))
+            {
+                normalizedPeriod = "monthly";
+            }
+
+            var today = DateTime.Today;
+            DateTime normalizedStart;
+            DateTime normalizedEnd;
+
+            if (normalizedPeriod == "weekly")
+            {
+                normalizedStart = StartOfWeek(today);
+                normalizedEnd = normalizedStart.AddDays(6);
+            }
+            else if (normalizedPeriod == "custom")
+            {
+                normalizedStart = (startDate ?? today.AddDays(-30)).Date;
+                normalizedEnd = (endDate ?? today).Date;
+            }
+            else
+            {
+                normalizedStart = new DateTime(today.Year, today.Month, 1);
+                normalizedEnd = normalizedStart.AddMonths(1).AddDays(-1);
+            }
+
+            if (normalizedStart > normalizedEnd)
+            {
+                (normalizedStart, normalizedEnd) = (normalizedEnd, normalizedStart);
+            }
+
+            var doctors = await _context.Doctors
+                .Include(d => d.Department)
+                .OrderBy(d => d.Name)
+                .ThenBy(d => d.Surname)
+                .ToListAsync();
+
+            if (doctorId.HasValue && doctors.All(d => d.Id != doctorId.Value))
+            {
+                doctorId = null;
+            }
+
+            var doctorOptions = new List<SelectListItem>
+            {
+                new() { Value = string.Empty, Text = "Tum Doktorlar", Selected = !doctorId.HasValue }
+            };
+
+            doctorOptions.AddRange(doctors.Select(d => new SelectListItem
+            {
+                Value = d.Id.ToString(),
+                Text = $"{d.Title} {d.Name} {d.Surname} ({d.Department?.Name ?? "Bilinmeyen"})".Trim(),
+                Selected = doctorId.HasValue && d.Id == doctorId.Value
+            }));
+
+            var rangeAppointments = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .Where(a => a.AppointmentDate >= normalizedStart && a.AppointmentDate < normalizedEnd.AddDays(1))
+                .ToListAsync();
+
+            var filteredAppointments = doctorId.HasValue
+                ? rangeAppointments.Where(a => a.DoctorId == doctorId.Value).ToList()
+                : rangeAppointments;
+
+            decimal GetFee(Appointment appointment)
+            {
+                var departmentName = appointment.Doctor?.Department?.Name;
+                return appointment.Price ?? (departmentName != null && DepartmentPriceMap.TryGetValue(departmentName, out var fee)
+                    ? fee
+                    : DefaultAppointmentFee);
+            }
+
+            var selectedDoctor = doctorId.HasValue
+                ? doctors.FirstOrDefault(d => d.Id == doctorId.Value)
+                : null;
+
+            var totalAppointments = filteredAppointments.Count();
+            var completedAppointments = filteredAppointments.Count(a => a.Status == AppointmentStatus.Tamamlandi);
+            var approvedAppointments = filteredAppointments.Count(a => a.Status == AppointmentStatus.Onaylandi);
+            var pendingAppointments = filteredAppointments.Count(a => a.Status == AppointmentStatus.Bekliyor);
+            var cancelledAppointments = filteredAppointments.Count(a => a.Status == AppointmentStatus.Iptal);
+            var collectedAppointments = filteredAppointments.Count(a => a.IsCollected);
+            var uniquePatientCount = filteredAppointments
+                .Select(a => a.PatientUserId ?? $"{a.PatientName}|{a.PatientSurname}|{a.PatientPhone}")
+                .Distinct()
+                .Count();
+
+            var estimatedRevenue = filteredAppointments
+                .Where(a => a.Status != AppointmentStatus.Iptal)
+                .Sum(GetFee);
+
+            var collectedRevenue = filteredAppointments
+                .Where(a => a.IsCollected)
+                .Sum(GetFee);
+
+            var useDailyTrend = (normalizedEnd - normalizedStart).TotalDays <= 14;
+            var trend = useDailyTrend
+                ? filteredAppointments
+                    .GroupBy(a => a.AppointmentDate.Date)
+                    .OrderBy(g => g.Key)
+                    .Select(g => new DoctorInsightTrendItem
+                    {
+                        Label = g.Key.ToString("dd MMM", CultureInfo.GetCultureInfo("tr-TR")),
+                        AppointmentCount = g.Count(),
+                        CompletedCount = g.Count(a => a.Status == AppointmentStatus.Tamamlandi)
+                    })
+                    .ToList()
+                : filteredAppointments
+                    .GroupBy(a => StartOfWeek(a.AppointmentDate.Date))
+                    .OrderBy(g => g.Key)
+                    .Select(g => new DoctorInsightTrendItem
+                    {
+                        Label = $"{g.Key:dd MMM}",
+                        AppointmentCount = g.Count(),
+                        CompletedCount = g.Count(a => a.Status == AppointmentStatus.Tamamlandi)
+                    })
+                    .ToList();
+
+            var statusBreakdown = Enum.GetValues(typeof(AppointmentStatus))
+                .Cast<AppointmentStatus>()
+                .Select(status => new DoctorStatusBreakdownItem
+                {
+                    StatusLabel = status.ToString(),
+                    Count = filteredAppointments.Count(a => a.Status == status)
+                })
+                .ToList();
+
+            var departmentBreakdown = filteredAppointments
+                .GroupBy(a => a.Doctor?.Department?.Name ?? "Bilinmeyen")
+                .Select(g => new DoctorDepartmentBreakdownItem
+                {
+                    DepartmentName = g.Key,
+                    AppointmentCount = g.Count(),
+                    UniquePatientCount = g.Select(a => a.PatientUserId ?? $"{a.PatientName}|{a.PatientSurname}|{a.PatientPhone}")
+                        .Distinct()
+                        .Count(),
+                    CollectedRevenue = g.Where(a => a.IsCollected).Sum(GetFee)
+                })
+                .OrderByDescending(x => x.AppointmentCount)
+                .ToList();
+
+            var topPatients = filteredAppointments
+                .GroupBy(a => $"{a.PatientName} {a.PatientSurname}".Trim())
+                .Select(g => new DoctorTopPatientItem
+                {
+                    PatientName = g.Key,
+                    AppointmentCount = g.Count()
+                })
+                .OrderByDescending(x => x.AppointmentCount)
+                .ThenBy(x => x.PatientName)
+                .Take(10)
+                .ToList();
+
+            var recentAppointments = filteredAppointments
+                .OrderByDescending(a => a.AppointmentDate)
+                .Take(20)
+                .Select(a => new DoctorRecentAppointmentItem
+                {
+                    AppointmentId = a.Id,
+                    AppointmentDate = a.AppointmentDate,
+                    PatientName = $"{a.PatientName} {a.PatientSurname}".Trim(),
+                    DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
+                    Status = a.Status,
+                    IsCollected = a.IsCollected
+                })
+                .ToList();
+
+            var doctorRanking = rangeAppointments
+                .GroupBy(a => new
+                {
+                    a.DoctorId,
+                    DoctorName = a.Doctor == null
+                        ? "Bilinmeyen Doktor"
+                        : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
+                    DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen"
+                })
+                .Select(g => new DoctorRankingItem
+                {
+                    DoctorId = g.Key.DoctorId,
+                    DoctorName = g.Key.DoctorName,
+                    DepartmentName = g.Key.DepartmentName,
+                    AppointmentCount = g.Count(),
+                    CompletedCount = g.Count(a => a.Status == AppointmentStatus.Tamamlandi),
+                    UniquePatientCount = g.Select(a => a.PatientUserId ?? $"{a.PatientName}|{a.PatientSurname}|{a.PatientPhone}")
+                        .Distinct()
+                        .Count(),
+                    CollectedRevenue = g.Where(a => a.IsCollected).Sum(GetFee)
+                })
+                .OrderByDescending(x => x.AppointmentCount)
+                .ThenByDescending(x => x.CollectedRevenue)
+                .Take(12)
+                .ToList();
+
+            var model = new AdminDoctorInsightsViewModel
+            {
+                DoctorId = doctorId,
+                Period = normalizedPeriod,
+                StartDate = normalizedStart,
+                EndDate = normalizedEnd,
+                SelectedDoctorName = selectedDoctor == null
+                    ? "Tum Doktorlar"
+                    : $"{selectedDoctor.Title} {selectedDoctor.Name} {selectedDoctor.Surname}".Trim(),
+                SelectedDepartmentName = selectedDoctor?.Department?.Name ?? "Tum Bolumler",
+                TotalAppointments = totalAppointments,
+                UniquePatientCount = uniquePatientCount,
+                CompletedAppointments = completedAppointments,
+                ApprovedAppointments = approvedAppointments,
+                PendingAppointments = pendingAppointments,
+                CancelledAppointments = cancelledAppointments,
+                CollectionRate = totalAppointments == 0 ? 0 : Math.Round((decimal)collectedAppointments / totalAppointments * 100, 1),
+                CompletionRate = totalAppointments == 0 ? 0 : Math.Round((decimal)completedAppointments / totalAppointments * 100, 1),
+                EstimatedRevenue = estimatedRevenue,
+                CollectedRevenue = collectedRevenue,
+                DoctorOptions = doctorOptions,
+                Trend = trend,
+                StatusBreakdown = statusBreakdown,
+                DepartmentBreakdown = departmentBreakdown,
+                TopPatients = topPatients,
+                RecentAppointments = recentAppointments,
+                DoctorRanking = doctorRanking
+            };
+
+            return View(model);
         }
 
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> Tahsilat()
         {
             var now = DateTime.Now;
-            var allRevenueAppointments = await _context.Appointments
+            var today = DateTime.Today;
+
+            var appointments = await _context.Appointments
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
-                .Where(a => a.Status != AppointmentStatus.Iptal && !a.IsCollected && a.AppointmentDate <= now)
+                .Where(a => a.AppointmentDate <= now)
                 .OrderByDescending(a => a.AppointmentDate)
                 .ToListAsync();
 
@@ -489,7 +850,14 @@ namespace HastaneRandevuSistemi.Controllers
                     : DefaultAppointmentFee);
             }
 
-            var pendingPayments = allRevenueAppointments
+            var pendingAppointments = appointments
+                .Where(a => a.Status != AppointmentStatus.Iptal && !a.IsCollected)
+                .ToList();
+
+            var recentCollected = appointments
+                .Where(a => a.IsCollected)
+                .OrderByDescending(a => a.CollectedDate ?? a.AppointmentDate)
+                .Take(12)
                 .Select(a => new AccountingLedgerItem
                 {
                     AppointmentId = a.Id,
@@ -498,13 +866,57 @@ namespace HastaneRandevuSistemi.Controllers
                     PatientName = $"{a.PatientName} {a.PatientSurname}".Trim(),
                     DoctorName = a.Doctor == null ? "Bilinmeyen Doktor" : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
                     DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
-                    StatusLabel = "Ödeme Bekliyor",
+                    StatusLabel = "Tahsil edildi",
+                    Amount = GetFee(a),
+                    IsCollected = true,
+                    IsAppointmentFinished = true
+                })
+                .ToList();
+
+            var pendingItems = pendingAppointments
+                .Select(a => new AccountingLedgerItem
+                {
+                    AppointmentId = a.Id,
+                    RecordedDate = a.CreatedDate,
+                    AppointmentDate = a.AppointmentDate,
+                    PatientName = $"{a.PatientName} {a.PatientSurname}".Trim(),
+                    DoctorName = a.Doctor == null ? "Bilinmeyen Doktor" : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
+                    DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
+                    StatusLabel = a.AppointmentDate.Date < today ? "Gecikmis tahsilat" : "Bugun tahsil edilebilir",
                     Amount = GetFee(a),
                     IsCollected = false,
                     IsAppointmentFinished = true
-                }).ToList();
+                })
+                .ToList();
 
-            return View(pendingPayments);
+            var topDepartment = pendingItems
+                .GroupBy(x => x.DepartmentName)
+                .Select(g => new { Name = g.Key, Total = g.Sum(x => x.Amount) })
+                .OrderByDescending(x => x.Total)
+                .FirstOrDefault();
+
+            var topDoctor = pendingItems
+                .GroupBy(x => x.DoctorName)
+                .Select(g => new { Name = g.Key, Total = g.Sum(x => x.Amount) })
+                .OrderByDescending(x => x.Total)
+                .FirstOrDefault();
+
+            return View(new TahsilatDashboardViewModel
+            {
+                PendingCount = pendingItems.Count,
+                PendingTotal = pendingItems.Sum(x => x.Amount),
+                OverdueCount = pendingItems.Count(x => x.AppointmentDate.Date < today),
+                OverdueTotal = pendingItems.Where(x => x.AppointmentDate.Date < today).Sum(x => x.Amount),
+                TodayCount = pendingItems.Count(x => x.AppointmentDate.Date == today),
+                TodayTotal = pendingItems.Where(x => x.AppointmentDate.Date == today).Sum(x => x.Amount),
+                CollectedTodayTotal = recentCollected.Where(x => x.RecordedDate.Date == today || x.AppointmentDate.Date == today).Sum(x => x.Amount),
+                TopDepartmentName = topDepartment?.Name ?? "-",
+                TopDepartmentAmount = topDepartment?.Total ?? 0,
+                TopDoctorName = topDoctor?.Name ?? "-",
+                TopDoctorAmount = topDoctor?.Total ?? 0,
+                PendingItems = pendingItems,
+                RecentCollectedItems = recentCollected
+            });
         }
 
         [HttpPost]
@@ -516,19 +928,25 @@ namespace HastaneRandevuSistemi.Controllers
             if (appointment == null)
             {
                 TempData["ErrorMessage"] = "Odeme islenecek kayit bulunamadi.";
-                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
             }
 
             if (appointment.Status == AppointmentStatus.Iptal)
             {
                 TempData["ErrorMessage"] = "Iptal edilen randevu icin odeme islenemez.";
-                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
             }
 
             if (appointment.AppointmentDate > DateTime.Now)
             {
                 TempData["ErrorMessage"] = "Randevu bitmeden odeme yapildi olarak isaretlenemez.";
-                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
+            }
+
+            if (IsOfficialHoliday(appointment.AppointmentDate))
+            {
+                TempData["ErrorMessage"] = "Resmi tatil gunundeki randevu icin tahsilat yapilamaz.";
+                return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
             }
 
             appointment.IsCollected = true;
@@ -536,7 +954,7 @@ namespace HastaneRandevuSistemi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Odeme yapildi olarak guncellendi.";
-            return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+            return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
         }
 
         [HttpPost]
@@ -548,13 +966,13 @@ namespace HastaneRandevuSistemi.Controllers
             if (appointment == null)
             {
                 TempData["ErrorMessage"] = "Odeme iptal edilecek kayit bulunamadi.";
-                return RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+                return RedirectToAction(nameof(Tahsilat));
             }
 
             if (appointment.AppointmentDate > DateTime.Now)
             {
                 TempData["ErrorMessage"] = "Randevu bitmeden odeme kaydi degistirilemez.";
-                return RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+                return RedirectToAction(nameof(Tahsilat));
             }
 
             appointment.IsCollected = false;
@@ -562,7 +980,7 @@ namespace HastaneRandevuSistemi.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Odeme iptal edildi olarak guncellendi.";
-            return RedirectToAction(nameof(AdminAccounting), new { fromDate, toDate, departmentId });
+            return RedirectToAction(nameof(Tahsilat));
         }
 
         [HttpGet]
@@ -757,6 +1175,41 @@ namespace HastaneRandevuSistemi.Controllers
                 new() { Value = "Admin", Text = "Adminler" }
             };
         }
+
+        private static bool IsOfficialHoliday(DateTime date)
+        {
+            return BuildHolidayMap(date.Year).ContainsKey(DateOnly.FromDateTime(date));
+        }
+
+        private static IReadOnlyDictionary<DateOnly, string> BuildHolidayMap(params int[] years)
+        {
+            var map = new Dictionary<DateOnly, string>();
+            foreach (var year in years.Distinct())
+            {
+                AddHoliday(map, new DateOnly(year, 1, 1), "Yilbasi");
+                AddHoliday(map, new DateOnly(year, 4, 23), "23 Nisan Ulusal Egemenlik ve Cocuk Bayrami");
+                AddHoliday(map, new DateOnly(year, 5, 1), "1 Mayis Emek ve Dayanisma Gunu");
+                AddHoliday(map, new DateOnly(year, 5, 19), "19 Mayis Ataturk'u Anma, Genclik ve Spor Bayrami");
+                AddHoliday(map, new DateOnly(year, 7, 15), "15 Temmuz Demokrasi ve Milli Birlik Gunu");
+                AddHoliday(map, new DateOnly(year, 8, 30), "30 Agustos Zafer Bayrami");
+                AddHoliday(map, new DateOnly(year, 10, 29), "29 Ekim Cumhuriyet Bayrami");
+            }
+
+            return map;
+        }
+
+        private static void AddHoliday(IDictionary<DateOnly, string> map, DateOnly date, string label)
+        {
+            if (!map.ContainsKey(date))
+            {
+                map[date] = label;
+            }
+        }
+
+        private static DateTime StartOfWeek(DateTime date)
+        {
+            var day = date.DayOfWeek == DayOfWeek.Sunday ? 7 : (int)date.DayOfWeek;
+            return date.Date.AddDays(1 - day);
+        }
     }
 }
-

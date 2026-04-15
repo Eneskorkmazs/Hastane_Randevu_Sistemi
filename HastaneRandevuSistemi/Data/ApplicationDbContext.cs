@@ -15,6 +15,7 @@ namespace HastaneRandevuSistemi.Data
         public DbSet<Appointment> Appointments { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<MedicalReport> MedicalReports { get; set; }
+        public DbSet<MedicalHistory> MedicalHistories { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -69,6 +70,14 @@ namespace HastaneRandevuSistemi.Data
                 .Property(a => a.AdminAccessGrantedDate)
                 .HasColumnType(dateTimeColumnType);
 
+            modelBuilder.Entity<Appointment>()
+                .Property(a => a.ReminderSentAt)
+                .HasColumnType(dateTimeColumnType);
+
+            modelBuilder.Entity<Appointment>()
+                .Property(a => a.PrescriptionCreatedAt)
+                .HasColumnType(dateTimeColumnType);
+
             modelBuilder.Entity<Notification>()
                 .HasOne(n => n.User)
                 .WithMany()
@@ -87,6 +96,20 @@ namespace HastaneRandevuSistemi.Data
                 .HasOne(m => m.Appointment)
                 .WithMany(a => a.MedicalReports)
                 .HasForeignKey(m => m.AppointmentId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MedicalHistory>()
+                .Property(m => m.VisitDate)
+                .HasColumnType(dateTimeColumnType);
+
+            modelBuilder.Entity<MedicalHistory>()
+                .Property(m => m.CreatedAt)
+                .HasColumnType(dateTimeColumnType);
+
+            modelBuilder.Entity<MedicalHistory>()
+                .HasOne(m => m.User)
+                .WithMany()
+                .HasForeignKey(m => m.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         }
     }

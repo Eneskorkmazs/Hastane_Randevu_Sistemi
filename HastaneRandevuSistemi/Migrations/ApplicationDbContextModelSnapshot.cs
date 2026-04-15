@@ -196,8 +196,26 @@ namespace HastaneRandevuSistemi.Migrations
                     b.Property<string>("PatientUserId")
                         .HasColumnType("TEXT");
 
+                    b.Property<DateTime?>("PrescriptionCreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PrescriptionDiagnosis")
+                        .HasMaxLength(180)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PrescriptionMedications")
+                        .HasMaxLength(400)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("PrescriptionNotes")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
                     b.Property<decimal?>("Price")
                         .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime?>("ReminderSentAt")
+                        .HasColumnType("TEXT");
 
                     b.Property<int>("Status")
                         .HasColumnType("INTEGER");
@@ -263,6 +281,59 @@ namespace HastaneRandevuSistemi.Migrations
                     b.HasIndex("DepartmentId");
 
                     b.ToTable("Doctors");
+                });
+
+            modelBuilder.Entity("HastaneRandevuSistemi.Models.MedicalHistory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("AllergyInfo")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AttachmentName")
+                        .HasMaxLength(255)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AttachmentPath")
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Diagnosis")
+                        .HasMaxLength(250)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Medications")
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("VisitDate")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("MedicalHistories");
                 });
 
             modelBuilder.Entity("HastaneRandevuSistemi.Models.MedicalReport", b =>
@@ -495,6 +566,17 @@ namespace HastaneRandevuSistemi.Migrations
                         .IsRequired();
 
                     b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("HastaneRandevuSistemi.Models.MedicalHistory", b =>
+                {
+                    b.HasOne("HastaneRandevuSistemi.Models.AppUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("HastaneRandevuSistemi.Models.MedicalReport", b =>

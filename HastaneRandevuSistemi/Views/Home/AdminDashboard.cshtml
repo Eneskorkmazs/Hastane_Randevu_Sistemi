@@ -19,13 +19,10 @@
             <h1 class="display-5 fw-bold text-dark mb-0">Yönetim Merkezi</h1>
         </div>
         <div class="text-md-end d-flex align-items-center gap-3">
-            <div class="bg-success text-white px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2">
-                <i class="fa-solid fa-vault fs-5"></i>
-                <div class="text-start">
-                    <div class="small opacity-75 lh-1" style="font-size: 0.7rem;">TOPLAM KASA</div>
-                    <div class="fw-bold lh-1 fs-5">@Model.TotalRevenue.ToString("C2")</div>
-                </div>
-            </div>
+            <a asp-controller="Home" asp-action="AdminAccounting" class="btn btn-success rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2">
+                <i class="fa-solid fa-wallet"></i>
+                <span class="fw-semibold">Muhasebe Merkezi</span>
+            </a>
             <span class="badge bg-white text-dark border px-4 py-2 rounded-pill shadow-sm d-flex align-items-center h-100">
                 <i class="fa-solid fa-clock me-2 text-primary"></i>@DateTime.Now.ToString("dd MMMM yyyy")
             </span>
@@ -366,4 +363,3 @@
         background: linear-gradient(90deg, #0b5cad 0%, #0d8bd6 100%);
     }
 </style>
-

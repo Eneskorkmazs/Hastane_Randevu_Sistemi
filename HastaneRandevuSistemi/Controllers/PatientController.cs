@@ -1,4 +1,4 @@
-using HastaneRandevuSistemi.Data;
+﻿using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.Services;
 using HastaneRandevuSistemi.ViewModels;
@@ -35,16 +35,22 @@ namespace HastaneRandevuSistemi.Controllers
             };
 
         private const decimal DefaultDepartmentFee = 1350m;
+        private static readonly HashSet<string> AllowedMedicalHistoryExtensions =
+            new(StringComparer.OrdinalIgnoreCase) { ".pdf", ".jpeg", ".jpg", ".png", ".doc", ".docx" };
+        private const long MaxMedicalHistoryFileSizeInBytes = 8 * 1024 * 1024;
 
         private readonly ApplicationDbContext _context;
         private readonly UserManager<AppUser> _userManager;
+        private readonly SignInManager<AppUser> _signInManager;
 
         public PatientController(
             ApplicationDbContext context,
-            UserManager<AppUser> userManager)
+            UserManager<AppUser> userManager,
+            SignInManager<AppUser> signInManager)
         {
             _context = context;
             _userManager = userManager;
+            _signInManager = signInManager;
         }
 
         public async Task<IActionResult> Dashboard()
@@ -66,6 +72,8 @@ namespace HastaneRandevuSistemi.Controllers
                 .Where(n => n.UserId == user.Id)
                 .OrderByDescending(n => n.CreatedDate)
                 .ToListAsync();
+            var medicalHistoryCount = await _context.MedicalHistories.CountAsync(m => m.UserId == user.Id);
+            var prescriptionCount = appointments.Count(a => !string.IsNullOrWhiteSpace(a.PrescriptionMedications));
 
             var now = DateTime.Now;
             var pendingAppointments = appointments
@@ -97,7 +105,9 @@ namespace HastaneRandevuSistemi.Controllers
                 PendingAppointmentsCount = pendingAppointments.Count,
                 CompletedAppointmentsCount = appointments.Count(a => a.Status == AppointmentStatus.Tamamlandi),
                 CancelledAppointmentsCount = appointments.Count(a => a.Status == AppointmentStatus.Iptal),
+                PrescriptionCount = prescriptionCount,
                 UnreadNotificationsCount = notifications.Count(n => !n.IsRead),
+                MedicalHistoryCount = medicalHistoryCount,
                 DepartmentFees = departmentFees,
                 PendingAppointments = pendingAppointments.Take(5).ToList(),
                 RecentAppointments = appointments.Take(5).ToList(),
@@ -173,6 +183,51 @@ namespace HastaneRandevuSistemi.Controllers
 
             TempData["SuccessMessage"] = "Profil bilgileriniz güncellendi.";
             return RedirectToAction(nameof(Profile));
+        }
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            return View(new ChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return View(model);
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if (!result.Succeeded)
+            {
+                foreach (var error in result.Errors)
+                {
+                    ModelState.AddModelError(string.Empty, error.Description);
+                }
+
+                return View(model);
+            }
+
+            await _signInManager.RefreshSignInAsync(user);
+
+            await CreateNotificationAsync(
+                user.Id,
+                "Parolaniz degistirildi",
+                "Hesap guvenliginiz icin parola degisikligi basariyla tamamlandi.",
+                "Guvenlik",
+                "/Patient/ChangePassword");
+
+            TempData["SuccessMessage"] = "Parolaniz basariyla guncellendi.";
+            return RedirectToAction(nameof(ChangePassword));
         }
 
         public async Task<IActionResult> Notifications()
@@ -363,9 +418,150 @@ namespace HastaneRandevuSistemi.Controllers
             return Json(new { count });
         }
 
+        [HttpGet]
+        public async Task<IActionResult> MedicalHistory()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            return View(await BuildMedicalHistoryViewModelAsync(user.Id));
+        }
+
+        [HttpGet]
+        public IActionResult Prescriptions()
+        {
+            return Redirect("/Patient/MedicalHistory#receteler");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> AddMedicalHistory(PatientMedicalHistoryViewModel model, IFormFile? attachmentFile)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            if (model.VisitDate > DateTime.Today.AddDays(1))
+            {
+                ModelState.AddModelError(nameof(model.VisitDate), "Muayene tarihi gelecekte olamaz.");
+            }
+
+            string? relativeAttachmentPath = null;
+            string? originalAttachmentName = null;
+            if (attachmentFile != null && attachmentFile.Length > 0)
+            {
+                if (attachmentFile.Length > MaxMedicalHistoryFileSizeInBytes)
+                {
+                    ModelState.AddModelError(string.Empty, "Dosya boyutu en fazla 8 MB olabilir.");
+                }
+
+                var extension = Path.GetExtension(attachmentFile.FileName);
+                if (!AllowedMedicalHistoryExtensions.Contains(extension))
+                {
+                    ModelState.AddModelError(string.Empty, "Sadece PDF, JPG, PNG, DOC ve DOCX dosyalari yuklenebilir.");
+                }
+
+                if (ModelState.IsValid)
+                {
+                    var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "medical-history");
+                    if (!Directory.Exists(uploadsRoot))
+                    {
+                        Directory.CreateDirectory(uploadsRoot);
+                    }
+
+                    var generatedName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
+                    var fullPath = Path.Combine(uploadsRoot, generatedName);
+                    await using var stream = new FileStream(fullPath, FileMode.Create);
+                    await attachmentFile.CopyToAsync(stream);
+
+                    relativeAttachmentPath = $"/uploads/medical-history/{generatedName}";
+                    originalAttachmentName = attachmentFile.FileName;
+                }
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var history = await BuildMedicalHistoryViewModelAsync(user.Id);
+                model.Records = history.Records;
+                model.Prescriptions = history.Prescriptions;
+                return View("MedicalHistory", model);
+            }
+
+            _context.MedicalHistories.Add(new MedicalHistory
+            {
+                UserId = user.Id,
+                Title = model.Title.Trim(),
+                Diagnosis = string.IsNullOrWhiteSpace(model.Diagnosis) ? null : model.Diagnosis.Trim(),
+                Medications = string.IsNullOrWhiteSpace(model.Medications) ? null : model.Medications.Trim(),
+                AllergyInfo = string.IsNullOrWhiteSpace(model.AllergyInfo) ? null : model.AllergyInfo.Trim(),
+                Notes = string.IsNullOrWhiteSpace(model.Notes) ? null : model.Notes.Trim(),
+                VisitDate = model.VisitDate.Date,
+                AttachmentName = originalAttachmentName,
+                AttachmentPath = relativeAttachmentPath,
+                CreatedAt = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+
+            await CreateNotificationAsync(
+                user.Id,
+                "Tibbi gecmis kaydi eklendi",
+                $"{model.VisitDate:dd.MM.yyyy} tarihli yeni tibbi gecmis kaydiniz olusturuldu.",
+                "TibbiGecmis",
+                "/Patient/MedicalHistory");
+
+            TempData["SuccessMessage"] = "Tibbi gecmis kaydi eklendi.";
+            return RedirectToAction(nameof(MedicalHistory));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteMedicalHistory(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+            {
+                return Challenge();
+            }
+
+            var record = await _context.MedicalHistories
+                .FirstOrDefaultAsync(m => m.Id == id && m.UserId == user.Id);
+
+            if (record == null)
+            {
+                TempData["ErrorMessage"] = "Silinecek tibbi gecmis kaydi bulunamadi.";
+                return RedirectToAction(nameof(MedicalHistory));
+            }
+
+            if (!string.IsNullOrWhiteSpace(record.AttachmentPath))
+            {
+                var physicalPath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot",
+                    record.AttachmentPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
+
+                if (System.IO.File.Exists(physicalPath))
+                {
+                    System.IO.File.Delete(physicalPath);
+                }
+            }
+
+            _context.MedicalHistories.Remove(record);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Tibbi gecmis kaydi silindi.";
+            return RedirectToAction(nameof(MedicalHistory));
+        }
+
         private IQueryable<Appointment> GetPatientAppointmentsQuery(AppUser user)
         {
             return _context.Appointments
+                .AsNoTracking()
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
                 .Where(a =>
@@ -377,6 +573,40 @@ namespace HastaneRandevuSistemi.Controllers
         {
             return await _context.Notifications
                 .CountAsync(n => n.UserId == userId && !n.IsRead);
+        }
+
+        private async Task<PatientMedicalHistoryViewModel> BuildMedicalHistoryViewModelAsync(string userId)
+        {
+            var records = await _context.MedicalHistories
+                .Where(m => m.UserId == userId)
+                .OrderByDescending(m => m.VisitDate)
+                .ThenByDescending(m => m.CreatedAt)
+                .ToListAsync();
+            var prescriptions = await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .Where(a => a.PatientUserId == userId && !string.IsNullOrWhiteSpace(a.PrescriptionMedications))
+                .OrderByDescending(a => a.PrescriptionCreatedAt ?? a.AppointmentDate)
+                .ThenByDescending(a => a.Id)
+                .Select(a => new PatientPrescriptionItemViewModel
+                {
+                    AppointmentId = a.Id,
+                    AppointmentDate = a.AppointmentDate,
+                    PrescriptionDate = a.PrescriptionCreatedAt ?? a.AppointmentDate,
+                    DoctorName = ((a.Doctor!.Title ?? string.Empty) + " " + a.Doctor.Name + " " + a.Doctor.Surname).Trim(),
+                    DepartmentName = a.Doctor!.Department != null ? a.Doctor.Department.Name : string.Empty,
+                    Diagnosis = a.PrescriptionDiagnosis ?? "-",
+                    Medications = a.PrescriptionMedications!,
+                    Notes = a.PrescriptionNotes
+                })
+                .ToListAsync();
+
+            return new PatientMedicalHistoryViewModel
+            {
+                Records = records,
+                Prescriptions = prescriptions
+            };
         }
 
         private async Task CreateNotificationAsync(string userId, string title, string message, string type, string link)
@@ -395,3 +625,4 @@ namespace HastaneRandevuSistemi.Controllers
         }
     }
 }
+

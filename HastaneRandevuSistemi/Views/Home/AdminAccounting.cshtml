@@ -1,10 +1,15 @@
-@model HastaneRandevuSistemi.ViewModels.AdminAccountingViewModel
+﻿@model HastaneRandevuSistemi.ViewModels.AdminAccountingViewModel
 @using Microsoft.AspNetCore.Mvc.Rendering
 
 @{
     ViewData["Title"] = "Muhasebe";
     var departmentOptions = ViewData["DepartmentOptions"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
+    var doctorOptions = ViewData["DoctorOptions"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
     var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+    var topWorkingDoctor = Model.DoctorBreakdown.OrderByDescending(x => x.AppointmentCount).ThenByDescending(x => x.UniquePatientCount).FirstOrDefault();
+    var topCancelledDoctor = Model.DoctorBreakdown.OrderByDescending(x => x.CancelledCount).ThenByDescending(x => x.CancelledRevenue).FirstOrDefault();
+    var doctorCount = Model.DoctorBreakdown.Count;
+    var avgAppointmentPerDoctor = doctorCount == 0 ? 0 : (decimal)Model.TotalAppointments / doctorCount;
 
     string CleanDoctorName(string? doctorName)
     {
@@ -56,9 +61,18 @@
         <div>
             <span class="text-uppercase small fw-bold text-success">Admin Finans</span>
             <h1 class="h3 fw-bold mb-1">Muhasebe Merkezi</h1>
-            <p class="text-muted mb-0">Gelir, tahsilat ve bölüm bazlı yoğunluğu sade bir görünümle takip edin.</p>
+            <p class="text-muted mb-0">Hizmet analizi, doktor-hasta yoğunluğu, bolum geliri ve tahsilat ayni ekranda.</p>
         </div>
-        <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Dön</a>
+        <div class="d-flex align-items-center flex-wrap gap-2">
+            <div class="bg-success text-white px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2">
+                <i class="fa-solid fa-vault"></i>
+                <div class="text-start">
+                    <div class="small opacity-75 lh-1" style="font-size: 0.7rem;">TOPLAM KASA</div>
+                    <div class="fw-bold lh-1 fs-6">@Model.CollectedRevenue.ToString("C0", trCulture)</div>
+                </div>
+            </div>
+            <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Dön</a>
+        </div>
     </div>
 
     <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -72,7 +86,7 @@
                     <label class="form-label">Bitiş</label>
                     <input type="date" name="toDate" value="@Model.ToDate.ToString("yyyy-MM-dd")" class="form-control" />
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label class="form-label">Bölüm</label>
                     <select name="departmentId" class="form-select">
                         <option value="">Tüm Bölümler</option>
@@ -82,11 +96,46 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-3 d-flex gap-2">
+                <div class="col-md-2">
+                    <label class="form-label">Doktor</label>
+                    <select name="doctorId" class="form-select">
+                        <option value="">Tüm Doktorlar</option>
+                        @foreach (var item in doctorOptions)
+                        {
+                            <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex gap-2">
                     <a asp-action="AdminAccounting" class="btn btn-outline-secondary rounded-pill w-100">Temizle</a>
                     <button type="submit" class="btn btn-success rounded-pill w-100">Uygula</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Zaman Bazli Gelir Trendi</h5>
+                            <p class="text-muted small mb-0">Hover ile detay, tiklama ile tablo filtreleme.</p>
+                        </div>
+                        <button id="resetChartFilterBtn" type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                            Filtreyi Temizle
+                        </button>
+                    </div>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="revenueTrendChart"></canvas>
+                    </div>
+                    <div id="chartHoverInfo" class="simple-box mt-3">
+                        <span>Grafik etkileşim bilgisi</span>
+                        <strong id="chartHoverInfoText">Bir çubuğun veya noktanın üzerine gelin.</strong>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -130,6 +179,152 @@
     </div>
 
     <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+                        <div>
+                            <h5 class="fw-bold mb-1">Hizmet Analizi</h5>
+                            <p class="text-muted small mb-0">Bölüm ya da doktor seçip sadece o alana ait istatistikleri anında gör.</p>
+                        </div>
+                        <div class="badge bg-light text-primary rounded-pill px-3 py-2 border">Bölüm & Doktor Performansı</div>
+                    </div>
+                    <div class="analysis-toolbar mb-4">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Analiz tipi</label>
+                                <select id="analysisModeSelect" class="form-select">
+                                    <option value="department" selected="@(Model.DoctorId.HasValue ? null : "selected")">Bölüme göre</option>
+                                    <option value="doctor" selected="@(Model.DoctorId.HasValue ? "selected" : null)">Doktora göre</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Bölüm seç</label>
+                                <select id="analysisDepartmentSelect" class="form-select">
+                                    <option value="">Tüm Bölümler</option>
+                                    @foreach (var item in departmentOptions)
+                                    {
+                                        <option value="@item.Value" selected="@(item.Selected && !Model.DoctorId.HasValue ? "selected" : null)">@item.Text</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Doktor seç</label>
+                                <select id="analysisDoctorSelect" class="form-select">
+                                    <option value="">Tüm Doktorlar</option>
+                                    @foreach (var item in doctorOptions)
+                                    {
+                                        <option value="@item.Value" selected="@(item.Selected ? "selected" : null)">@item.Text</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+                            <div>
+                                <div id="analysisSelectionTitle" class="fw-semibold text-dark">Genel Bölüm Görünümü</div>
+                                <div id="analysisSelectionHint" class="small text-muted">Tüm bölümler karşılaştırılıyor.</div>
+                            </div>
+                            <button id="clearAnalysisSelectionBtn" type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                Seçimi Temizle
+                            </button>
+                        </div>
+                    </div>
+                    <div style="height: 320px; position: relative;">
+                        <canvas id="revenueBarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Tahsilat Dağılımı</h5>
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="revenuePieChart"></canvas>
+                    </div>
+                    <div class="mt-4 pt-2 border-top">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-muted small">Tahsil Edilen</span>
+                            <span class="fw-bold text-success small">@((Model.EstimatedRevenue > 0) ? (Model.CollectedRevenue / Model.EstimatedRevenue * 100).ToString("F1") : "0")%</span>
+                        </div>
+                        <div class="progress rounded-pill bg-light" style="height: 6px;">
+                            <div class="progress-bar bg-success" role="progressbar" style="width: @((Model.EstimatedRevenue > 0) ? (Model.CollectedRevenue / Model.EstimatedRevenue * 100).ToString("F1") : "0")%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Hizmet Analizi Ozet Tablosu</h5>
+                            <p class="text-muted small mb-0">Seçtiğin bölüm veya doktora göre detaylı özet.</p>
+                        </div>
+                        <span id="analysisSummaryBadge" class="badge bg-light text-dark border rounded-pill px-3 py-2">Genel görünüm</span>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <tbody>
+                                <tr>
+                                    <th id="analysisLabelScope" class="text-muted fw-semibold">Analiz kapsamı</th>
+                                    <td id="analysisValueScope" class="text-end fw-bold">Tüm bölümler</td>
+                                </tr>
+                                <tr>
+                                    <th id="analysisLabelSecondary" class="text-muted fw-semibold">Doktor sayısı</th>
+                                    <td id="analysisValueSecondary" class="text-end fw-bold">@doctorCount</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted fw-semibold">Toplam randevu</th>
+                                    <td id="analysisValueAppointments" class="text-end fw-bold">@Model.TotalAppointments</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted fw-semibold">Benzersiz hasta</th>
+                                    <td id="analysisValuePatients" class="text-end fw-bold">@Model.DoctorBreakdown.Sum(x => x.UniquePatientCount)</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted fw-semibold">Tahsil edilen (adet)</th>
+                                    <td id="analysisValueCompleted" class="text-end fw-bold text-success">@Model.CompletedAppointments</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted fw-semibold">Iptal edilen (adet)</th>
+                                    <td id="analysisValueCancelled" class="text-end fw-bold text-danger">@Model.CancelledAppointments</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted fw-semibold">Tahsil edilen tutar</th>
+                                    <td id="analysisValueCollectedRevenue" class="text-end fw-bold text-success">@Model.CollectedRevenue.ToString("C0", trCulture)</td>
+                                </tr>
+                                <tr>
+                                    <th class="text-muted fw-semibold">Bekleyen tutar</th>
+                                    <td id="analysisValuePendingRevenue" class="text-end fw-bold text-warning">@Model.PendingRevenue.ToString("C0", trCulture)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Randevu Durum Dagilimi</h5>
+                    <div style="height: 280px; position: relative;">
+                        <canvas id="serviceStatusPieChart"></canvas>
+                    </div>
+                    <p class="small text-muted mt-3 mb-0">
+                        Daire grafigi ile sistemde tamamlanan, bekleyen ve iptal edilen hizmetleri hizlica gorebilirsin.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
         <div class="col-lg-7">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
@@ -149,12 +344,14 @@
                         <div class="table-responsive">
                             <table class="table align-middle mb-0">
                                 <thead>
-                                    <tr>
-                                        <th>Bölüm</th>
-                                        <th>Randevu</th>
-                                        <th>Tahsil Edilen</th>
-                                        <th>Açık Bakiye</th>
-                                    </tr>
+                            <tr>
+                                <th>Bölüm</th>
+                                <th>Randevu</th>
+                                <th>Hasta</th>
+                                <th>Tahsil Edilen</th>
+                                <th>Açık Bakiye</th>
+                                <th>Pay</th>
+                            </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var item in Model.DepartmentBreakdown)
@@ -162,8 +359,12 @@
                                         <tr>
                                             <td class="fw-semibold">@item.DepartmentName</td>
                                             <td>@item.AppointmentCount</td>
+                                            <td>@item.UniquePatientCount</td>
                                             <td class="text-success fw-semibold">@item.CollectedRevenue.ToString("C0", trCulture)</td>
                                             <td class="text-warning fw-semibold">@item.PendingRevenue.ToString("C0", trCulture)</td>
+                                            <td>
+                                                <span class="badge rounded-pill bg-light text-dark border">@item.RevenueSharePercent.ToString("F1", trCulture)%</span>
+                                            </td>
                                         </tr>
                                     }
                                 </tbody>
@@ -249,13 +450,230 @@
         </div>
     }
 
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-1">Doktor Hizmet Analizi</h5>
+                    <p class="text-muted small mb-0">Hangi doktorun kac hasta baktigi ve getirdigi gelir.</p>
+                </div>
+                <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.DoctorBreakdown.Count doktor</span>
+            </div>
+
+            @if (!Model.DoctorBreakdown.Any())
+            {
+                <div class="text-muted border rounded-4 p-3 bg-light">Doktor analizi icin veri bulunamadi.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table id="doctorAnalyticsTable" class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Doktor</th>
+                                <th>Bolum</th>
+                                <th>Randevu</th>
+                                <th>Hasta</th>
+                                <th>Iptal</th>
+                                <th>Tahsil Edilen</th>
+                                <th>Acilik</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doctor in Model.DoctorBreakdown)
+                            {
+                                <tr data-doctor="@CleanDoctorName(doctor.DoctorName)" data-department="@doctor.DepartmentName">
+                                    <td class="fw-semibold">@CleanDoctorName(doctor.DoctorName)</td>
+                                    <td>@doctor.DepartmentName</td>
+                                    <td>@doctor.AppointmentCount</td>
+                                    <td>@doctor.UniquePatientCount</td>
+                                    <td class="text-danger fw-semibold">@doctor.CancelledCount</td>
+                                    <td class="text-success fw-semibold">@doctor.CollectedRevenue.ToString("C0", trCulture)</td>
+                                    <td class="text-warning fw-semibold">@doctor.PendingRevenue.ToString("C0", trCulture)</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Doktor Calisma Tablosu</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Doktor</th>
+                                    <th class="text-end">Randevu</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var doctor in Model.DoctorBreakdown.OrderByDescending(x => x.AppointmentCount).ThenByDescending(x => x.UniquePatientCount))
+                                {
+                                    <tr>
+                                        <td>@CleanDoctorName(doctor.DoctorName)</td>
+                                        <td class="text-end fw-semibold">@doctor.AppointmentCount</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Doktor Tahsilat Tablosu</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Doktor</th>
+                                    <th class="text-end">Tahsilat</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var doctor in Model.DoctorBreakdown.OrderByDescending(x => x.CollectedRevenue).ThenByDescending(x => x.AppointmentCount))
+                                {
+                                    <tr>
+                                        <td>@CleanDoctorName(doctor.DoctorName)</td>
+                                        <td class="text-end fw-semibold text-success">@doctor.CollectedRevenue.ToString("C0", trCulture)</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Doktor Iptal Tablosu</h6>
+                    <div class="table-responsive">
+                        <table class="table table-sm align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Doktor</th>
+                                    <th class="text-end">Iptal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var doctor in Model.DoctorBreakdown.OrderByDescending(x => x.CancelledCount).ThenByDescending(x => x.CancelledRevenue))
+                                {
+                                    <tr>
+                                        <td>@CleanDoctorName(doctor.DoctorName)</td>
+                                        <td class="text-end fw-semibold text-danger">@doctor.CancelledCount</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-body p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
-                    <h5 class="fw-bold mb-1">Son İşlemler</h5>
-                    <p class="text-muted small mb-0">En güncel ödeme ve randevu kayıtları.</p>
+                    <h5 class="fw-bold mb-1">Kasa / Tahsilat Isleri</h5>
+                    <p class="text-muted small mb-0">Muhasebe ve odeme alma akisi tek ekranda yonetilir.</p>
                 </div>
+                <a href="#pendingQueue" class="btn btn-outline-primary rounded-pill px-4">
+                    <i class="fa-solid fa-hand-holding-dollar me-2"></i>Bekleyen Tahsilatlar
+                </a>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="simple-box h-100">
+                        <span>Odeme bekleyen randevu</span>
+                        <strong>@Model.PendingCollectionQueueCount</strong>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="simple-box h-100">
+                        <span>Tahsil edilebilir toplam</span>
+                        <strong>@Model.PendingCollectionQueueTotal.ToString("C0", trCulture)</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div id="pendingQueue" class="mb-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0">Tahsilat Kuyrugu</h6>
+                    <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.PendingCollectionQueue.Count kayit</span>
+                </div>
+
+                @if (!Model.PendingCollectionQueue.Any())
+                {
+                    <div class="text-muted border rounded-4 p-3 bg-light">Tahsilat bekleyen kayit bulunmuyor.</div>
+                }
+                else
+                {
+                    <div class="table-responsive">
+                        <table id="pendingQueueTable" class="table align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Tarih</th>
+                                    <th>Hasta</th>
+                                    <th>Doktor</th>
+                                    <th>Bolum</th>
+                                    <th>Durum</th>
+                                    <th class="text-end">Tutar</th>
+                                    <th class="text-end">Islem</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var payment in Model.PendingCollectionQueue)
+                                {
+                                    <tr data-doctor="@payment.DoctorName" data-department="@payment.DepartmentName">
+                                        <td>@payment.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                        <td class="fw-semibold">@payment.PatientName</td>
+                                        <td>@payment.DoctorName</td>
+                                        <td>@payment.DepartmentName</td>
+                                        <td>
+                                            @if (payment.IsHoliday)
+                                            {
+                                                <span class="text-danger fw-semibold">@payment.StatusLabel</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-warning fw-semibold">@payment.StatusLabel</span>
+                                            }
+                                        </td>
+                                        <td class="text-end fw-semibold">@payment.Amount.ToString("C0", trCulture)</td>
+                                        <td class="text-end">
+                                            @if (!payment.IsHoliday)
+                                            {
+                                                <form asp-action="MarkCollected" asp-route-id="@payment.AppointmentId" asp-route-returnUrl="@Url.Action("AdminAccounting", "Home", new { fromDate = Model.FromDate, toDate = Model.ToDate, departmentId = Model.DepartmentId, doctorId = Model.DoctorId })" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                                        <i class="fa-solid fa-check me-1"></i>Tahsil Et
+                                                    </button>
+                                                </form>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small">Islem yok</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
             </div>
 
             @if (!Model.RecentTransactions.Any())
@@ -265,7 +683,7 @@
             else
             {
                 <div class="table-responsive">
-                    <table class="table align-middle mb-0">
+                    <table id="recentTransactionsTable" class="table align-middle mb-0">
                         <thead>
                             <tr>
                                 <th>Tarih</th>
@@ -273,20 +691,23 @@
                                 <th>Bölüm</th>
                                 <th>Durum</th>
                                 <th class="text-end">Tutar</th>
+                                <th class="text-end">İşlem</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var item in Model.RecentTransactions)
-                            {
+                                @foreach (var item in Model.RecentTransactions)
+                                {
                                 var rowClass = item.StatusLabel switch
                                 {
-                                    "Odeme Yapildi" => "text-success",
-                                    "Iptal / Kayip" => "text-danger",
-                                    "Odeme Bekliyor" => "text-warning",
+                                    "Ödeme Yapıldı" => "text-success",
+                                    "İptal / Kayıp" => "text-danger",
+                                    "Ödemesi geri verildi / İptal edildi" => "text-info",
+                                    "Ödeme Bekliyor" => "text-warning",
+                                    var label when label.StartsWith("Resmi Tatil", StringComparison.OrdinalIgnoreCase) => "text-danger",
                                     _ => "text-secondary"
                                 };
 
-                                <tr>
+                                <tr data-doctor="@item.DoctorName" data-department="@item.DepartmentName">
                                     <td>
                                         <div>@item.AppointmentDate.ToString("dd.MM.yyyy")</div>
                                         <small class="text-muted">@item.AppointmentDate.ToString("HH:mm")</small>
@@ -295,6 +716,37 @@
                                     <td>@item.DepartmentName</td>
                                     <td><span class="@rowClass fw-semibold">@item.StatusLabel</span></td>
                                     <td class="text-end fw-semibold">@item.Amount.ToString("C0", trCulture)</td>
+                                    <td class="text-end">
+                                        @if (!item.IsCollected && item.IsAppointmentFinished && !item.IsHoliday)
+                                        {
+                                            <form asp-action="MarkCollected" asp-route-id="@item.AppointmentId" asp-route-returnUrl="@Url.Action("AdminAccounting", "Home", new { fromDate = Model.FromDate, toDate = Model.ToDate, departmentId = Model.DepartmentId, doctorId = Model.DoctorId })" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                                    <i class="fa-solid fa-check me-1"></i>Tahsil Et
+                                                </button>
+                                            </form>
+                                        }
+                                        else if (item.IsCollected)
+                                        {
+                                            <form asp-action="CancelCollected" asp-route-id="@item.AppointmentId" asp-route-fromDate="@Model.FromDate.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate.ToString("yyyy-MM-dd")" asp-route-departmentId="@Model.DepartmentId" asp-route-doctorId="@Model.DoctorId" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                                    <i class="fa-solid fa-xmark me-1"></i>İptal
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            @if (item.IsHoliday)
+                                            {
+                                                <span class="text-danger small">Resmi tatil: işlem yok</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted small"><i class="fa-solid fa-xmark"></i></span>
+                                            }
+                                        }
+                                    </td>
                                 </tr>
                             }
                         </tbody>
@@ -354,3 +806,499 @@
         line-height: 1.4;
     }
 </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const trCulture = "tr-TR";
+        const currency = (value) => new Intl.NumberFormat(trCulture, { style: "currency", currency: "TRY", maximumFractionDigits: 0 }).format(value || 0);
+        const hoverInfoText = document.getElementById("chartHoverInfoText");
+        const analysisModeSelect = document.getElementById("analysisModeSelect");
+        const analysisDepartmentSelect = document.getElementById("analysisDepartmentSelect");
+        const analysisDoctorSelect = document.getElementById("analysisDoctorSelect");
+        const clearAnalysisSelectionBtn = document.getElementById("clearAnalysisSelectionBtn");
+        const analysisSelectionTitle = document.getElementById("analysisSelectionTitle");
+        const analysisSelectionHint = document.getElementById("analysisSelectionHint");
+        const analysisSummaryBadge = document.getElementById("analysisSummaryBadge");
+        const analysisLabelScope = document.getElementById("analysisLabelScope");
+        const analysisValueScope = document.getElementById("analysisValueScope");
+        const analysisLabelSecondary = document.getElementById("analysisLabelSecondary");
+        const analysisValueSecondary = document.getElementById("analysisValueSecondary");
+        const analysisValueAppointments = document.getElementById("analysisValueAppointments");
+        const analysisValuePatients = document.getElementById("analysisValuePatients");
+        const analysisValueCompleted = document.getElementById("analysisValueCompleted");
+        const analysisValueCancelled = document.getElementById("analysisValueCancelled");
+        const analysisValueCollectedRevenue = document.getElementById("analysisValueCollectedRevenue");
+        const analysisValuePendingRevenue = document.getElementById("analysisValuePendingRevenue");
+        const departmentRows = Array.from(document.querySelectorAll("#doctorAnalyticsTable tbody tr"));
+        const queueRows = Array.from(document.querySelectorAll("#pendingQueue tbody tr"));
+        const transactionRows = Array.from(document.querySelectorAll("table.table tbody tr[data-department]"));
+        const normalize = (v) => (v || "").toString().trim().toLowerCase();
+
+        function filterRows(filter) {
+            const apply = (rows) => rows.forEach((row) => {
+                if (!filter || normalize(row.dataset.department) === normalize(filter) || normalize(row.dataset.doctor) === normalize(filter)) {
+                    row.style.display = "";
+                } else {
+                    row.style.display = "none";
+                }
+            });
+
+            apply(departmentRows);
+            apply(queueRows);
+            apply(transactionRows);
+        }
+
+        document.getElementById("resetChartFilterBtn")?.addEventListener("click", function() {
+            filterRows(null);
+            hoverInfoText.textContent = "Filtre temizlendi. Tum kayitlar gosteriliyor.";
+        });
+
+        const departmentAnalytics = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DepartmentBreakdown.Select(x => new
+        {
+            id = x.DepartmentId,
+            name = x.DepartmentName,
+            doctorCount = x.DoctorCount,
+            appointmentCount = x.AppointmentCount,
+            patientCount = x.UniquePatientCount,
+            completedCount = x.CompletedCount,
+            cancelledCount = x.CancelledCount,
+            estimatedRevenue = x.EstimatedRevenue,
+            collectedRevenue = x.CollectedRevenue,
+            pendingRevenue = x.PendingRevenue,
+            revenueSharePercent = x.RevenueSharePercent
+        })));
+        const doctorAnalytics = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DoctorBreakdown.Select(x => new
+        {
+            id = x.DoctorId,
+            name = CleanDoctorName(x.DoctorName),
+            departmentId = x.DepartmentId,
+            departmentName = x.DepartmentName,
+            appointmentCount = x.AppointmentCount,
+            patientCount = x.UniquePatientCount,
+            completedCount = x.CompletedCount,
+            cancelledCount = x.CancelledCount,
+            estimatedRevenue = x.EstimatedRevenue,
+            collectedRevenue = x.CollectedRevenue,
+            pendingRevenue = x.PendingRevenue,
+            cancelledRevenue = x.CancelledRevenue
+        })));
+        const selectedDepartmentId = "@(Model.DepartmentId?.ToString() ?? string.Empty)";
+        const selectedDoctorId = "@(Model.DoctorId?.ToString() ?? string.Empty)";
+        const departmentNameMap = new Map(departmentAnalytics.map(item => [String(item.id ?? ""), item.name]));
+        const doctorNameMap = new Map(doctorAnalytics.map(item => [String(item.id ?? ""), item.name]));
+
+        if (selectedDepartmentId && analysisDepartmentSelect) {
+            analysisDepartmentSelect.value = selectedDepartmentId;
+        }
+
+        if (selectedDoctorId && analysisDoctorSelect) {
+            analysisDoctorSelect.value = selectedDoctorId;
+            analysisModeSelect.value = "doctor";
+        }
+
+        const ctxBar = document.getElementById("revenueBarChart").getContext("2d");
+        const revenueBarChart = new Chart(ctxBar, {
+            type: 'bar',
+            data: { labels: [], datasets: [] },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                    legend: { display: true, position: "top" },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.dataset.label}: ${currency(context.parsed.y)}`;
+                            },
+                            afterBody: function(items) {
+                                const raw = items?.[0]?.raw;
+                                if (!raw || typeof raw !== "object") return "";
+                                const lines = [`Hasta: ${raw.patientCount ?? 0}`, `Randevu: ${raw.appointmentCount ?? 0}`];
+                                if (raw.cancelledCount !== undefined) {
+                                    lines.push(`Iptal: ${raw.cancelledCount}`);
+                                }
+                                if (raw.doctorCount !== undefined) {
+                                    lines.push(`Doktor: ${raw.doctorCount}`);
+                                }
+                                return lines;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { drawBorder: false, color: '#f1f1f1' },
+                        ticks: {
+                            callback: function(value) {
+                                return currency(value);
+                            }
+                        }
+                    },
+                    x: { grid: { display: false } }
+                },
+                onHover: function(event, activeElements) {
+                    if (!activeElements.length) return;
+                    const point = activeElements[0];
+                    const index = point.index;
+                    const label = revenueBarChart.data.labels[index];
+                    const raw = revenueBarChart.data.datasets[0]?.rawMeta?.[index];
+                    if (!raw) return;
+                    hoverInfoText.textContent = `${label} | Tahsil: ${currency(raw.collectedRevenue)} | Bekleyen: ${currency(raw.pendingRevenue)} | Hasta: ${raw.patientCount ?? 0}`;
+                },
+                onClick: function(event, activeElements) {
+                    if (!activeElements.length) return;
+                    const index = activeElements[0].index;
+                    const raw = revenueBarChart.data.datasets[0]?.rawMeta?.[index];
+                    if (!raw) return;
+
+                    if (raw.type === "department") {
+                        analysisModeSelect.value = "department";
+                        analysisDepartmentSelect.value = raw.id ? String(raw.id) : "";
+                    } else {
+                        analysisModeSelect.value = "doctor";
+                        analysisDoctorSelect.value = raw.id ? String(raw.id) : "";
+                        if (raw.departmentId) {
+                            analysisDepartmentSelect.value = String(raw.departmentId);
+                        }
+                    }
+
+                    updateAnalysisView();
+                }
+            }
+        });
+
+        function buildDepartmentSummary(item) {
+            if (!item) {
+                return {
+                    scopeLabel: "Tum bolumler",
+                    secondaryLabel: "Doktor sayisi",
+                    secondaryValue: departmentAnalytics.reduce((sum, entry) => sum + (entry.doctorCount || 0), 0),
+                    appointmentCount: departmentAnalytics.reduce((sum, entry) => sum + (entry.appointmentCount || 0), 0),
+                    patientCount: departmentAnalytics.reduce((sum, entry) => sum + (entry.patientCount || 0), 0),
+                    completedCount: departmentAnalytics.reduce((sum, entry) => sum + (entry.completedCount || 0), 0),
+                    cancelledCount: departmentAnalytics.reduce((sum, entry) => sum + (entry.cancelledCount || 0), 0),
+                    collectedRevenue: departmentAnalytics.reduce((sum, entry) => sum + (entry.collectedRevenue || 0), 0),
+                    pendingRevenue: departmentAnalytics.reduce((sum, entry) => sum + (entry.pendingRevenue || 0), 0),
+                    badge: "Tum bolumler",
+                    title: "Genel Bölüm Görünümü",
+                    hint: "Tüm bölümler karşılaştırılıyor."
+                };
+            }
+
+            return {
+                scopeLabel: item.name,
+                secondaryLabel: "Doktor sayisi",
+                secondaryValue: item.doctorCount || 0,
+                appointmentCount: item.appointmentCount || 0,
+                patientCount: item.patientCount || 0,
+                completedCount: item.completedCount || 0,
+                cancelledCount: item.cancelledCount || 0,
+                collectedRevenue: item.collectedRevenue || 0,
+                pendingRevenue: item.pendingRevenue || 0,
+                badge: "Secili bolum",
+                title: `${item.name} Analizi`,
+                hint: "Bu bölüme ait doktor, randevu ve gelir verileri gösteriliyor."
+            };
+        }
+
+        function buildDoctorSummary(item) {
+            if (!item) {
+                return {
+                    scopeLabel: "Tum doktorlar",
+                    secondaryLabel: "Bolum sayisi",
+                    secondaryValue: new Set(doctorAnalytics.map(entry => normalize(entry.departmentName)).filter(Boolean)).size,
+                    appointmentCount: doctorAnalytics.reduce((sum, entry) => sum + (entry.appointmentCount || 0), 0),
+                    patientCount: doctorAnalytics.reduce((sum, entry) => sum + (entry.patientCount || 0), 0),
+                    completedCount: doctorAnalytics.reduce((sum, entry) => sum + (entry.completedCount || 0), 0),
+                    cancelledCount: doctorAnalytics.reduce((sum, entry) => sum + (entry.cancelledCount || 0), 0),
+                    collectedRevenue: doctorAnalytics.reduce((sum, entry) => sum + (entry.collectedRevenue || 0), 0),
+                    pendingRevenue: doctorAnalytics.reduce((sum, entry) => sum + (entry.pendingRevenue || 0), 0),
+                    badge: "Tum doktorlar",
+                    title: "Genel Doktor Görünümü",
+                    hint: "Tüm doktorlar performans karşılaştırmasında listeleniyor."
+                };
+            }
+
+            return {
+                scopeLabel: item.name,
+                secondaryLabel: "Bolumu",
+                secondaryValue: item.departmentName || "-",
+                appointmentCount: item.appointmentCount || 0,
+                patientCount: item.patientCount || 0,
+                completedCount: item.completedCount || 0,
+                cancelledCount: item.cancelledCount || 0,
+                collectedRevenue: item.collectedRevenue || 0,
+                pendingRevenue: item.pendingRevenue || 0,
+                badge: "Secili doktor",
+                title: `${item.name} Performansı`,
+                hint: `${item.departmentName || "Doktor"} için randevu, iptal ve tahsilat verileri gösteriliyor.`
+            };
+        }
+
+        function updateSummary(summary) {
+            analysisSelectionTitle.textContent = summary.title;
+            analysisSelectionHint.textContent = summary.hint;
+            analysisSummaryBadge.textContent = summary.badge;
+            analysisLabelScope.textContent = "Analiz kapsamı";
+            analysisValueScope.textContent = summary.scopeLabel;
+            analysisLabelSecondary.textContent = summary.secondaryLabel;
+            analysisValueSecondary.textContent = summary.secondaryValue;
+            analysisValueAppointments.textContent = summary.appointmentCount;
+            analysisValuePatients.textContent = summary.patientCount;
+            analysisValueCompleted.textContent = summary.completedCount;
+            analysisValueCancelled.textContent = summary.cancelledCount;
+            analysisValueCollectedRevenue.textContent = currency(summary.collectedRevenue);
+            analysisValuePendingRevenue.textContent = currency(summary.pendingRevenue);
+        }
+
+        function applyRowFilterBySelection(mode, selectedDepartment, selectedDoctor) {
+            if (mode === "doctor" && selectedDoctor) {
+                const doctorName = doctorNameMap.get(selectedDoctor) || "";
+                filterRows(doctorName);
+                hoverInfoText.textContent = `${doctorName} secildi. Ilgili tablo satirlari filtrelendi.`;
+                return;
+            }
+
+            if (selectedDepartment) {
+                const departmentName = departmentNameMap.get(selectedDepartment) || "";
+                filterRows(departmentName);
+                hoverInfoText.textContent = `${departmentName} secildi. Ilgili tablo satirlari filtrelendi.`;
+                return;
+            }
+
+            filterRows(null);
+            hoverInfoText.textContent = "Secime gore grafik ve tablolar guncellendi.";
+        }
+
+        function setChartData(labels, collectedValues, pendingValues, rawMeta, modeLabel) {
+            revenueBarChart.data.labels = labels;
+            revenueBarChart.data.datasets = [
+                {
+                    label: "Tahsil Edilen",
+                    data: collectedValues,
+                    rawMeta,
+                    backgroundColor: "rgba(25, 135, 84, 0.78)",
+                    borderColor: "#198754",
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    maxBarThickness: 42
+                },
+                {
+                    label: "Bekleyen",
+                    data: pendingValues,
+                    rawMeta,
+                    backgroundColor: "rgba(255, 193, 7, 0.78)",
+                    borderColor: "#ffc107",
+                    borderWidth: 1,
+                    borderRadius: 8,
+                    maxBarThickness: 42
+                }
+            ];
+            revenueBarChart.options.plugins.legend.display = true;
+            revenueBarChart.update();
+            if (!labels.length) {
+                hoverInfoText.textContent = `${modeLabel} icin gosterilecek veri bulunamadi.`;
+            }
+        }
+
+        function updateAnalysisView() {
+            const mode = analysisModeSelect?.value || "department";
+            const selectedDepartment = analysisDepartmentSelect?.value || "";
+            const selectedDoctor = analysisDoctorSelect?.value || "";
+
+            if (mode === "department") {
+                const selectedItem = departmentAnalytics.find(item => String(item.id ?? "") === selectedDepartment);
+                const doctorItems = selectedDepartment
+                    ? doctorAnalytics.filter(item => String(item.departmentId ?? "") === selectedDepartment)
+                    : [];
+                const chartItems = selectedDepartment ? doctorItems : departmentAnalytics;
+                const labels = chartItems.map(item => mode === "department" && selectedDepartment ? item.name : item.name);
+                const rawMeta = chartItems.map(item => ({
+                    ...item,
+                    type: selectedDepartment ? "doctor" : "department"
+                }));
+
+                setChartData(
+                    labels,
+                    chartItems.map(item => item.collectedRevenue || 0),
+                    chartItems.map(item => item.pendingRevenue || 0),
+                    rawMeta,
+                    "Secili bolum"
+                );
+                updateSummary(buildDepartmentSummary(selectedItem || null));
+                applyRowFilterBySelection(mode, selectedDepartment, selectedDoctor);
+                return;
+            }
+
+            const selectedItem = doctorAnalytics.find(item => String(item.id ?? "") === selectedDoctor);
+            const chartItems = selectedDoctor
+                ? doctorAnalytics.filter(item => String(item.id ?? "") === selectedDoctor)
+                : selectedDepartment
+                    ? doctorAnalytics.filter(item => String(item.departmentId ?? "") === selectedDepartment)
+                    : doctorAnalytics;
+
+            setChartData(
+                chartItems.map(item => item.name),
+                chartItems.map(item => item.collectedRevenue || 0),
+                chartItems.map(item => item.pendingRevenue || 0),
+                chartItems.map(item => ({ ...item, type: "doctor" })),
+                "Secili doktor"
+            );
+            updateSummary(buildDoctorSummary(selectedItem || null));
+            applyRowFilterBySelection(mode, selectedDepartment, selectedDoctor);
+        }
+
+        analysisModeSelect?.addEventListener("change", function() {
+            if (this.value === "department") {
+                analysisDoctorSelect.value = "";
+            }
+            updateAnalysisView();
+        });
+
+        analysisDepartmentSelect?.addEventListener("change", function() {
+            if (!this.value && analysisModeSelect.value === "department") {
+                analysisDoctorSelect.value = "";
+            }
+            updateAnalysisView();
+        });
+
+        analysisDoctorSelect?.addEventListener("change", function() {
+            if (this.value) {
+                analysisModeSelect.value = "doctor";
+            }
+            updateAnalysisView();
+        });
+
+        clearAnalysisSelectionBtn?.addEventListener("click", function() {
+            analysisModeSelect.value = "department";
+            analysisDepartmentSelect.value = "";
+            analysisDoctorSelect.value = "";
+            updateAnalysisView();
+        });
+
+        updateAnalysisView();
+
+        const ctxPie = document.getElementById("revenuePieChart").getContext("2d");
+        new Chart(ctxPie, {
+            type: 'doughnut',
+            data: {
+                labels: ['Tahsil Edilen', 'Bekleyen', 'İptal'],
+                datasets: [{
+                    data: [@((double)Model.CollectedRevenue), @((double)Model.PendingRevenue), @((double)Model.CancelledRevenue)],
+                    backgroundColor: ['#198754', '#ffc107', '#dc3545'],
+                    borderWidth: 0,
+                    hoverOffset: 12
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '75%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { usePointStyle: true, padding: 20, font: { size: 12 } }
+                    }
+                }
+            }
+        });
+
+        const ctxServicePie = document.getElementById("serviceStatusPieChart").getContext("2d");
+        new Chart(ctxServicePie, {
+            type: "doughnut",
+            data: {
+                labels: ["Tamamlanan", "Bekleyen", "Iptal"],
+                datasets: [{
+                    data: [@Model.CompletedAppointments, @Model.PendingAppointments, @Model.CancelledAppointments],
+                    backgroundColor: ["#20c997", "#0dcaf0", "#dc3545"],
+                    borderWidth: 0,
+                    hoverOffset: 10
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: "70%",
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { usePointStyle: true, padding: 16, font: { size: 12 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `${context.label}: ${context.parsed} adet`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        const trendLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueTrend.Select(x => x.Label)));
+        const trendCollected = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueTrend.Select(x => x.CollectedRevenue)));
+        const trendPending = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueTrend.Select(x => x.PendingRevenue)));
+        const trendAppointments = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueTrend.Select(x => x.AppointmentCount)));
+
+        const ctxTrend = document.getElementById("revenueTrendChart").getContext("2d");
+        new Chart(ctxTrend, {
+            type: "line",
+            data: {
+                labels: trendLabels,
+                datasets: [
+                    {
+                        label: "Tahsil Edilen",
+                        data: trendCollected,
+                        borderColor: "#0d6efd",
+                        backgroundColor: "rgba(13, 110, 253, 0.16)",
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointHoverRadius: 7
+                    },
+                    {
+                        label: "Bekleyen",
+                        data: trendPending,
+                        borderColor: "#fd7e14",
+                        backgroundColor: "rgba(253, 126, 20, 0.12)",
+                        fill: true,
+                        tension: 0.35,
+                        pointRadius: 4,
+                        pointHoverRadius: 7
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                plugins: {
+                    tooltip: {
+                        callbacks: {
+                            afterBody: function(items) {
+                                const idx = items?.[0]?.dataIndex ?? -1;
+                                if (idx < 0) return "";
+                                return `Randevu: ${trendAppointments[idx]}`;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: { callback: (v) => currency(v) }
+                    }
+                },
+                onHover: function(event, activeElements) {
+                    if (!activeElements.length) return;
+                    const idx = activeElements[0].index;
+                    hoverInfoText.textContent = `${trendLabels[idx]} | Tahsil: ${currency(trendCollected[idx])} | Bekleyen: ${currency(trendPending[idx])} | Randevu: ${trendAppointments[idx]}`;
+                }
+            }
+        });
+    });
+</script>
+

@@ -1,4 +1,4 @@
-using HastaneRandevuSistemi.Data;
+﻿using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -50,3 +50,4 @@ namespace HastaneRandevuSistemi.Services
         }
     }
 }
+

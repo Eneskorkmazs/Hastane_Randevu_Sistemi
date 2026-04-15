@@ -40,6 +40,7 @@ namespace HastaneRandevuSistemi.Services
                 using var smtpClient = new SmtpClient(host)
                 {
                     Port = port,
+                    UseDefaultCredentials = false,
                     Credentials = new NetworkCredential(fromEmail, password),
                     EnableSsl = enableSsl,
                     DeliveryMethod = SmtpDeliveryMethod.Network,

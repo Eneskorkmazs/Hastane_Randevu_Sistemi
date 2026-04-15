@@ -1,7 +1,12 @@
 ﻿using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
+using HastaneRandevuSistemi.Validators;
+using FluentValidation;
+using FluentValidation.AspNetCore;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -25,6 +30,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 var localConnectionString = builder.Configuration.GetConnectionString("LocalDefaultConnection")
     ?? "Data Source=HastaneRandevuSistemi.local.db";
 var databaseProvider = builder.Configuration["DatabaseProvider"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "HastaneRandevuSistemi";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "HastaneRandevuSistemi";
+var jwtSecret = builder.Configuration["Jwt:Key"] ?? "HastaneRandevuSistemiSuperSecretKeyDahaUzunOlmali123!";
 
 if (string.IsNullOrWhiteSpace(databaseProvider))
 {
@@ -82,7 +90,38 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<HastaneRandevuSistemi.Services.EmailService>();
-builder.Services.AddControllersWithViews();
+builder.Services.AddHttpClient<HastaneRandevuSistemi.Services.SmsService>();
+builder.Services.AddHostedService<HastaneRandevuSistemi.Services.AppointmentReminderService>();
+builder.Services.AddMemoryCache();
+builder.Services.AddResponseCaching(options =>
+{
+    options.MaximumBodySize = 1024 * 1024;
+    options.SizeLimit = 1024 * 1024 * 10;
+});
+builder.Services.AddAntiforgery(options =>
+{
+    options.HeaderName = "X-CSRF-TOKEN";
+    options.Cookie.Name = "__HRS-CSRF";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
+    options.Cookie.SameSite = SameSiteMode.Strict;
+});
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddValidatorsFromAssemblyContaining<RegisterViewModelValidator>();
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.SameAsRequest
+        : CookieSecurePolicy.Always;
+});
 
 builder.Services.AddAuthentication()
     .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
@@ -93,9 +132,9 @@ builder.Services.AddAuthentication()
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = "HastaneRandevuSistemi",
-            ValidAudience = "HastaneRandevuSistemi",
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("HastaneRandevuSistemiSuperSecretKeyDahaUzunOlmali123!"))
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret))
         };
     });
 
@@ -115,13 +154,27 @@ if (!app.Environment.IsDevelopment())
     app.UseHttpsRedirection();
 }
 
-app.UseSwagger();
-app.UseSwaggerUI(c =>
+if (app.Environment.IsDevelopment())
 {
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hastane Randevu Sistemi API V1");
-});
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hastane Randevu Sistemi API V1");
+    });
+}
 
 app.UseStaticFiles();
+app.UseResponseCaching();
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+    context.Response.Headers["Content-Security-Policy"] =
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data:;";
+    await next();
+});
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

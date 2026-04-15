@@ -18,6 +18,10 @@
             <a asp-action="Profile" class="btn btn-outline-light rounded-pill px-4">
                 <i class="fa-solid fa-user-pen me-2"></i>Profilim
             </a>
+            <a asp-action="MedicalHistory" class="btn btn-outline-light rounded-pill px-4">
+                <i class="fa-solid fa-notes-medical me-2"></i>Saglik Gecmisim
+                <span class="badge rounded-pill bg-light text-dark ms-2">@Model.MedicalHistoryCount / @Model.PrescriptionCount</span>
+            </a>
         </div>
     </div>
 
@@ -97,7 +101,7 @@
                                             </td>
                                             <td class="text-end">
                                                 @if (canCancel) {
-                                                    <form asp-controller="Appointment" asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm(''Bu randevuyu iptal etmek istiyor musunuz?'');">
+                                                    <form asp-controller="Appointment" asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
                                                         @Html.AntiForgeryToken()
                                                         <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
                                                             İptal Et
@@ -403,11 +407,51 @@
         opacity: 0.85;
     }
 
+    [data-theme="dark"] .dashboard-stat-card {
+        background: var(--bg-surface);
+        color: var(--text-primary);
+        box-shadow: var(--card-shadow);
+    }
+
+    [data-theme="dark"] .dashboard-stat-card span {
+        color: var(--text-secondary);
+    }
+
+    [data-theme="dark"] .dashboard-stat-card strong {
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .department-fee-row {
+        background: linear-gradient(180deg, #111827 0%, #1e293b 100%);
+        border-color: var(--border-color);
+    }
+
+    [data-theme="dark"] .department-fee-row span {
+        color: var(--text-primary);
+    }
+
+    [data-theme="dark"] .department-fee-row strong {
+        color: #8bd5ff;
+    }
+
+    [data-theme="dark"] .notification-card {
+        background: var(--bg-surface);
+        border-color: var(--border-color);
+    }
+
+    [data-theme="dark"] .notification-card.is-unread {
+        background: linear-gradient(180deg, #0f172a 0%, #162235 100%);
+        border-color: #2b4e73;
+    }
+
+    [data-theme="dark"] .profile-summary div {
+        border-bottom-color: var(--border-color);
+    }
+
     @@media (max-width: 991px) {
         .patient-hero {
             flex-direction: column;
         }
     }
 </style>
-
 

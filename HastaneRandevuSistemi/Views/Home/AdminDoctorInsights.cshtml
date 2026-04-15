@@ -1,0 +1,358 @@
+@model HastaneRandevuSistemi.ViewModels.AdminDoctorInsightsViewModel
+
+@{
+    ViewData["Title"] = "Doktor Istatistikleri";
+    var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <span class="text-uppercase small fw-bold text-primary">Admin Analitik</span>
+            <h1 class="h3 fw-bold mb-1">Doktor Istatistikleri</h1>
+            <p class="text-muted mb-0">Secilen doktorun haftalik/aylik performansini ve tum doktor karsilastirmalarini izleyin.</p>
+        </div>
+        <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Don</a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label">Doktor</label>
+                    <select class="form-select" name="doctorId">
+                        @foreach (var option in Model.DoctorOptions)
+                        {
+                            <option value="@option.Value" selected="@option.Selected">@option.Text</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Donem</label>
+                    <select class="form-select" name="period" id="periodSelector">
+                        <option value="weekly" selected="@(Model.Period == "weekly")">Haftalik</option>
+                        <option value="monthly" selected="@(Model.Period == "monthly")">Aylik</option>
+                        <option value="custom" selected="@(Model.Period == "custom")">Ozel Aralik</option>
+                    </select>
+                </div>
+                <div class="col-md-2 custom-date-field @(Model.Period == "custom" ? "" : "d-none")">
+                    <label class="form-label">Baslangic</label>
+                    <input type="date" class="form-control" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-2 custom-date-field @(Model.Period == "custom" ? "" : "d-none")">
+                    <label class="form-label">Bitis</label>
+                    <input type="date" class="form-control" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+                </div>
+                <div class="col-md-1 d-grid">
+                    <button type="submit" class="btn btn-primary">Uygula</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small">Toplam Randevu</div>
+                    <div class="display-6 fw-bold">@Model.TotalAppointments</div>
+                    <small class="text-muted">@Model.StartDate.ToString("dd.MM.yyyy") - @Model.EndDate.ToString("dd.MM.yyyy")</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small">Benzersiz Hasta</div>
+                    <div class="display-6 fw-bold">@Model.UniquePatientCount</div>
+                    <small class="text-muted">@Model.SelectedDoctorName</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small">Tamamlanma Orani</div>
+                    <div class="display-6 fw-bold text-success">% @Model.CompletionRate.ToString("F1", trCulture)</div>
+                    <small class="text-muted">@Model.CompletedAppointments tamamlanan</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="text-muted small">Tahsilat Orani</div>
+                    <div class="display-6 fw-bold text-primary">% @Model.CollectionRate.ToString("F1", trCulture)</div>
+                    <small class="text-muted">@Model.CollectedRevenue.ToString("C0", trCulture)</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Randevu Trendi</h5>
+                    <div style="height: 320px;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Durum Dagilimi</h5>
+                    <div style="height: 320px;">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Bolum Dagilimi</h5>
+                    @if (!Model.DepartmentBreakdown.Any())
+                    {
+                        <div class="text-muted">Veri bulunamadi.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Bolum</th>
+                                        <th>Randevu</th>
+                                        <th>Hasta</th>
+                                        <th class="text-end">Tahsilat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var item in Model.DepartmentBreakdown)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@item.DepartmentName</td>
+                                            <td>@item.AppointmentCount</td>
+                                            <td>@item.UniquePatientCount</td>
+                                            <td class="text-end text-success fw-semibold">@item.CollectedRevenue.ToString("C0", trCulture)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">En Sik Hastalar</h5>
+                    @if (!Model.TopPatients.Any())
+                    {
+                        <div class="text-muted">Veri bulunamadi.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Hasta</th>
+                                        <th class="text-end">Randevu Sayisi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var patient in Model.TopPatients)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold">@patient.PatientName</td>
+                                            <td class="text-end">@patient.AppointmentCount</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Doktor Karsilastirma (Ayni Donem)</h5>
+                    @if (!Model.DoctorRanking.Any())
+                    {
+                        <div class="text-muted">Veri bulunamadi.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Doktor</th>
+                                        <th>Bolum</th>
+                                        <th>Randevu</th>
+                                        <th>Tamamlanan</th>
+                                        <th>Hasta</th>
+                                        <th class="text-end">Tahsilat</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var row in Model.DoctorRanking)
+                                    {
+                                        <tr class="@(Model.DoctorId.HasValue && row.DoctorId == Model.DoctorId.Value ? "table-primary" : string.Empty)">
+                                            <td class="fw-semibold">@row.DoctorName</td>
+                                            <td>@row.DepartmentName</td>
+                                            <td>@row.AppointmentCount</td>
+                                            <td>@row.CompletedCount</td>
+                                            <td>@row.UniquePatientCount</td>
+                                            <td class="text-end text-success fw-semibold">@row.CollectedRevenue.ToString("C0", trCulture)</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <h5 class="fw-bold mb-3">Son Randevular</h5>
+            @if (!Model.RecentAppointments.Any())
+            {
+                <div class="text-muted">Veri bulunamadi.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Hasta</th>
+                                <th>Bolum</th>
+                                <th>Durum</th>
+                                <th>Odeme</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.RecentAppointments)
+                            {
+                                <tr>
+                                    <td>@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td class="fw-semibold">@item.PatientName</td>
+                                    <td>@item.DepartmentName</td>
+                                    <td>@item.Status</td>
+                                    <td>
+                                        @if (item.IsCollected)
+                                        {
+                                            <span class="badge bg-success">Alindi</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Bekliyor</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        (function () {
+            const periodSelector = document.getElementById("periodSelector");
+            const customFields = document.querySelectorAll(".custom-date-field");
+
+            function syncCustomFields() {
+                const show = periodSelector && periodSelector.value === "custom";
+                customFields.forEach(x => x.classList.toggle("d-none", !show));
+            }
+
+            if (periodSelector) {
+                periodSelector.addEventListener("change", syncCustomFields);
+                syncCustomFields();
+            }
+
+            const trendLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trend.Select(x => x.Label)));
+            const trendAppointments = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trend.Select(x => x.AppointmentCount)));
+            const trendCompleted = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Trend.Select(x => x.CompletedCount)));
+            const statusLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StatusBreakdown.Select(x => x.StatusLabel)));
+            const statusCounts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StatusBreakdown.Select(x => x.Count)));
+
+            const trendCtx = document.getElementById("trendChart");
+            if (trendCtx) {
+                new Chart(trendCtx, {
+                    type: "line",
+                    data: {
+                        labels: trendLabels,
+                        datasets: [
+                            {
+                                label: "Toplam Randevu",
+                                data: trendAppointments,
+                                borderColor: "#0d6efd",
+                                backgroundColor: "rgba(13, 110, 253, 0.16)",
+                                fill: true,
+                                tension: 0.28
+                            },
+                            {
+                                label: "Tamamlanan",
+                                data: trendCompleted,
+                                borderColor: "#198754",
+                                backgroundColor: "rgba(25, 135, 84, 0.12)",
+                                fill: true,
+                                tension: 0.28
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { position: "bottom" } }
+                    }
+                });
+            }
+
+            const statusCtx = document.getElementById("statusChart");
+            if (statusCtx) {
+                new Chart(statusCtx, {
+                    type: "doughnut",
+                    data: {
+                        labels: statusLabels,
+                        datasets: [{
+                            data: statusCounts,
+                            backgroundColor: ["#ffc107", "#0d6efd", "#dc3545", "#198754"],
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        cutout: "70%",
+                        plugins: { legend: { position: "bottom" } }
+                    }
+                });
+            }
+        })();
+    </script>
+}

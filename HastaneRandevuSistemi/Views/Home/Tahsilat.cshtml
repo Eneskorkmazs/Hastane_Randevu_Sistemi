@@ -1,14 +1,11 @@
-@model IEnumerable<HastaneRandevuSistemi.ViewModels.AccountingLedgerItem>
+@model HastaneRandevuSistemi.ViewModels.TahsilatDashboardViewModel
+
 @{
     ViewData["Title"] = "Tahsilat Merkezi";
+    var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
 }
 
-<div class="container-fluid px-md-5 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
-        <h2 class="fw-bold text-success mb-0"><i class="fa-solid fa-hand-holding-dollar me-2"></i>Tahsilat Merkezi</h2>
-        <a asp-controller="Home" asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill">Admin Panele Dön</a>
-    </div>
-
+<div class="container py-4">
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4" role="alert">
@@ -16,6 +13,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
+
     @if (TempData["ErrorMessage"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-4" role="alert">
@@ -24,49 +22,184 @@
         </div>
     }
 
+    <div class="tahsilat-hero mb-4">
+        <div>
+            <span class="eyebrow">Finans Operasyonu</span>
+            <h1 class="mb-2">Tahsilat Merkezi</h1>
+            <p class="mb-0">Bugun alinacak odemeleri, gecikmis tahsilatlari ve son kasa hareketlerini tek ekrandan yonetin.</p>
+        </div>
+        <div class="hero-actions">
+            <a asp-action="AdminAccounting" class="btn btn-light text-primary fw-bold rounded-pill px-4">Muhasebe</a>
+            <a asp-action="AdminDashboard" class="btn btn-outline-light rounded-pill px-4">Panele Don</a>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="metric-card">
+                <span>Bekleyen Toplam</span>
+                <strong>@Model.PendingTotal.ToString("C0", trCulture)</strong>
+                <small>@Model.PendingCount kayit</small>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="metric-card warning">
+                <span>Gecikmis Tahsilat</span>
+                <strong>@Model.OverdueTotal.ToString("C0", trCulture)</strong>
+                <small>@Model.OverdueCount kayit</small>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="metric-card info">
+                <span>Bugun Alinabilir</span>
+                <strong>@Model.TodayTotal.ToString("C0", trCulture)</strong>
+                <small>@Model.TodayCount kayit</small>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="metric-card success">
+                <span>Bugun Kasa</span>
+                <strong>@Model.CollectedTodayTotal.ToString("C0", trCulture)</strong>
+                <small>Tahsil edilen toplam</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                        <div>
+                            <h5 class="fw-bold mb-1">Oncelikli Tahsilatlar</h5>
+                            <p class="text-muted small mb-0">Gecikmis kayitlar once gelir, sonra bugun alinabilecek odemeler listelenir.</p>
+                        </div>
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.PendingItems.Count kayit</span>
+                    </div>
+
+                    @if (!Model.PendingItems.Any())
+                    {
+                        <div class="empty-state">
+                            <i class="fa-solid fa-circle-check"></i>
+                            <p class="mb-0">Tahsilat bekleyen kayit kalmadi.</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Oncelik</th>
+                                        <th>Hasta</th>
+                                        <th>Doktor / Bolum</th>
+                                        <th>Tarih</th>
+                                        <th class="text-end">Tutar</th>
+                                        <th class="text-end">Islem</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var payment in Model.PendingItems.OrderBy(x => x.AppointmentDate))
+                                    {
+                                        var isOverdue = payment.AppointmentDate.Date < DateTime.Today;
+                                        <tr>
+                                            <td>
+                                                <span class="badge rounded-pill @(isOverdue ? "bg-danger" : "bg-warning text-dark")">
+                                                    @(isOverdue ? "Gecikmis" : "Bugun")
+                                                </span>
+                                            </td>
+                                            <td class="fw-semibold">@payment.PatientName</td>
+                                            <td>
+                                                <div>@payment.DoctorName</div>
+                                                <div class="small text-muted">@payment.DepartmentName</div>
+                                            </td>
+                                            <td>@payment.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                            <td class="text-end fw-semibold">@payment.Amount.ToString("C0", trCulture)</td>
+                                            <td class="text-end">
+                                                <form asp-action="MarkCollected" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@payment.AppointmentId" />
+                                                    <input type="hidden" name="returnUrl" value="@Url.Action("Tahsilat", "Home")" />
+                                                    <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">
+                                                        <i class="fa-solid fa-check me-1"></i>Tahsil Et
+                                                    </button>
+                                                </form>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">Hizli Ozet</h5>
+                    <div class="summary-stack">
+                        <div class="summary-tile">
+                            <span>En yuksek bekleyen bolum</span>
+                            <strong>@Model.TopDepartmentName</strong>
+                            <small>@Model.TopDepartmentAmount.ToString("C0", trCulture)</small>
+                        </div>
+                        <div class="summary-tile">
+                            <span>En yuksek bekleyen doktor</span>
+                            <strong>@Model.TopDoctorName</strong>
+                            <small>@Model.TopDoctorAmount.ToString("C0", trCulture)</small>
+                        </div>
+                        <div class="summary-tile subtle">
+                            <span>Operasyon notu</span>
+                            <strong>Once gecikmis tahsilatlari kapat</strong>
+                            <small>Kasa akisinda en hizli iyilesme bu listeden gelir.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="card border-0 shadow-sm rounded-4">
         <div class="card-body p-4">
-            <h5 class="fw-bold mb-4">Bekleyen Tüm Ödemeler</h5>
-            @if (!Model.Any())
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-1">Son Tahsil Edilenler</h5>
+                    <p class="text-muted small mb-0">Kasaya yeni giren hareketleri hizlica kontrol edin.</p>
+                </div>
+                <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.RecentCollectedItems.Count hareket</span>
+            </div>
+
+            @if (!Model.RecentCollectedItems.Any())
             {
-                <div class="text-center py-5 text-muted bg-light rounded-4">
-                    <i class="fa-solid fa-check-circle fa-3x mb-3 text-success opacity-50"></i>
-                    <p class="mb-0">Tahsilat bekleyen işlem bulunmuyor.</p>
+                <div class="empty-state compact">
+                    <i class="fa-solid fa-receipt"></i>
+                    <p class="mb-0">Henuz tahsil edilmis kayit bulunmuyor.</p>
                 </div>
             }
             else
             {
                 <div class="table-responsive">
-                    <table class="table align-middle table-hover mb-0">
+                    <table class="table align-middle mb-0">
                         <thead>
                             <tr>
-                                <th class="text-secondary small">HASTA</th>
-                                <th class="text-secondary small">DOKTOR & BÖLÜM</th>
-                                <th class="text-secondary small">TARİH</th>
-                                <th class="text-secondary small text-end">TUTAR</th>
-                                <th class="text-secondary small text-end">İŞLEM</th>
+                                <th>Hasta</th>
+                                <th>Doktor</th>
+                                <th>Bolum</th>
+                                <th>Tarih</th>
+                                <th class="text-end">Tutar</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var payment in Model)
+                            @foreach (var item in Model.RecentCollectedItems)
                             {
                                 <tr>
-                                    <td class="fw-bold">@payment.PatientName</td>
-                                    <td>
-                                        <div>@payment.DoctorName</div>
-                                        <div class="small text-muted">@payment.DepartmentName</div>
-                                    </td>
-                                    <td>@payment.AppointmentDate.ToString("dd MMM yyyy HH:mm")</td>
-                                    <td class="text-end fw-bold text-dark">@payment.Amount.ToString("C2")</td>
-                                    <td class="text-end">
-                                        <form asp-controller="Home" asp-action="MarkCollected" method="post" class="d-inline-block">
-                                            <input type="hidden" name="id" value="@payment.AppointmentId" />
-                                            <input type="hidden" name="returnUrl" value="@Url.Action("Tahsilat")" />
-                                            <button type="submit" class="btn btn-success fw-bold px-4 rounded-pill shadow-sm">
-                                                <i class="fa-solid fa-check me-2"></i>Tahsil Et
-                                            </button>
-                                        </form>
-                                    </td>
+                                    <td class="fw-semibold">@item.PatientName</td>
+                                    <td>@item.DoctorName</td>
+                                    <td>@item.DepartmentName</td>
+                                    <td>@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td class="text-end fw-semibold text-success">@item.Amount.ToString("C0", trCulture)</td>
                                 </tr>
                             }
                         </tbody>
@@ -76,3 +209,115 @@
         </div>
     </div>
 </div>
+
+<style>
+    .tahsilat-hero {
+        border-radius: 30px;
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        gap: 2rem;
+        color: #fff;
+        background: linear-gradient(135deg, #0f5a45 0%, #05281f 100%);
+        box-shadow: 0 24px 60px rgba(5, 40, 31, 0.18);
+    }
+
+    .tahsilat-hero h1 {
+        font-size: clamp(2rem, 3vw, 3rem);
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .eyebrow {
+        display: inline-block;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .hero-actions {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .metric-card {
+        height: 100%;
+        border-radius: 22px;
+        padding: 1.25rem;
+        background: linear-gradient(180deg, #ffffff 0%, #f4fbf7 100%);
+        box-shadow: 0 15px 35px rgba(22, 36, 56, 0.08);
+    }
+
+    .metric-card.warning { background: linear-gradient(180deg, #fffaf1 0%, #ffe5bf 100%); }
+    .metric-card.info { background: linear-gradient(180deg, #f4fcff 0%, #d6f0ff 100%); }
+    .metric-card.success { background: linear-gradient(180deg, #f4fff8 0%, #cff3dd 100%); }
+
+    .metric-card span, .metric-card small {
+        display: block;
+        color: #5f6f7d;
+    }
+
+    .metric-card strong {
+        display: block;
+        font-size: 2rem;
+        line-height: 1;
+        margin: 0.6rem 0;
+        color: #102a43;
+    }
+
+    .summary-stack {
+        display: grid;
+        gap: 1rem;
+    }
+
+    .summary-tile {
+        border-radius: 18px;
+        padding: 1rem 1.1rem;
+        background: linear-gradient(180deg, #f8fbfd 0%, #edf3f7 100%);
+        border: 1px solid #e2eaf1;
+    }
+
+    .summary-tile.subtle {
+        background: linear-gradient(180deg, #f6fbf8 0%, #e7f4ec 100%);
+    }
+
+    .summary-tile span, .summary-tile small {
+        display: block;
+        color: #607283;
+    }
+
+    .summary-tile strong {
+        display: block;
+        color: #102a43;
+        font-size: 1.08rem;
+        margin: 0.35rem 0;
+    }
+
+    .empty-state {
+        min-height: 220px;
+        display: grid;
+        place-items: center;
+        text-align: center;
+        color: #7d8a97;
+        gap: 0.75rem;
+    }
+
+    .empty-state.compact {
+        min-height: 140px;
+    }
+
+    .empty-state i {
+        font-size: 2.3rem;
+    }
+
+    @@media (max-width: 991px) {
+        .tahsilat-hero {
+            flex-direction: column;
+        }
+    }
+</style>

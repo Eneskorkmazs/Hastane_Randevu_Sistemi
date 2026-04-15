@@ -1,4 +1,4 @@
-﻿@using Microsoft.AspNetCore.Identity
+@using Microsoft.AspNetCore.Identity
 @using HastaneRandevuSistemi.Models
 @using Microsoft.EntityFrameworkCore
 @inject SignInManager<AppUser> SignInManager
@@ -79,6 +79,13 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        (function () {
+            var currentTheme = localStorage.getItem('theme') || "light";
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            document.documentElement.setAttribute('data-bs-theme', currentTheme);
+        })();
+    </script>
 </head>
 <body class="d-flex flex-column min-vh-100">
 
@@ -109,8 +116,8 @@
                     <span class="navbar-toggler-icon"></span>
                 </button>
 
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1 ms-auto mb-2 mb-lg-0">
+                <div class="navbar-collapse collapse justify-content-between">
+                    <ul class="navbar-nav nav-main-links flex-grow-1 ms-auto mb-2 mb-lg-0">
 
                         @if (!isDoctor)
                         {
@@ -159,6 +166,11 @@
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Patient", "Dashboard")" asp-controller="Patient" asp-action="Dashboard">
                                     <i class="fa-solid fa-gauge-high me-1"></i> Panelim
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("Patient", "MedicalHistory", "Prescriptions")" asp-controller="Patient" asp-action="MedicalHistory">
+                                    <i class="fa-solid fa-notes-medical me-1"></i> Saglik Gecmisim
                                 </a>
                             </li>
                             <li class="nav-item position-relative">
@@ -250,7 +262,13 @@
                         }
                     </ul>
 
-                    <ul class="navbar-nav ms-3">
+                    <ul class="navbar-nav nav-user-actions ms-3 align-items-center">
+                        <li class="nav-item me-3">
+                            <button id="theme-toggle" class="border-0 shadow-sm" aria-label="Tema değiştir" title="Tema Değiştir">
+                                <i class="fa-solid fa-moon"></i>
+                                <i class="fa-solid fa-sun text-warning"></i>
+                            </button>
+                        </li>
                         @if (isSignedIn)
                         {
                             var currentUser = await UserManager.GetUserAsync(User);
@@ -275,6 +293,11 @@
                                         <li>
                                             <a class="dropdown-item" asp-controller="Patient" asp-action="Profile">
                                                 <i class="fa-solid fa-user-pen me-2"></i> Profilim
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Patient" asp-action="MedicalHistory">
+                                                <i class="fa-solid fa-notes-medical me-2"></i> Saglik Gecmisim
                                             </a>
                                         </li>
                                         <li>

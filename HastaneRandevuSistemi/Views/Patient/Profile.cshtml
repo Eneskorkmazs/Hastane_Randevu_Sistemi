@@ -1,4 +1,4 @@
-@model HastaneRandevuSistemi.ViewModels.PatientProfileViewModel
+﻿@model HastaneRandevuSistemi.ViewModels.PatientProfileViewModel
 
 @{
     ViewData["Title"] = "Profilim";
@@ -69,6 +69,9 @@
                 </div>
 
                 <div class="col-12 d-flex justify-content-end gap-2 pt-2">
+                    <a asp-action="ChangePassword" class="btn btn-outline-primary rounded-pill px-4">
+                        <i class="fa-solid fa-key me-2"></i>Parola Degistir
+                    </a>
                     <a asp-action="Dashboard" class="btn btn-light rounded-pill px-4">Panele Dön</a>
                     <button type="submit" class="btn btn-primary rounded-pill px-4">
                         <i class="fa-solid fa-floppy-disk me-2"></i>Kaydet
@@ -99,3 +102,4 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
 }
+

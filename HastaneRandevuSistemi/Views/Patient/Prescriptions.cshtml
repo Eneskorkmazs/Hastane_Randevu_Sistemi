@@ -1,0 +1,65 @@
+@model HastaneRandevuSistemi.ViewModels.PatientPrescriptionsViewModel
+
+@{
+    ViewData["Title"] = "Reçetelerim";
+}
+
+<div class="container py-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1">Reçetelerim</h1>
+            <p class="text-muted mb-0">Randevu tarihine göre doktorunuzun yazdığı ilaçları görüntüleyin.</p>
+        </div>
+        <a asp-action="Dashboard" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="fa-solid fa-arrow-left me-2"></i>Hasta Paneli
+        </a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            @if (!Model.Items.Any())
+            {
+                <div class="text-center text-muted py-5">
+                    <i class="fa-solid fa-prescription-bottle-medical fs-1 mb-3"></i>
+                    <p class="mb-0">Henüz oluşturulmuş bir reçeteniz bulunmuyor.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Randevu Tarihi</th>
+                                <th>Doktor / Branş</th>
+                                <th>Tanı</th>
+                                <th>İlaçlar</th>
+                                <th>Notlar</th>
+                                <th>Reçete Tarihi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Items)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</div>
+                                        <a asp-controller="Appointment" asp-action="Details" asp-route-id="@item.AppointmentId" class="small text-decoration-none">Randevu detayı</a>
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold">@item.DoctorName</div>
+                                        <div class="small text-muted">@item.DepartmentName</div>
+                                    </td>
+                                    <td>@item.Diagnosis</td>
+                                    <td class="text-success-emphasis fw-semibold">@item.Medications</td>
+                                    <td>@(string.IsNullOrWhiteSpace(item.Notes) ? "-" : item.Notes)</td>
+                                    <td>@item.PrescriptionDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

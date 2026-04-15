@@ -5,6 +5,7 @@ namespace HastaneRandevuSistemi.ViewModels
         public string DoctorName { get; set; } = string.Empty;
         public string DepartmentName { get; set; } = string.Empty;
         public string Title { get; set; } = "Uzm. Dr.";
+        public int CurrentMonthOffset { get; set; }
         public string MonthTitle { get; set; } = string.Empty;
         public int AppointmentCountThisMonth { get; set; }
         public int TodayAppointmentCount { get; set; }

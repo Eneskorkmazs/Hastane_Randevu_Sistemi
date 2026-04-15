@@ -423,7 +423,11 @@
                     success: function (payload) {
                         $timeSelect.empty().append('<option value="">-- Saat seçiniz --</option>');
                         if (!payload.isAvailableDay) {
-                            $msgBox.text(payload.message).removeClass("text-success").addClass("text-danger");
+                            if (payload.isHoliday) {
+                                $msgBox.text("Bugün resmi tatil.").removeClass("text-success").addClass("text-danger");
+                            } else {
+                                $msgBox.text(payload.message).removeClass("text-success").addClass("text-danger");
+                            }
                             return;
                         }
 

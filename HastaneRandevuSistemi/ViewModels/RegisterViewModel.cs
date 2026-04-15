@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace HastaneRandevuSistemi.ViewModels
 {
@@ -55,3 +55,5 @@ namespace HastaneRandevuSistemi.ViewModels
         public string Adres { get; set; } = string.Empty;
     }
 }
+
+

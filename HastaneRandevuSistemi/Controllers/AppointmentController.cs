@@ -1,4 +1,4 @@
-using HastaneRandevuSistemi.Data;
+﻿using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Globalization;
 
 namespace HastaneRandevuSistemi.Controllers
@@ -48,18 +49,36 @@ namespace HastaneRandevuSistemi.Controllers
             }
         ];
 
+        private sealed class DepartmentLookupItem
+        {
+            public int Id { get; init; }
+            public string Name { get; init; } = string.Empty;
+        }
+
+        private sealed class DoctorLookupItem
+        {
+            public int id { get; init; }
+            public string name { get; init; } = string.Empty;
+        }
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<AppUser> _userManager;
         private readonly EmailService _emailService;
+        private readonly SmsService _smsService;
+        private readonly IMemoryCache _cache;
 
         public AppointmentController(
             ApplicationDbContext context,
             UserManager<AppUser> userManager,
-            EmailService emailService)
+            EmailService emailService,
+            SmsService smsService,
+            IMemoryCache cache)
         {
             _context = context;
             _userManager = userManager;
             _emailService = emailService;
+            _smsService = smsService;
+            _cache = cache;
         }
 
         private async Task<(string? UserId, string DisplayName)> GetCurrentActorAsync()
@@ -94,6 +113,7 @@ namespace HastaneRandevuSistemi.Controllers
             }
 
             var appointmentsQuery = _context.Appointments
+                .AsNoTracking()
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
                 .AsQueryable();
@@ -241,7 +261,7 @@ namespace HastaneRandevuSistemi.Controllers
                 ViewBag.PatientPhone = user.Telefon ?? user.PhoneNumber;
             }
 
-            ViewData["DepartmentId"] = new SelectList(_context.Departments, "Id", "Name");
+            await LoadDepartmentSelectListAsync();
             return View();
         }
 
@@ -269,6 +289,12 @@ namespace HastaneRandevuSistemi.Controllers
             if (appointment.AppointmentDate.Minute != 0 || appointment.AppointmentDate.Hour < 9 || appointment.AppointmentDate.Hour > 16)
             {
                 ModelState.AddModelError(nameof(appointment.AppointmentDate), "Randevular 09:00 - 16:00 arasında saat başlarında oluşturulabilir.");
+            }
+
+            var createHolidayMap = BuildHolidayMap(appointment.AppointmentDate.Year);
+            if (createHolidayMap.TryGetValue(DateOnly.FromDateTime(appointment.AppointmentDate), out var createHolidayLabel))
+            {
+                ModelState.AddModelError(nameof(appointment.AppointmentDate), $"Secilen tarih resmi tatildir ({createHolidayLabel}). Bu gun randevu verilemez.");
             }
 
             var availabilityPlan = await GetDoctorAvailabilityPlanAsync(appointment.DoctorId);
@@ -303,26 +329,57 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewData["DepartmentId"] = new SelectList(_context.Departments, "Id", "Name");
+                await LoadDepartmentSelectListAsync();
                 return View(appointment);
             }
 
             _context.Add(appointment);
             await _context.SaveChangesAsync();
 
+            var doctorForMessaging = await _context.Doctors
+                .Include(d => d.Department)
+                .FirstOrDefaultAsync(d => d.Id == appointment.DoctorId);
+
+            var doctorForMessageName = doctorForMessaging == null
+                ? "doktorunuz"
+                : $"{doctorForMessaging.Title} {doctorForMessaging.Name} {doctorForMessaging.Surname}".Trim();
+            var departmentForMessageName = doctorForMessaging?.Department?.Name ?? "ilgili bölüm";
+
+            await _smsService.SendAppointmentSmsAsync(
+                appointment.PatientPhone ?? currentUser?.Telefon ?? currentUser?.PhoneNumber,
+                $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli {departmentForMessageName} / {doctorForMessageName} randevunuz olusturuldu. Saglikli gunler.");
+
+            var patientUserForMessaging = currentUser;
+            if (!string.IsNullOrWhiteSpace(appointment.PatientUserId) &&
+                (patientUserForMessaging == null || patientUserForMessaging.Id != appointment.PatientUserId))
+            {
+                patientUserForMessaging = await _userManager.FindByIdAsync(appointment.PatientUserId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(patientUserForMessaging?.Email))
+            {
+                var bookingMailBody = $@"
+<div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;'>
+    <h2 style='color: #2c3e50;'>Hastane Randevu Sistemi</h2>
+    <h3 style='color: #34495e;'>Randevunuz Olusturuldu</h3>
+    <p style='font-size: 16px; color: #555;'>{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli {departmentForMessageName} / {doctorForMessageName} randevunuz olusturulmustur.</p>
+    <p style='font-size: 14px; color: #777;'>Randevu No: {appointment.Id}</p>
+    <hr style='border: 0; border-top: 1px solid #ddd; margin: 20px 0;'/>
+    <p style='font-size: 12px; color: #aaa;'>Saglikli gunler dileriz.</p>
+</div>";
+
+                await _emailService.SendEmailAsync(
+                    patientUserForMessaging.Email,
+                    "Randevunuz olusturuldu",
+                    bookingMailBody);
+            }
+
             if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
             {
-                var doctor = await _context.Doctors
-                    .Include(d => d.Department)
-                    .FirstOrDefaultAsync(d => d.Id == appointment.DoctorId);
-
-                var doctorName = doctor == null ? "doktorunuz" : $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim();
-                var departmentName = doctor?.Department?.Name ?? "ilgili bölüm";
-
                 await CreateNotificationAsync(
                     appointment.PatientUserId,
                     "Randevunuz oluşturuldu",
-                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} için {departmentName} / {doctorName} randevunuz alındı.",
+                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} için {departmentForMessageName} / {doctorForMessageName} randevunuz alındı.",
                     "Randevu",
                     "/Appointment/Index");
             }
@@ -333,6 +390,70 @@ namespace HastaneRandevuSistemi.Controllers
                 return RedirectToAction("Dashboard", "Patient");
             }
 
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,Doktor")]
+        public async Task<IActionResult> SendReminder(int id)
+        {
+            var appointment = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Hatirlatma gonderilecek randevu bulunamadi.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (User.IsInRole("Doktor") && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
+            {
+                return Forbid();
+            }
+
+            if (User.IsInRole("Admin") && !appointment.AdminAccessGranted)
+            {
+                TempData["ErrorMessage"] = "Bu randevu icin once doktorun admin erisim izni vermesi gerekir.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (appointment.Status is AppointmentStatus.Iptal or AppointmentStatus.Tamamlandi)
+            {
+                TempData["InfoMessage"] = "Sadece aktif randevular icin hatirlatma gonderilebilir.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (appointment.AppointmentDate <= DateTime.Now)
+            {
+                TempData["InfoMessage"] = "Gecmis randevular icin hatirlatma gonderilemez.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (string.IsNullOrWhiteSpace(appointment.PatientUserId))
+            {
+                TempData["ErrorMessage"] = "Bu randevuya bagli bir hasta kullanicisi bulunamadigi icin hatirlatma gonderilemedi.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var doctorName = appointment.Doctor == null
+                ? "doktorunuz"
+                : $"{appointment.Doctor.Title} {appointment.Doctor.Name} {appointment.Doctor.Surname}".Trim();
+            var departmentName = appointment.Doctor?.Department?.Name ?? "ilgili bolum";
+            var reminderText = appointment.AppointmentDate - DateTime.Now <= TimeSpan.FromHours(24)
+                ? "Randevu saatiniz yaklasiyor."
+                : "Randevu tarihinizi unutmayiniz.";
+
+            await CreateNotificationAsync(
+                appointment.PatientUserId,
+                "Randevu hatirlatmasi",
+                $"{reminderText} {appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihindeki {departmentName} / {doctorName} randevunuz icin bilgilendirme mesajidir.",
+                "Hatirlatma",
+                "/Appointment/Index");
+
+            TempData["SuccessMessage"] = "Hatirlatma bildirimi ve e-postasi gonderildi.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -437,26 +558,47 @@ namespace HastaneRandevuSistemi.Controllers
             {
                 return Forbid();
             }
-
+            var wasCollectedBeforeCancel = appointment.IsCollected;
             var actor = await GetCurrentActorAsync();
 
             appointment.Status = AppointmentStatus.Iptal;
             appointment.CancelledByUserId = actor.UserId;
             appointment.CancelledByName = actor.DisplayName;
             appointment.CancelledDate = DateTime.Now;
+
+            // Iptal edilen randevuda daha once odeme alinmissa kaydi geri al (iade).
+            if (wasCollectedBeforeCancel)
+            {
+                appointment.IsCollected = false;
+                appointment.CollectedDate = null;
+
+                if (isPatient)
+                {
+                    appointment.CancelledByName = $"{actor.DisplayName} (Admin tarafindan odemesi geri iade edildi)";
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
             {
+                var cancelMessage = $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz iptal edildi.";
+                if (wasCollectedBeforeCancel)
+                {
+                    cancelMessage += " Admin tarafindan odeme iadeniz yapildi.";
+                }
+
                 await CreateNotificationAsync(
                     appointment.PatientUserId,
-                    "Randevu durumu güncellendi",
-                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz iptal edildi.",
+                    "Randevu durumu guncellendi",
+                    cancelMessage,
                     "Durum",
                     "/Appointment/Index");
             }
 
-            TempData["SuccessMessage"] = "Randevu iptal edildi.";
+            TempData["SuccessMessage"] = wasCollectedBeforeCancel
+                ? "Randevu iptal edildi ve odeme iadesi yapildi."
+                : "Randevu iptal edildi.";
             return RedirectToAction(nameof(Index));
         }
 
@@ -625,6 +767,7 @@ namespace HastaneRandevuSistemi.Controllers
             appointment.AdminAccessRequestedDate = DateTime.Now;
             appointment.AdminAccessRequestedByUserId = actor.UserId;
             appointment.AdminAccessRequestedByName = actor.DisplayName;
+
             await _context.SaveChangesAsync();
 
             if (!string.IsNullOrWhiteSpace(appointment.Doctor?.UserId))
@@ -660,12 +803,20 @@ namespace HastaneRandevuSistemi.Controllers
                 return Forbid();
             }
 
+            if (!appointment.AdminAccessRequested)
+            {
+                TempData["ErrorMessage"] = "Erisim izni verilmedi.";
+                return RedirectToAction(nameof(DoctorAccessRequests));
+            }
+
             var actor = await GetCurrentActorAsync();
+
             appointment.AdminAccessRequested = false;
             appointment.AdminAccessGranted = true;
             appointment.AdminAccessGrantedDate = DateTime.Now;
             appointment.AdminAccessGrantedByUserId = actor.UserId;
             appointment.AdminAccessGrantedByName = actor.DisplayName;
+
             await _context.SaveChangesAsync();
 
             if (!string.IsNullOrWhiteSpace(appointment.AdminAccessRequestedByUserId))
@@ -722,7 +873,7 @@ namespace HastaneRandevuSistemi.Controllers
                     "/Appointment/Index");
             }
 
-            TempData["SuccessMessage"] = "Admin erisim talebi reddedildi.";
+            TempData["SuccessMessage"] = "Erisim izni verilmedi.";
             return RedirectToAction(nameof(DoctorAccessRequests));
         }
 
@@ -749,12 +900,26 @@ namespace HastaneRandevuSistemi.Controllers
 
         [HttpGet]
         [AllowAnonymous]
-        public JsonResult GetDoctorsByDepartment(int departmentId)
+        [ResponseCache(Duration = 120, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "departmentId" })]
+        public async Task<IActionResult> GetDoctorsByDepartment(int departmentId)
         {
-            var doctors = _context.Doctors
-                .Where(d => d.DepartmentId == departmentId)
-                .Select(d => new { id = d.Id, name = (d.Title + " " + d.Name + " " + d.Surname).Trim() })
-                .ToList();
+            var cacheKey = $"lookup:doctors:department:{departmentId}";
+            if (!_cache.TryGetValue(cacheKey, out IReadOnlyList<DoctorLookupItem>? doctors))
+            {
+                doctors = await _context.Doctors
+                    .AsNoTracking()
+                    .Where(d => d.DepartmentId == departmentId)
+                    .OrderBy(d => d.Name)
+                    .ThenBy(d => d.Surname)
+                    .Select(d => new DoctorLookupItem
+                    {
+                        id = d.Id,
+                        name = (d.Title + " " + d.Name + " " + d.Surname).Trim()
+                    })
+                    .ToListAsync();
+
+                _cache.Set(cacheKey, doctors, TimeSpan.FromMinutes(10));
+            }
 
             return Json(doctors);
         }
@@ -780,6 +945,7 @@ namespace HastaneRandevuSistemi.Controllers
 
         [HttpGet]
         [AllowAnonymous]
+        [ResponseCache(Duration = 30, Location = ResponseCacheLocation.Any, VaryByQueryKeys = new[] { "doctorId", "date" })]
         public async Task<IActionResult> GetTakenSlots(int doctorId, string date)
         {
             if (!DateTime.TryParse(date, out var selectedDate))
@@ -793,24 +959,42 @@ namespace HastaneRandevuSistemi.Controllers
                 return NotFound();
             }
 
+            var holidayMap = BuildHolidayMap(selectedDate.Year);
+            var isHoliday = holidayMap.TryGetValue(DateOnly.FromDateTime(selectedDate), out var holidayLabel);
+            if (isHoliday)
+            {
+                return Json(new
+                {
+                    takenSlots = Array.Empty<string>(),
+                    availableHours = availabilityPlan.WorkingHours.Select(hour => $"{hour:00}:00"),
+                    isAvailableDay = false,
+                    isHoliday = true,
+                    holidayLabel = holidayLabel ?? string.Empty,
+                    summary = availabilityPlan.Summary,
+                    message = "Bugun resmi tatil."
+                });
+            }
+
             var isAvailableDay = availabilityPlan.WorkingDays.Contains(selectedDate.DayOfWeek);
-            var taken = _context.Appointments
+            var taken = await _context.Appointments
+                .AsNoTracking()
                 .Where(a => a.DoctorId == doctorId && a.AppointmentDate.Date == selectedDate.Date && a.Status != AppointmentStatus.Iptal)
                 .Select(a => a.AppointmentDate.ToString("HH:mm"))
-                .ToList();
+                .ToListAsync();
 
             return Json(new
             {
                 takenSlots = taken,
                 availableHours = availabilityPlan.WorkingHours.Select(hour => $"{hour:00}:00"),
                 isAvailableDay,
+                isHoliday = false,
+                holidayLabel = string.Empty,
                 summary = availabilityPlan.Summary,
                 message = isAvailableDay
-                    ? "Müsait saatler listelendi."
+                    ? "Musait saatler listelendi."
                     : $"Bu doktor {availabilityPlan.Summary} hizmet vermektedir."
             });
         }
-
         [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetRecommendedSlots(int doctorId, string? startDate)
@@ -826,6 +1010,7 @@ namespace HastaneRandevuSistemi.Controllers
             }
 
             var recommendations = new List<object>();
+            var holidayMap = BuildHolidayMap(searchStart.Year, searchStart.AddDays(21).Year);
             for (var dayOffset = 0; dayOffset < 21 && recommendations.Count < 5; dayOffset++)
             {
                 var currentDate = searchStart.AddDays(dayOffset);
@@ -834,9 +1019,16 @@ namespace HastaneRandevuSistemi.Controllers
                     continue;
                 }
 
-                var takenSlots = _context.Appointments
+                if (holidayMap.ContainsKey(DateOnly.FromDateTime(currentDate)))
+                {
+                    continue;
+                }
+
+                var takenSlots = (await _context.Appointments
+                    .AsNoTracking()
                     .Where(a => a.DoctorId == doctorId && a.AppointmentDate.Date == currentDate.Date && a.Status != AppointmentStatus.Iptal)
                     .Select(a => a.AppointmentDate.Hour)
+                    .ToListAsync())
                     .ToHashSet();
 
                 foreach (var hour in availabilityPlan.WorkingHours)
@@ -873,6 +1065,7 @@ namespace HastaneRandevuSistemi.Controllers
             }
 
             var doctorId = await _context.Doctors
+                .AsNoTracking()
                 .Where(d => d.UserId == user.Id)
                 .Select(d => (int?)d.Id)
                 .FirstOrDefaultAsync();
@@ -883,6 +1076,7 @@ namespace HastaneRandevuSistemi.Controllers
             }
 
             return await _context.Doctors
+                .AsNoTracking()
                 .Where(d => d.Name == user.Name && d.Surname == user.Surname)
                 .Select(d => (int?)d.Id)
                 .FirstOrDefaultAsync();
@@ -891,6 +1085,7 @@ namespace HastaneRandevuSistemi.Controllers
         private async Task<DoctorAvailabilityPlan?> GetDoctorAvailabilityPlanAsync(int doctorId)
         {
             var doctor = await _context.Doctors
+                .AsNoTracking()
                 .Where(d => d.Id == doctorId)
                 .Select(d => new { d.Id, d.DepartmentId })
                 .FirstOrDefaultAsync();
@@ -901,6 +1096,7 @@ namespace HastaneRandevuSistemi.Controllers
             }
 
             var departmentDoctorIds = await _context.Doctors
+                .AsNoTracking()
                 .Where(d => d.DepartmentId == doctor.DepartmentId)
                 .OrderBy(d => d.Id)
                 .Select(d => d.Id)
@@ -918,6 +1114,31 @@ namespace HastaneRandevuSistemi.Controllers
         private static string GetTurkishDayName(DayOfWeek dayOfWeek)
         {
             return new CultureInfo("tr-TR").DateTimeFormat.GetDayName(dayOfWeek);
+        }
+
+        private static IReadOnlyDictionary<DateOnly, string> BuildHolidayMap(params int[] years)
+        {
+            var map = new Dictionary<DateOnly, string>();
+            foreach (var year in years.Distinct())
+            {
+                AddHoliday(map, new DateOnly(year, 1, 1), "Yilbasi");
+                AddHoliday(map, new DateOnly(year, 4, 23), "23 Nisan Ulusal Egemenlik ve Cocuk Bayrami");
+                AddHoliday(map, new DateOnly(year, 5, 1), "1 Mayis Emek ve Dayanisma Gunu");
+                AddHoliday(map, new DateOnly(year, 5, 19), "19 Mayis Ataturk'u Anma, Genclik ve Spor Bayrami");
+                AddHoliday(map, new DateOnly(year, 7, 15), "15 Temmuz Demokrasi ve Milli Birlik Gunu");
+                AddHoliday(map, new DateOnly(year, 8, 30), "30 Agustos Zafer Bayrami");
+                AddHoliday(map, new DateOnly(year, 10, 29), "29 Ekim Cumhuriyet Bayrami");
+            }
+
+            return map;
+        }
+
+        private static void AddHoliday(IDictionary<DateOnly, string> map, DateOnly date, string label)
+        {
+            if (!map.ContainsKey(date))
+            {
+                map[date] = label;
+            }
         }
 
         private async Task CreateNotificationAsync(string userId, string title, string message, string type, string link)
@@ -954,6 +1175,23 @@ namespace HastaneRandevuSistemi.Controllers
             {
                 // Mail gonderimi basarisiz olursa akisi bolmemek icin sessizce gec
             }
+        }
+
+        private async Task LoadDepartmentSelectListAsync(int? selectedDepartmentId = null)
+        {
+            const string cacheKey = "lookup:departments";
+            if (!_cache.TryGetValue(cacheKey, out IReadOnlyList<DepartmentLookupItem>? departments))
+            {
+                departments = await _context.Departments
+                    .AsNoTracking()
+                    .OrderBy(d => d.Name)
+                    .Select(d => new DepartmentLookupItem { Id = d.Id, Name = d.Name })
+                    .ToListAsync();
+
+                _cache.Set(cacheKey, departments, TimeSpan.FromMinutes(20));
+            }
+
+            ViewData["DepartmentId"] = new SelectList(departments, nameof(DepartmentLookupItem.Id), nameof(DepartmentLookupItem.Name), selectedDepartmentId);
         }
 
         [HttpGet]
@@ -1082,3 +1320,6 @@ namespace HastaneRandevuSistemi.Controllers
         }
     }
 }
+
+
+

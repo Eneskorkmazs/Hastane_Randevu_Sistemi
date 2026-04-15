@@ -106,7 +106,16 @@ namespace HastaneRandevuSistemi.Controllers
 
             try
             {
-                var result = await _signInManager.PasswordSignInAsync(model.Email, model.Password, model.RememberMe, false);
+                var normalizedEmail = (model.Email ?? string.Empty).Trim();
+                var user = await _userManager.FindByEmailAsync(normalizedEmail);
+                if (user == null)
+                {
+                    await SignOutAndClearUserAsync();
+                    ModelState.AddModelError(string.Empty, "E-posta veya şifre hatalı.");
+                    return View(model);
+                }
+
+                var result = await _signInManager.PasswordSignInAsync(user, model.Password, model.RememberMe, false);
                 if (!result.Succeeded)
                 {
                     await SignOutAndClearUserAsync();
@@ -114,15 +123,30 @@ namespace HastaneRandevuSistemi.Controllers
                     return View(model);
                 }
 
-                var user = await _userManager.FindByEmailAsync(model.Email);
-                if (user == null)
+                var roles = await _userManager.GetRolesAsync(user);
+                var selectedRole = (model.SelectedRole ?? string.Empty).Trim();
+
+                if (selectedRole.Equals("Hasta", StringComparison.OrdinalIgnoreCase))
                 {
-                    await SignOutAndClearUserAsync();
-                    ModelState.AddModelError(string.Empty, "Hesap bulunamadı.");
-                    return View(model);
+                    var canLoginFromPatientEntry = roles.Contains("Hasta") || roles.Contains("Admin");
+                    if (!canLoginFromPatientEntry)
+                    {
+                        await SignOutAndClearUserAsync();
+                        ModelState.AddModelError(string.Empty, "Bu hesap hasta girişinden kullanılamaz.");
+                        return View(model);
+                    }
+                }
+                else if (selectedRole.Equals("Doktor", StringComparison.OrdinalIgnoreCase))
+                {
+                    var canLoginFromDoctorEntry = roles.Contains("Doktor") || roles.Contains("Admin");
+                    if (!canLoginFromDoctorEntry)
+                    {
+                        await SignOutAndClearUserAsync();
+                        ModelState.AddModelError(string.Empty, "Bu hesap doktor girişinden kullanılamaz.");
+                        return View(model);
+                    }
                 }
 
-                var roles = await _userManager.GetRolesAsync(user);
                 if (roles.Contains("Admin"))
                 {
                     return RedirectToAction("AdminDashboard", "Home");
@@ -130,22 +154,10 @@ namespace HastaneRandevuSistemi.Controllers
 
                 if (roles.Contains("Doktor"))
                 {
-                    if (string.Equals(model.SelectedRole, "Hasta", StringComparison.OrdinalIgnoreCase))
-                    {
-                        await SignOutAndClearUserAsync();
-                        ModelState.AddModelError(string.Empty, "Bu hesap doktor hesabıdır. Lütfen doktor girişi seçerek tekrar deneyin.");
-                        return View(model);
-                    }
-
                     return RedirectToAction("DoctorDashboard", "Home");
                 }
 
-                if (string.Equals(model.SelectedRole, "Doktor", StringComparison.OrdinalIgnoreCase))
-                {
-                    await SignOutAndClearUserAsync();
-                    ModelState.AddModelError(string.Empty, "Bu hesap hasta hesabıdır. Lütfen hasta girişi seçerek tekrar deneyin.");
-                    return View(model);
-                }
+
 
                 if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
                 {
@@ -298,8 +310,6 @@ namespace HastaneRandevuSistemi.Controllers
         }
     }
 }
-
-
 
 
 

@@ -1,10 +1,11 @@
-using HastaneRandevuSistemi.Data;
+﻿using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using System.Globalization;
 
 namespace HastaneRandevuSistemi.Controllers
@@ -49,11 +50,16 @@ namespace HastaneRandevuSistemi.Controllers
 
         private readonly ApplicationDbContext _context;
         private readonly UserManager<AppUser> _userManager;
+        private readonly IMemoryCache _cache;
 
-        public DoctorToolsController(ApplicationDbContext context, UserManager<AppUser> userManager)
+        public DoctorToolsController(
+            ApplicationDbContext context,
+            UserManager<AppUser> userManager,
+            IMemoryCache cache)
         {
             _context = context;
             _userManager = userManager;
+            _cache = cache;
         }
 
         public async Task<IActionResult> Index()
@@ -123,6 +129,7 @@ namespace HastaneRandevuSistemi.Controllers
                 DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim(),
                 DepartmentName = doctor.Department?.Name ?? string.Empty,
                 Title = doctor.Title,
+                CurrentMonthOffset = monthOffset,
                 MonthTitle = targetMonth.ToString("MMMM yyyy", new CultureInfo("tr-TR")),
                 AppointmentCountThisMonth = monthAppointments.Count,
                 TodayAppointmentCount = todayAppointments.Count,
@@ -234,7 +241,25 @@ namespace HastaneRandevuSistemi.Controllers
             model.PatientSurname = appointment.PatientSurname;
             model.PrescriptionDate = DateTime.Now;
 
-            TempData["SuccessMessage"] = "Prescription draft is ready.";
+            appointment.PrescriptionDiagnosis = model.Diagnosis.Trim();
+            appointment.PrescriptionMedications = model.Medications.Trim();
+            appointment.PrescriptionNotes = string.IsNullOrWhiteSpace(model.Notes) ? null : model.Notes.Trim();
+            appointment.PrescriptionCreatedAt = model.PrescriptionDate;
+            await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
+            {
+                _cache.Remove($"patient:prescriptions:{appointment.PatientUserId}");
+
+                await CreateNotificationAsync(
+                    appointment.PatientUserId,
+                    "Yeni recete olusturuldu",
+                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz icin recete yazildi.",
+                    "Recete",
+                    "/Patient/MedicalHistory#receteler");
+            }
+
+            TempData["SuccessMessage"] = "Recete kaydedildi.";
             return View("PrescriptionPreview", model);
         }
 
@@ -247,7 +272,10 @@ namespace HastaneRandevuSistemi.Controllers
                 PatientSurname = appointment.PatientSurname,
                 DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim(),
                 DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty,
-                PrescriptionDate = DateTime.Now
+                PrescriptionDate = appointment.PrescriptionCreatedAt ?? DateTime.Now,
+                Diagnosis = appointment.PrescriptionDiagnosis ?? string.Empty,
+                Medications = appointment.PrescriptionMedications ?? string.Empty,
+                Notes = appointment.PrescriptionNotes
             };
         }
 
@@ -455,13 +483,13 @@ namespace HastaneRandevuSistemi.Controllers
 
             foreach (var year in uniqueYears)
             {
-                AddHoliday(map, new DateOnly(year, 1, 1), "Yilbasi");
-                AddHoliday(map, new DateOnly(year, 4, 23), "23 Nisan");
-                AddHoliday(map, new DateOnly(year, 5, 1), "1 Mayis");
-                AddHoliday(map, new DateOnly(year, 5, 19), "19 Mayis");
-                AddHoliday(map, new DateOnly(year, 7, 15), "15 Temmuz");
-                AddHoliday(map, new DateOnly(year, 8, 30), "30 Agustos");
-                AddHoliday(map, new DateOnly(year, 10, 29), "29 Ekim");
+                AddHoliday(map, new DateOnly(year, 1, 1), "Yılbaşı ğŸ„");
+                AddHoliday(map, new DateOnly(year, 4, 23), "23 Nisan Ulusal Egemenlik ve Çocuk Bayramı");
+                AddHoliday(map, new DateOnly(year, 5, 1), "1 Mayıs Emek ve Dayanışma Günü");
+                AddHoliday(map, new DateOnly(year, 5, 19), "19 Mayıs Atatürk'ü Anma, Gençlik ve Spor Bayramı");
+                AddHoliday(map, new DateOnly(year, 10, 29), "29 Ekim Cumhuriyet Bayramı");
+                AddHoliday(map, new DateOnly(year, 7, 15), "15 Temmuz Demokrasi ve Milli Birlik Günü");
+                AddHoliday(map, new DateOnly(year, 8, 30), "30 Ağustos Zafer Bayramı");
             }
 
             return map;
@@ -496,5 +524,21 @@ namespace HastaneRandevuSistemi.Controllers
 
             return weeks;
         }
+
+        private async Task CreateNotificationAsync(string userId, string title, string message, string type, string link)
+        {
+            _context.Notifications.Add(new Notification
+            {
+                UserId = userId,
+                Title = title,
+                Message = message,
+                Type = type,
+                Link = link,
+                CreatedDate = DateTime.Now
+            });
+
+            await _context.SaveChangesAsync();
+        }
     }
 }
+

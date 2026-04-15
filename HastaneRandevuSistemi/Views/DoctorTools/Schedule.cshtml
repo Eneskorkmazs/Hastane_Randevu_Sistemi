@@ -5,12 +5,56 @@
 @{
     ViewData["Title"] = "Takvimim";
 
+    string GetHolidayTheme(string? label)
+    {
+        if (string.IsNullOrWhiteSpace(label))
+        {
+            return "theme-holiday";
+        }
+
+        if (label.Contains("Cocuk", StringComparison.OrdinalIgnoreCase) || label.Contains("Çocuk", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-joy";
+        }
+
+        if (label.Contains("Cumhuriyet", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-republic";
+        }
+
+        if (label.Contains("Genclik", StringComparison.OrdinalIgnoreCase) || label.Contains("Gençlik", StringComparison.OrdinalIgnoreCase) || label.Contains("Spor", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-energy";
+        }
+
+        if (label.Contains("Zafer", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-victory";
+        }
+
+        if (label.Contains("Demokrasi", StringComparison.OrdinalIgnoreCase) || label.Contains("Milli Birlik", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-unity";
+        }
+
+        if (label.Contains("Emek", StringComparison.OrdinalIgnoreCase) || label.Contains("Dayanisma", StringComparison.OrdinalIgnoreCase) || label.Contains("Dayanışma", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-solidarity";
+        }
+
+        if (label.Contains("Yilbasi", StringComparison.OrdinalIgnoreCase) || label.Contains("Yılbaşı", StringComparison.OrdinalIgnoreCase))
+        {
+            return "theme-newyear";
+        }
+
+        return "theme-holiday";
+    }
+
     var initialDay = Model.DayDetails.FirstOrDefault(day => day.IsToday && day.IsCurrentMonth)
         ?? Model.DayDetails.FirstOrDefault(day => day.IsCurrentMonth)
         ?? Model.DayDetails.FirstOrDefault();
 
     var initialDayKey = initialDay?.DayKey ?? string.Empty;
-    var initialAppointments = initialDay?.Appointments ?? Array.Empty<HastaneRandevuSistemi.ViewModels.DoctorCalendarAppointmentViewModel>();
 
     var calendarDayMapJson = JsonSerializer.Serialize(
         Model.DayDetails.ToDictionary(
@@ -93,19 +137,20 @@
                     <h2 class="toolbar-title mb-0">@Model.MonthTitle</h2>
                 </div>
                 <div class="btn-group">
-                    <a asp-action="Schedule" asp-route-monthOffset="-1" class="btn btn-outline-primary">
+                    <a asp-action="Schedule" asp-route-monthOffset="@(Model.CurrentMonthOffset - 1)" class="btn btn-outline-primary">
                         <i class="fa-solid fa-chevron-left me-1"></i>Onceki Ay
                     </a>
                     <a asp-action="Schedule" asp-route-monthOffset="0" class="btn btn-primary">Bugun</a>
-                    <a asp-action="Schedule" asp-route-monthOffset="1" class="btn btn-outline-primary">
+                    <a asp-action="Schedule" asp-route-monthOffset="@(Model.CurrentMonthOffset + 1)" class="btn btn-outline-primary">
                         Sonraki Ay <i class="fa-solid fa-chevron-right ms-1"></i>
                     </a>
                 </div>
             </div>
             <div class="legend-row mt-3">
                 <span class="legend-chip"><span class="legend-dot sunday"></span>Pazar</span>
-                <span class="legend-chip"><span class="legend-dot holiday"></span>Resmi tatil</span>
-                <span class="legend-chip"><span class="legend-dot work"></span>Calisma gunu</span>
+                <span class="legend-chip"><span class="legend-dot holiday"></span>Resmi Tatil</span>
+                <span class="legend-chip"><span class="legend-dot work"></span>Çalışma Günü</span>
+                <span class="legend-chip"><span class="legend-dot past"></span>Geçmiş Gün</span>
             </div>
         </div>
     </div>
@@ -130,7 +175,7 @@
                             foreach (var day in week.Days)
                             {
                                 <button type="button"
-                                        class="day-cell calendar-day-button @(day.IsCurrentMonth ? "current-month" : "other-month") @(day.IsToday ? "today" : "") @(day.IsSunday ? "sunday" : "") @(day.IsHoliday ? "holiday" : "") @(day.Date.Date < DateTime.Today.Date ? "past-day" : "") @(day.Date.ToString("yyyy-MM-dd") == initialDayKey ? "selected" : "")"
+                                        class="day-cell calendar-day-button @(day.IsCurrentMonth ? "current-month" : "other-month") @(day.IsToday ? "today" : "") @(day.IsSunday ? "sunday" : "") @(day.IsHoliday ? $"holiday {GetHolidayTheme(day.HolidayLabel)}" : "") @(day.Date.Date < DateTime.Today.Date ? "past-day" : "") @(day.Date.ToString("yyyy-MM-dd") == initialDayKey ? "selected" : "")"
                                         data-day-key="@day.Date.ToString("yyyy-MM-dd")"
                                         aria-pressed="@(day.Date.ToString("yyyy-MM-dd") == initialDayKey ? "true" : "false")">
                                     <div class="day-head">
@@ -169,21 +214,17 @@
         --muted: #5f738d;
         --line: #dbe5f1;
         --primary: #0f4fa8;
-        --primary-soft: #eaf2ff;
         --card: #ffffff;
     }
-
     .doctor-schedule-v3 .calendar-hero {
         background: radial-gradient(circle at 85% 15%, rgba(132, 181, 255, 0.28), transparent 38%), linear-gradient(135deg, #0c2d4e 0%, #0f4273 52%, #1260a8 100%);
         color: #fff;
     }
-
     .hero-grid { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
     .hero-tag { display: inline-flex; padding: 0.4rem 0.8rem; border-radius: 999px; background: rgba(255, 255, 255, 0.14); font-weight: 700; letter-spacing: 0.04em; margin-bottom: 0.8rem; font-size: 0.8rem; }
     .hero-title { margin: 0 0 0.2rem; font-size: clamp(1.35rem, 2.4vw, 2rem); font-weight: 800; }
     .hero-subtitle { opacity: 0.88; font-weight: 500; }
     .hero-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; }
-
     .metric-card { height: 100%; border-radius: 18px; border: 1px solid var(--line); padding: 1rem; background: var(--card); }
     .metric-indigo { background: linear-gradient(180deg, #ffffff 0%, #f4f8ff 100%); }
     .metric-blue { background: linear-gradient(180deg, #ffffff 0%, #eff8ff 100%); }
@@ -193,7 +234,6 @@
     .metric-value { font-size: 2rem; line-height: 1.08; margin: 0.2rem 0; color: var(--ink); font-weight: 900; }
     .metric-text { font-size: 1rem; font-weight: 700; }
     .metric-note { color: var(--muted); font-size: 0.88rem; }
-
     .toolbar-grid { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
     .toolbar-label { color: var(--muted); text-transform: uppercase; font-size: 0.76rem; letter-spacing: 0.08em; font-weight: 800; }
     .toolbar-title { color: var(--ink); font-weight: 800; }
@@ -203,59 +243,41 @@
     .legend-dot.sunday { background: #f6b0b0; }
     .legend-dot.holiday { background: #f0bf83; }
     .legend-dot.work { background: #8ac0ff; }
-
-    .calendar-panel, .side-card, .calendar-toolbar { background: var(--card); }
+    .legend-dot.past { background: #cbd5e1; }
+    .calendar-panel, .calendar-toolbar { background: var(--card); }
     .calendar-weekdays { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px; color: var(--muted); font-size: 0.76rem; letter-spacing: 0.08em; text-transform: uppercase; font-weight: 800; }
     .calendar-weekdays div { padding-left: 0.4rem; }
     .calendar-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
-
     .day-cell { border: 1px solid var(--line); border-radius: 14px; min-height: 108px; background: linear-gradient(180deg, #ffffff 0%, #f9fcff 100%); padding: 0.7rem; text-align: left; display: flex; flex-direction: column; gap: 0.35rem; transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease; cursor: pointer; }
     .day-cell:hover { border-color: #b6c9e4; transform: translateY(-2px); box-shadow: 0 8px 18px rgba(15, 56, 98, 0.09); }
     .day-cell.other-month { opacity: 0.45; background: #f4f7fb; }
-    .day-cell.past-day {
-        background: linear-gradient(180deg, #e3e9f1 0%, #d7e0ea 100%);
-        border-color: #b7c4d5;
-    }
+    .day-cell.past-day { background: #f1f5f9; border-color: #e2e8f0; opacity: 0.75; }
     .day-cell.past-day .day-number,
     .day-cell.past-day .day-state,
-    .day-cell.past-day .day-foot {
-        color: #334155;
-    }
+    .day-cell.past-day .day-foot { color: #94a3b8; }
+    .day-cell.past-day:hover { opacity: 1; background: #f8fafc; }
     .day-cell.today { border-color: #2f80ed; }
     .day-cell.sunday { background: linear-gradient(180deg, #fff7f7 0%, #fff0f0 100%); border-color: #efcccc; }
-    .day-cell.holiday { background: linear-gradient(180deg, #fff5e7 0%, #ffedda 100%); border-color: #f3c998; }
+    .day-cell.holiday { background: linear-gradient(180deg, #fffcf5 0%, #fff7eb 100%); border-color: #fbd38d; box-shadow: inset 0 0 0 2px rgba(251, 211, 141, 0.2); }
+    .day-cell.holiday.theme-joy { background: linear-gradient(135deg, #fff8f1 0%, #ffe1d1 42%, #ffd5ea 100%); border-color: #f7b4a2; }
+    .day-cell.holiday.theme-republic { background: linear-gradient(135deg, #fff5f5 0%, #ffd8d8 44%, #f4b2b2 100%); border-color: #e79b9b; }
+    .day-cell.holiday.theme-energy { background: linear-gradient(135deg, #f2fbff 0%, #d8f1ff 48%, #bee6ff 100%); border-color: #88c8f4; }
+    .day-cell.holiday.theme-victory { background: linear-gradient(135deg, #fffaf0 0%, #ffe8b0 52%, #ffd36f 100%); border-color: #efbf61; }
+    .day-cell.holiday.theme-unity { background: linear-gradient(135deg, #f6f7ff 0%, #e1e4ff 48%, #cbd2ff 100%); border-color: #aeb8ff; }
+    .day-cell.holiday.theme-solidarity { background: linear-gradient(135deg, #fff9f0 0%, #ffe4c9 45%, #ffd0a4 100%); border-color: #f0b981; }
+    .day-cell.holiday.theme-newyear { background: linear-gradient(135deg, #f7f4ff 0%, #e2dbff 42%, #c7d2fe 100%); border-color: #b7b4f8; }
     .day-cell.selected { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(15, 79, 168, 0.15); }
-    .day-cell:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(15, 79, 168, 0.24); }
-
     .day-head { display: flex; justify-content: space-between; align-items: center; }
     .day-number { font-size: 1.05rem; font-weight: 800; color: var(--ink); }
     .day-pill { min-width: 24px; height: 24px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--primary); color: #fff; font-size: 0.76rem; font-weight: 700; padding: 0 0.35rem; }
     .day-state { color: var(--muted); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 700; }
     .day-holiday { color: #ad3d00; font-size: 0.72rem; font-weight: 700; }
     .day-foot { margin-top: auto; color: #1f6cd5; font-weight: 700; font-size: 0.75rem; }
-
-    .stack-grid { display: grid; gap: 1rem; }
-    .side-card-title { text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-size: 0.75rem; font-weight: 800; margin-bottom: 0.6rem; }
-    .selected-day-date { font-size: 1.05rem; color: var(--ink); font-weight: 800; margin-bottom: 0.75rem; }
-    .chip-row { display: flex; flex-wrap: wrap; gap: 0.45rem; }
-    .chip { display: inline-flex; align-items: center; padding: 0.35rem 0.7rem; border-radius: 999px; background: var(--primary-soft); border: 1px solid #d5e4ff; color: #154a92; font-size: 0.8rem; font-weight: 700; }
-    .chip-muted { background: #f2f5fa; border-color: #e2e9f3; color: #5f738d; }
-    .chip-holiday { background: #fff3e3; border-color: #f2cc9f; color: #ad4e00; }
-
-    .appointment-list, .upcoming-list, .slot-list { display: flex; flex-direction: column; gap: 0.55rem; }
-    .appointment-item, .upcoming-item, .slot-item { display: flex; align-items: center; justify-content: space-between; gap: 0.7rem; border: 1px solid var(--line); border-radius: 12px; background: #fbfdff; padding: 0.62rem 0.7rem; }
-    .slot-item { justify-content: flex-start; font-weight: 700; color: var(--ink); }
-    .slot-empty { color: var(--muted); background: #fafcff; border-style: dashed; font-weight: 500; }
-    .item-time { color: var(--ink); font-weight: 800; font-size: 0.86rem; }
-    .item-name { color: #2f425a; font-size: 0.89rem; font-weight: 600; }
-    .empty-state { border: 1px dashed #d6e1ef; border-radius: 12px; background: #fafcff; color: var(--muted); padding: 0.9rem; font-size: 0.9rem; }
-
     @@media (max-width: 1199.98px) {
         .hero-grid, .toolbar-grid { flex-direction: column; align-items: flex-start; }
         .hero-actions { width: 100%; }
         .hero-actions .btn { flex: 1 1 auto; }
     }
-
     @@media (max-width: 767.98px) {
         .calendar-grid, .calendar-weekdays { grid-template-columns: repeat(7, minmax(115px, 1fr)); }
         .calendar-panel { overflow-x: auto; }
@@ -268,7 +290,6 @@
         const calendarDays = @Html.Raw(calendarDayMapJson);
         const buttons = Array.from(document.querySelectorAll('.calendar-day-button'));
 
-
         const renderDay = (dayKey) => {
             window.location.href = '/DoctorTools/DayDetails?date=' + dayKey;
         };
@@ -278,3 +299,4 @@
         });
     })();
 </script>
+

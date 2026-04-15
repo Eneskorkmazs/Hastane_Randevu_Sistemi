@@ -1,4 +1,4 @@
-using System.Data;
+﻿using System.Data;
 using HastaneRandevuSistemi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -28,9 +28,14 @@ namespace HastaneRandevuSistemi.Data
 
             await EnsureRolesAsync(roleManager);
             await EnsureAccountingColumnsAsync(context);
+            await EnsureReminderColumnsAsync(context);
+            await EnsurePrescriptionColumnsAsync(context);
+            await EnsureMedicalReportsTableAsync(context);
+            await EnsureMedicalHistoryTableAsync(context);
             await EnsureAdminAsync(userManager, configuration, environment, logger);
             await NormalizeDepartmentsAsync(context);
             await SeedDepartmentsAndDoctorsAsync(context, userManager, configuration, environment, logger);
+            await SeedDemoAppointmentsAsync(context, environment, logger);
 
             await context.SaveChangesAsync();
         }
@@ -113,6 +118,48 @@ namespace HastaneRandevuSistemi.Data
                         @"ALTER TABLE ""Appointments"" ADD COLUMN ""AdminAccessGrantedByName"" TEXT NULL;");
                 }
 
+                if (!await ColumnExistsAsync(context, "Appointments", "Price"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""Price"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "ApprovedByUserId"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""ApprovedByUserId"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "ApprovedByName"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""ApprovedByName"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "ApprovedDate"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""ApprovedDate"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "CancelledByUserId"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""CancelledByUserId"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "CancelledByName"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""CancelledByName"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "CancelledDate"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""CancelledDate"" TEXT NULL;");
+                }
+
                 return;
             }
 
@@ -138,6 +185,186 @@ namespace HastaneRandevuSistemi.Data
                     @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessGrantedByUserId"" character varying(450) NULL;");
                 await context.Database.ExecuteSqlRawAsync(
                     @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""AdminAccessGrantedByName"" character varying(200) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""Price"" numeric(18,2) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""ApprovedByUserId"" character varying(450) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""ApprovedByName"" character varying(200) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""ApprovedDate"" timestamp without time zone NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""CancelledByUserId"" character varying(450) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""CancelledByName"" character varying(200) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""CancelledDate"" timestamp without time zone NULL;");
+            }
+        }
+
+        private static async Task EnsureMedicalHistoryTableAsync(ApplicationDbContext context)
+        {
+            var provider = context.Database.ProviderName ?? string.Empty;
+
+            if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    """
+                    CREATE TABLE IF NOT EXISTS "MedicalHistories" (
+                        "Id" INTEGER NOT NULL CONSTRAINT "PK_MedicalHistories" PRIMARY KEY AUTOINCREMENT,
+                        "UserId" TEXT NOT NULL,
+                        "Title" TEXT NOT NULL,
+                        "Diagnosis" TEXT NULL,
+                        "Medications" TEXT NULL,
+                        "AllergyInfo" TEXT NULL,
+                        "Notes" TEXT NULL,
+                        "VisitDate" TEXT NOT NULL,
+                        "AttachmentName" TEXT NULL,
+                        "AttachmentPath" TEXT NULL,
+                        "CreatedAt" TEXT NOT NULL,
+                        CONSTRAINT "FK_MedicalHistories_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+                    );
+                    """);
+
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE INDEX IF NOT EXISTS ""IX_MedicalHistories_UserId"" ON ""MedicalHistories"" (""UserId"");");
+                return;
+            }
+
+            if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    """
+                    CREATE TABLE IF NOT EXISTS "MedicalHistories" (
+                        "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                        "UserId" character varying(450) NOT NULL,
+                        "Title" character varying(120) NOT NULL,
+                        "Diagnosis" character varying(250) NULL,
+                        "Medications" character varying(500) NULL,
+                        "AllergyInfo" character varying(500) NULL,
+                        "Notes" character varying(2000) NULL,
+                        "VisitDate" timestamp without time zone NOT NULL,
+                        "AttachmentName" character varying(255) NULL,
+                        "AttachmentPath" character varying(1000) NULL,
+                        "CreatedAt" timestamp without time zone NOT NULL,
+                        CONSTRAINT "FK_MedicalHistories_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE CASCADE
+                    );
+                    """);
+
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE INDEX IF NOT EXISTS ""IX_MedicalHistories_UserId"" ON ""MedicalHistories"" (""UserId"");");
+            }
+        }
+
+        private static async Task EnsureMedicalReportsTableAsync(ApplicationDbContext context)
+        {
+            var provider = context.Database.ProviderName ?? string.Empty;
+
+            if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    """
+                    CREATE TABLE IF NOT EXISTS "MedicalReports" (
+                        "Id" INTEGER NOT NULL CONSTRAINT "PK_MedicalReports" PRIMARY KEY AUTOINCREMENT,
+                        "AppointmentId" INTEGER NOT NULL,
+                        "FileName" TEXT NOT NULL,
+                        "FilePath" TEXT NOT NULL,
+                        "UploadedAt" TEXT NOT NULL,
+                        "Notes" TEXT NULL,
+                        CONSTRAINT "FK_MedicalReports_Appointments_AppointmentId" FOREIGN KEY ("AppointmentId") REFERENCES "Appointments" ("Id") ON DELETE CASCADE
+                    );
+                    """);
+
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE INDEX IF NOT EXISTS ""IX_MedicalReports_AppointmentId"" ON ""MedicalReports"" (""AppointmentId"");");
+                return;
+            }
+
+            if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    """
+                    CREATE TABLE IF NOT EXISTS "MedicalReports" (
+                        "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                        "AppointmentId" integer NOT NULL,
+                        "FileName" character varying(255) NOT NULL,
+                        "FilePath" character varying(1000) NOT NULL,
+                        "UploadedAt" timestamp without time zone NOT NULL,
+                        "Notes" character varying(2000) NULL,
+                        CONSTRAINT "FK_MedicalReports_Appointments_AppointmentId" FOREIGN KEY ("AppointmentId") REFERENCES "Appointments" ("Id") ON DELETE CASCADE
+                    );
+                    """);
+
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE INDEX IF NOT EXISTS ""IX_MedicalReports_AppointmentId"" ON ""MedicalReports"" (""AppointmentId"");");
+            }
+        }
+
+        private static async Task EnsureReminderColumnsAsync(ApplicationDbContext context)
+        {
+            var provider = context.Database.ProviderName ?? string.Empty;
+
+            if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!await ColumnExistsAsync(context, "Appointments", "ReminderSentAt"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""ReminderSentAt"" TEXT NULL;");
+                }
+
+                return;
+            }
+
+            if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""ReminderSentAt"" timestamp without time zone NULL;");
+            }
+        }
+
+        private static async Task EnsurePrescriptionColumnsAsync(ApplicationDbContext context)
+        {
+            var provider = context.Database.ProviderName ?? string.Empty;
+
+            if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!await ColumnExistsAsync(context, "Appointments", "PrescriptionDiagnosis"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""PrescriptionDiagnosis"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "PrescriptionMedications"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""PrescriptionMedications"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "PrescriptionNotes"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""PrescriptionNotes"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "PrescriptionCreatedAt"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""PrescriptionCreatedAt"" TEXT NULL;");
+                }
+
+                return;
+            }
+
+            if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""PrescriptionDiagnosis"" character varying(180) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""PrescriptionMedications"" character varying(400) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""PrescriptionNotes"" character varying(500) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""PrescriptionCreatedAt"" timestamp without time zone NULL;");
             }
         }
 
@@ -365,6 +592,116 @@ namespace HastaneRandevuSistemi.Data
             }
         }
 
+        private static async Task SeedDemoAppointmentsAsync(
+            ApplicationDbContext context,
+            IHostEnvironment environment,
+            ILogger logger)
+        {
+            if (!environment.IsDevelopment())
+            {
+                return;
+            }
+
+            const string demoMarkerPrefix = "BOT-DEMO-";
+            var alreadySeeded = await context.Appointments.AnyAsync(a =>
+                a.PatientPhone != null && a.PatientPhone.StartsWith(demoMarkerPrefix));
+
+            if (alreadySeeded)
+            {
+                return;
+            }
+
+            var doctorsByDifferentDepartments = await context.Doctors
+                .Include(d => d.Department)
+                .Where(d => d.Department != null)
+                .OrderBy(d => d.Department!.Name)
+                .ThenBy(d => d.Id)
+                .ToListAsync();
+
+            var selectedDoctors = doctorsByDifferentDepartments
+                .GroupBy(d => d.DepartmentId)
+                .Select(g => g.First())
+                .Take(8)
+                .ToList();
+
+            if (selectedDoctors.Count == 0)
+            {
+                logger.LogWarning("Demo randevu seed atlandi: uygun doktor bulunamadi.");
+                return;
+            }
+
+            var patientNames = new (string Name, string Surname)[]
+            {
+                ("Ayse", "Demir"),
+                ("Mehmet", "Yildiz"),
+                ("Zeynep", "Kaya"),
+                ("Can", "Aydin"),
+                ("Elif", "Sahin"),
+                ("Burak", "Koc"),
+                ("Merve", "Arslan"),
+                ("Emre", "Celik")
+            };
+
+            var appointmentSpecs = new (int DayOffset, int Hour, AppointmentStatus Status)[]
+            {
+                (1, 9, AppointmentStatus.Bekliyor),
+                (2, 10, AppointmentStatus.Onaylandi),
+                (3, 11, AppointmentStatus.Bekliyor),
+                (-1, 10, AppointmentStatus.Tamamlandi),
+                (4, 13, AppointmentStatus.Iptal),
+                (5, 14, AppointmentStatus.Onaylandi),
+                (6, 9, AppointmentStatus.Bekliyor),
+                (-2, 11, AppointmentStatus.Tamamlandi)
+            };
+
+            var now = DateTime.Now;
+            var demoAppointments = new List<Appointment>();
+
+            for (var i = 0; i < selectedDoctors.Count; i++)
+            {
+                var doctor = selectedDoctors[i];
+                var person = patientNames[i % patientNames.Length];
+                var spec = appointmentSpecs[i % appointmentSpecs.Length];
+                var appointmentDate = DateTime.Today.AddDays(spec.DayOffset).AddHours(spec.Hour);
+
+                var appointment = new Appointment
+                {
+                    AppointmentDate = appointmentDate,
+                    PatientName = person.Name,
+                    PatientSurname = person.Surname,
+                    PatientPhone = $"{demoMarkerPrefix}{i + 1:00}",
+                    DoctorId = doctor.Id,
+                    Status = spec.Status,
+                    CreatedDate = now.AddMinutes(-(i + 1) * 12)
+                };
+
+                if (spec.Status is AppointmentStatus.Onaylandi or AppointmentStatus.Tamamlandi)
+                {
+                    appointment.ApprovedByName = "Demo Bot";
+                    appointment.ApprovedDate = appointment.CreatedDate.AddMinutes(20);
+                }
+
+                if (spec.Status == AppointmentStatus.Tamamlandi)
+                {
+                    appointment.IsCollected = true;
+                    appointment.CollectedDate = appointment.AppointmentDate.AddMinutes(45);
+                    appointment.Price = 850 + (i * 50);
+                }
+
+                if (spec.Status == AppointmentStatus.Iptal)
+                {
+                    appointment.CancelledByName = "Hasta";
+                    appointment.CancelledDate = appointment.CreatedDate.AddMinutes(35);
+                }
+
+                demoAppointments.Add(appointment);
+            }
+
+            await context.Appointments.AddRangeAsync(demoAppointments);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Demo randevular eklendi. Kayit sayisi: {Count}", demoAppointments.Count);
+        }
+
         private static string BuildDoctorEmail(string name, string surname)
         {
             var normalizedName = ConvertToIdentifier(name).Replace(" ", ".").Trim('.');
@@ -480,3 +817,5 @@ namespace HastaneRandevuSistemi.Data
         }
     }
 }
+
+
