@@ -207,8 +207,8 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - [Hafta 5 Raporu PDF](Reports/Hafta5_Raporu.pdf)
 - [İlk 5 Hafta Genel Raporu HTML](Reports/Ilk5Hafta_Genel_Rapor.html) · [PDF](Reports/Ilk5Hafta_Genel_Rapor.pdf)
 - [Hafta 6 Raporu HTML](Reports/Hafta6_Raporu.html) · [PDF](Reports/Hafta6_Raporu.pdf)
-- [Hafta 7 Raporu HTML](Reports/Hafta7_Raporu.html)
-- [Hafta 8 Raporu HTML](Reports/Hafta8_Raporu.html)
+- [Hafta 7 Raporu PDF](Reports/Hafta7_Raporu.pdf)
+- [Hafta 8 Raporu PDF](Reports/Hafta8_Raporu.pdf)
 
 ## Varsayılan Roller
 - `Admin`
