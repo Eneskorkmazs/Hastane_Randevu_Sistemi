@@ -1,147 +1,158 @@
 @model HastaneRandevuSistemi.ViewModels.PatientMedicalHistoryViewModel
 
 @{
-    ViewData["Title"] = "Saglik Gecmisim";
+    ViewData["Title"] = "Sağlık Geçmişim";
 }
 
 <div class="container py-4">
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            @TempData["SuccessMessage"]
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            @TempData["ErrorMessage"]
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 border-0 shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["ErrorMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     }
 
-    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
-            <span class="text-uppercase small text-primary fw-bold">Hasta Modulu</span>
-            <h1 class="h3 fw-bold mb-1">Saglik Gecmisim</h1>
-            <p class="text-muted mb-0">Tibbi gecmis kayitlarinizi ve doktor recetelerinizi tek sayfada yonetin.</p>
+            <span class="text-uppercase small text-primary fw-bold tracking-wider">Tıbbi Kayıtlar</span>
+            <h1 class="h2 fw-bold mb-1">Sağlık Geçmişim</h1>
+            <p class="text-muted mb-0">Hastanemizdeki kayıtlarınız ve kendi eklediğiniz tıbbi belgeler.</p>
         </div>
-        <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4">
-            <i class="fa-solid fa-arrow-left me-2"></i>Panele Don
-        </a>
-    </div>
-
-    <div class="card border-0 shadow-sm rounded-4 mb-4">
-        <div class="card-body p-4">
-            <h2 class="h5 fw-bold mb-3">Yeni Kayit Ekle</h2>
-            <form asp-action="AddMedicalHistory" method="post" enctype="multipart/form-data" class="row g-3">
-                @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-0"></div>
-
-                <div class="col-md-6">
-                    <label asp-for="Title" class="form-label fw-semibold"></label>
-                    <input asp-for="Title" class="form-control" maxlength="120" />
-                    <span asp-validation-for="Title" class="text-danger small"></span>
-                </div>
-                <div class="col-md-3">
-                    <label asp-for="VisitDate" class="form-label fw-semibold"></label>
-                    <input asp-for="VisitDate" type="date" class="form-control" />
-                    <span asp-validation-for="VisitDate" class="text-danger small"></span>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label fw-semibold">Ek Dosya (Opsiyonel)</label>
-                    <input type="file" name="attachmentFile" class="form-control" />
-                </div>
-
-                <div class="col-md-6">
-                    <label asp-for="Diagnosis" class="form-label fw-semibold"></label>
-                    <input asp-for="Diagnosis" class="form-control" maxlength="250" />
-                    <span asp-validation-for="Diagnosis" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="Medications" class="form-label fw-semibold"></label>
-                    <input asp-for="Medications" class="form-control" maxlength="500" />
-                    <span asp-validation-for="Medications" class="text-danger small"></span>
-                </div>
-                <div class="col-md-6">
-                    <label asp-for="AllergyInfo" class="form-label fw-semibold"></label>
-                    <input asp-for="AllergyInfo" class="form-control" maxlength="500" />
-                    <span asp-validation-for="AllergyInfo" class="text-danger small"></span>
-                </div>
-                <div class="col-12">
-                    <label asp-for="Notes" class="form-label fw-semibold"></label>
-                    <textarea asp-for="Notes" class="form-control" rows="3" maxlength="2000"></textarea>
-                    <span asp-validation-for="Notes" class="text-danger small"></span>
-                </div>
-
-                <div class="col-12 d-flex justify-content-end">
-                    <button type="submit" class="btn btn-primary rounded-pill px-4">
-                        <i class="fa-solid fa-floppy-disk me-2"></i>Kaydet
-                    </button>
-                </div>
-            </form>
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-primary rounded-pill px-4" data-bs-toggle="modal" data-bs-target="#addRecordModal">
+                <i class="fa-solid fa-plus me-2"></i>Yeni Kayıt Ekle
+            </button>
+            <a asp-action="Dashboard" class="btn btn-outline-secondary rounded-pill px-4">
+                <i class="fa-solid fa-house me-2"></i>Panele Dön
+            </a>
         </div>
     </div>
 
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h5 fw-bold mb-0">Kayit Gecmisi</h2>
-                <span class="badge bg-light text-dark border rounded-pill">@Model.Records.Count kayit</span>
-            </div>
-
-            @if (!Model.Records.Any())
+    <!-- Reçeteler Bölümü (Üstte, daha önemli) -->
+    <div id="receteler" class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+        <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+            <h2 class="h5 fw-bold mb-0"><i class="fa-solid fa-prescription-bottle-medical text-primary me-2"></i>Reçetelerim</h2>
+            <span class="badge bg-primary-soft text-primary rounded-pill px-3 border border-primary border-opacity-10">@Model.PrescriptionCount Kayıt</span>
+        </div>
+        <div class="card-body p-0">
+            @if (!Model.Prescriptions.Any())
             {
-                <div class="text-center py-5 text-muted bg-light rounded-4">
-                    <i class="fa-solid fa-folder-open fa-2x mb-2"></i>
-                    <p class="mb-0">Henuz tibbi gecmis kaydi bulunmuyor.</p>
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-solid fa-file-medical fa-3x mb-3 opacity-25"></i>
+                    <p class="mb-0">Henüz hastanemizde oluşturulmuş bir reçeteniz bulunmuyor.</p>
                 </div>
             }
             else
             {
                 <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
                             <tr>
-                                <th>Tarih</th>
-                                <th>Baslik</th>
-                                <th>Tani</th>
-                                <th>Ilaclar</th>
-                                <th>Ek Dosya</th>
-                                <th class="text-end">Islem</th>
+                                <th class="ps-4">Tarih</th>
+                                <th>Doktor / Branş</th>
+                                <th>Tanı</th>
+                                <th>İlaçlar</th>
+                                <th class="text-end pe-4">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.Prescriptions)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="fw-bold">@item.PrescriptionDate.ToString("dd.MM.yyyy")</div>
+                                        <div class="small text-muted">@item.PrescriptionDate.ToString("HH:mm")</div>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold">@item.DoctorName</div>
+                                        <div class="small text-muted">@item.DepartmentName</div>
+                                    </td>
+                                    <td><span class="small">@item.Diagnosis</span></td>
+                                    <td>
+                                        <div class="small fw-semibold text-primary">@item.Medications</div>
+                                        @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                        {
+                                            <div class="x-small text-muted mt-1 italic">Not: @item.Notes</div>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a asp-action="DownloadPrescriptionPdf" asp-route-id="@item.AppointmentId" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            <i class="fa-solid fa-file-pdf me-1"></i>PDF İndir
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Kayıt Geçmişi (Şahsi Kayıtlar) -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+            <h2 class="h5 fw-bold mb-0"><i class="fa-solid fa-folder-open text-warning me-2"></i>Şahsi Tıbbi Kayıtlarım</h2>
+            <span class="badge bg-warning-soft text-warning rounded-pill px-3 border border-warning border-opacity-10">@Model.Records.Count Kayıt</span>
+        </div>
+        <div class="card-body p-0">
+            @if (!Model.Records.Any())
+            {
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-solid fa-folder-plus fa-3x mb-3 opacity-25"></i>
+                    <p class="mb-0">Henüz kendi eklediğiniz bir tıbbi kayıt bulunmuyor.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th class="ps-4">Tarih</th>
+                                <th>Başlık / Notlar</th>
+                                <th>Tanı & İlaç</th>
+                                <th>Dosya</th>
+                                <th class="text-end pe-4">İşlem</th>
                             </tr>
                         </thead>
                         <tbody>
                             @foreach (var item in Model.Records)
                             {
                                 <tr>
-                                    <td>@item.VisitDate.ToString("dd.MM.yyyy")</td>
+                                    <td class="ps-4">@item.VisitDate.ToString("dd.MM.yyyy")</td>
                                     <td>
-                                        <div class="fw-semibold">@item.Title</div>
+                                        <div class="fw-bold">@item.Title</div>
                                         @if (!string.IsNullOrWhiteSpace(item.Notes))
                                         {
-                                            <div class="small text-muted mt-1">@item.Notes</div>
+                                            <div class="small text-muted text-truncate" style="max-width: 250px;">@item.Notes</div>
                                         }
                                     </td>
-                                    <td class="text-muted">@(!string.IsNullOrWhiteSpace(item.Diagnosis) ? item.Diagnosis : "-")</td>
-                                    <td class="text-muted">@(!string.IsNullOrWhiteSpace(item.Medications) ? item.Medications : "-")</td>
+                                    <td>
+                                        <div class="small">@(item.Diagnosis ?? "-")</div>
+                                        <div class="x-small text-muted">@(item.Medications ?? "")</div>
+                                    </td>
                                     <td>
                                         @if (!string.IsNullOrWhiteSpace(item.AttachmentPath))
                                         {
-                                            <a href="@item.AttachmentPath" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill">
-                                                <i class="fa-solid fa-paperclip me-1"></i>@(item.AttachmentName ?? "Dosya")
+                                            <a href="@item.AttachmentPath" target="_blank" class="btn btn-sm btn-light border rounded-pill">
+                                                <i class="fa-solid fa-paperclip me-1 text-primary"></i>Belge
                                             </a>
                                         }
-                                        else
-                                        {
-                                            <span class="text-muted">Yok</span>
-                                        }
                                     </td>
-                                    <td class="text-end">
-                                        <form asp-action="DeleteMedicalHistory" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu kaydi silmek istiyor musunuz?');">
+                                    <td class="text-end pe-4">
+                                        <form asp-action="DeleteMedicalHistory" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu kaydı silmek istiyor musunuz?');">
                                             @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
-                                                <i class="fa-solid fa-trash-can me-1"></i>Sil
+                                            <button type="submit" class="btn btn-sm text-danger border-0 bg-transparent">
+                                                <i class="fa-solid fa-trash-can"></i>
                                             </button>
                                         </form>
                                     </td>
@@ -153,63 +164,64 @@
             }
         </div>
     </div>
+</div>
 
-    <div id="receteler" class="card border-0 shadow-sm rounded-4 mt-4">
-        <div class="card-body p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h2 class="h5 fw-bold mb-0">Recetelerim</h2>
-                <span class="badge bg-light text-dark border rounded-pill">@Model.PrescriptionCount recete</span>
+<!-- Add Record Modal -->
+<div class="modal fade" id="addRecordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-5">
+            <div class="modal-header border-0 p-4 pb-0">
+                <h5 class="modal-title fw-bold">Yeni Tıbbi Kayıt Ekle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-
-            @if (!Model.Prescriptions.Any())
-            {
-                <div class="text-center py-5 text-muted bg-light rounded-4">
-                    <i class="fa-solid fa-prescription-bottle-medical fa-2x mb-2"></i>
-                    <p class="mb-0">Henuz recete kaydi bulunmuyor.</p>
+            <form asp-action="AddMedicalHistory" method="post" enctype="multipart/form-data">
+                <div class="modal-body p-4">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label asp-for="Title" class="form-label small fw-bold text-muted text-uppercase">Kayıt Başlığı (Örn: Kan Tahlili)</label>
+                            <input asp-for="Title" class="form-control rounded-3" placeholder="Giriş yapın..." required />
+                        </div>
+                        <div class="col-md-4">
+                            <label asp-for="VisitDate" class="form-label small fw-bold text-muted text-uppercase">Muayene Tarihi</label>
+                            <input asp-for="VisitDate" type="date" class="form-control rounded-3" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Diagnosis" class="form-label small fw-bold text-muted text-uppercase">Tanı / Klinik Durum</label>
+                            <input asp-for="Diagnosis" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="Medications" class="form-label small fw-bold text-muted text-uppercase">Kullanılan İlaçlar</label>
+                            <input asp-for="Medications" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-bold text-muted text-uppercase">Dosya Yükle (Sonuç, Rapor vb.)</label>
+                            <input type="file" name="attachmentFile" class="form-control rounded-3" />
+                        </div>
+                        <div class="col-12">
+                            <label asp-for="Notes" class="form-label small fw-bold text-muted text-uppercase">Ek Notlar</label>
+                            <textarea asp-for="Notes" class="form-control rounded-3" rows="3"></textarea>
+                        </div>
+                    </div>
                 </div>
-            }
-            else
-            {
-                <div class="table-responsive">
-                    <table class="table align-middle">
-                        <thead>
-                            <tr>
-                                <th>Randevu Tarihi</th>
-                                <th>Doktor / Brans</th>
-                                <th>Tani</th>
-                                <th>Ilaclar</th>
-                                <th>Notlar</th>
-                                <th>Recete Tarihi</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var item in Model.Prescriptions)
-                            {
-                                <tr>
-                                    <td>
-                                        <div class="fw-semibold">@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</div>
-                                        <a asp-controller="Appointment" asp-action="Details" asp-route-id="@item.AppointmentId" class="small text-decoration-none">Randevu detayi</a>
-                                    </td>
-                                    <td>
-                                        <div class="fw-semibold">@item.DoctorName</div>
-                                        <div class="small text-muted">@item.DepartmentName</div>
-                                    </td>
-                                    <td>@item.Diagnosis</td>
-                                    <td class="text-success-emphasis fw-semibold">@item.Medications</td>
-                                    <td>@(string.IsNullOrWhiteSpace(item.Notes) ? "-" : item.Notes)</td>
-                                    <td>@item.PrescriptionDate.ToString("dd.MM.yyyy HH:mm")</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-modal="modal">Kapat</button>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold">Kaydı Tamamla</button>
                 </div>
-            }
+            </form>
         </div>
     </div>
 </div>
 
+<style>
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.05); }
+    .bg-warning-soft { background-color: rgba(255, 193, 7, 0.08); }
+    .tracking-wider { letter-spacing: 0.1em; }
+    .x-small { font-size: 0.75rem; }
+    .italic { font-style: italic; }
+    .rounded-5 { border-radius: 1.5rem !important; }
+</style>
+
 @section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

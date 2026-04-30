@@ -1,0 +1,479 @@
+@model HastaneRandevuSistemi.ViewModels.AdminAccountingViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+
+@{
+    ViewData["Title"] = "Muhasebe Power BI Paneli";
+    var departmentOptions = ViewData["DepartmentOptions"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
+    var doctorOptions = ViewData["DoctorOptions"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
+    var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+    
+    var collectionRate = Model.EstimatedRevenue <= 0 ? 0 : Math.Round((Model.CollectedRevenue / Model.EstimatedRevenue) * 100m, 1);
+    var pendingRate = Model.EstimatedRevenue <= 0 ? 0 : Math.Round((Model.PendingRevenue / Model.EstimatedRevenue) * 100m, 1);
+}
+
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+<link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.bootstrap5.min.css" />
+<link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+
+<style>
+    :root {
+        --powerbi-bg: #eaeaea;
+        --powerbi-card: #ffffff;
+        --powerbi-text: #252423;
+        --powerbi-muted: #605E5C;
+        --powerbi-border: #e1dfdd;
+        --powerbi-primary: #118DFF;
+        --powerbi-success: #12805c;
+        --powerbi-warning: #d18700;
+        --powerbi-danger: #d13438;
+    }
+    
+    body {
+        background-color: var(--powerbi-bg) !important;
+        font-family: "Segoe UI", sans-serif;
+    }
+
+    .powerbi-dashboard {
+        padding: 20px;
+        color: var(--powerbi-text);
+    }
+
+    .pbi-card {
+        background: var(--powerbi-card);
+        border-radius: 4px;
+        box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132), 0 0.3px 0.9px 0 rgba(0,0,0,0.108);
+        border: 1px solid transparent;
+        padding: 16px;
+        height: 100%;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .pbi-card:hover {
+        box-shadow: 0 6.4px 14.4px 0 rgba(0,0,0,0.132), 0 1.2px 3.6px 0 rgba(0,0,0,0.108);
+    }
+    
+    .pbi-card-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--powerbi-muted);
+        text-transform: uppercase;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .pbi-kpi-value {
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.2;
+    }
+
+    .pbi-kpi-sub {
+        font-size: 12px;
+        color: var(--powerbi-muted);
+        margin-top: 4px;
+    }
+
+    /* Filters (Slicers) */
+    .pbi-slicer-container {
+        background: var(--powerbi-card);
+        padding: 12px 20px;
+        border-radius: 4px;
+        box-shadow: 0 1.6px 3.6px 0 rgba(0,0,0,0.132);
+        margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        align-items: flex-end;
+        border-left: 4px solid var(--powerbi-primary);
+    }
+    
+    .pbi-slicer {
+        flex: 1;
+        min-width: 150px;
+    }
+    
+    .pbi-slicer label {
+        font-size: 12px;
+        font-weight: 600;
+        color: var(--powerbi-muted);
+        margin-bottom: 4px;
+        display: block;
+    }
+    
+    .pbi-slicer input, .pbi-slicer select {
+        border-radius: 2px;
+        border: 1px solid var(--powerbi-border);
+        font-size: 13px;
+        padding: 6px 10px;
+        width: 100%;
+    }
+    
+    .pbi-btn {
+        background: var(--powerbi-primary);
+        color: white;
+        border: none;
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 2px;
+        cursor: pointer;
+    }
+    
+    .pbi-btn-outline {
+        background: transparent;
+        color: var(--powerbi-text);
+        border: 1px solid var(--powerbi-border);
+        padding: 6px 16px;
+        font-size: 13px;
+        font-weight: 600;
+        border-radius: 2px;
+        cursor: pointer;
+    }
+    
+    .pbi-canvas-col {
+        margin-bottom: 20px;
+    }
+
+    /* Charts */
+    .chart-container {
+        position: relative;
+        height: 300px;
+        width: 100%;
+    }
+    
+    /* DataTable overrides */
+    table.dataTable {
+        font-size: 13px;
+        border-collapse: collapse !important;
+    }
+    table.dataTable thead th {
+        border-bottom: 2px solid var(--powerbi-border) !important;
+        color: var(--powerbi-muted);
+        font-weight: 600;
+        background: #f8f8f8;
+    }
+    table.dataTable tbody td {
+        border-bottom: 1px solid var(--powerbi-border) !important;
+        vertical-align: middle;
+    }
+    table.dataTable tbody tr:hover {
+        background-color: #f3f2f1 !important;
+    }
+    .dataTables_wrapper .dataTables_filter input {
+        border: 1px solid var(--powerbi-border);
+        border-radius: 2px;
+        padding: 4px 8px;
+        font-size: 13px;
+    }
+    .dataTables_wrapper .dataTables_paginate .paginate_button.current {
+        background: var(--powerbi-primary) !important;
+        color: white !important;
+        border: none;
+        border-radius: 2px;
+    }
+    
+    .stat-badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .stat-success { background: #e6f4ea; color: #1e8e3e; }
+    .stat-warning { background: #fef7e0; color: #b06000; }
+    .stat-danger { background: #fce8e6; color: #d93025; }
+    
+</style>
+
+<div class="powerbi-dashboard">
+    @await Html.PartialAsync("_AdminAccountingHeader", Model)
+
+    <!-- Slicers (Filters) -->
+    <form method="get" class="pbi-slicer-container">
+        <div class="pbi-slicer">
+            <label>Başlangıç Tarihi</label>
+            <input type="date" name="fromDate" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="pbi-slicer">
+            <label>Bitiş Tarihi</label>
+            <input type="date" name="toDate" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+        </div>
+        <div class="pbi-slicer">
+            <label>Bölüm (Departman)</label>
+            <select name="departmentId">
+                <option value="">Tümü Seçili</option>
+                @foreach (var item in departmentOptions)
+                {
+                    <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="pbi-slicer">
+            <label>Doktor</label>
+            <select name="doctorId">
+                <option value="">Tümü Seçili</option>
+                @foreach (var item in doctorOptions)
+                {
+                    <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                }
+            </select>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="AdminAccountingStats" class="pbi-btn-outline text-decoration-none text-center" style="line-height:24px;"><i class="bi bi-x-circle"></i> Temizle</a>
+            <button type="submit" class="pbi-btn"><i class="bi bi-funnel"></i> Filtrele</button>
+        </div>
+    </form>
+
+    <!-- KPIs -->
+    <div class="row g-3 pbi-canvas-col">
+        <div class="col-md-3">
+            <div class="pbi-card" style="border-left: 4px solid var(--powerbi-primary);">
+                <div class="pbi-card-title">Toplam Potansiyel Gelir</div>
+                <div class="pbi-kpi-value text-primary">@Model.EstimatedRevenue.ToString("C0", trCulture)</div>
+                <div class="pbi-kpi-sub"><i class="bi bi-people-fill"></i> @Model.TotalAppointments Toplam Randevu</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pbi-card" style="border-left: 4px solid var(--powerbi-success);">
+                <div class="pbi-card-title">Tahsil Edilen</div>
+                <div class="pbi-kpi-value text-success">@Model.CollectedRevenue.ToString("C0", trCulture)</div>
+                <div class="pbi-kpi-sub"><i class="bi bi-graph-up-arrow"></i> %@collectionRate Tahsilat Başarısı</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pbi-card" style="border-left: 4px solid var(--powerbi-warning);">
+                <div class="pbi-card-title">Bekleyen Alacak</div>
+                <div class="pbi-kpi-value text-warning">@Model.PendingRevenue.ToString("C0", trCulture)</div>
+                <div class="pbi-kpi-sub"><i class="bi bi-hourglass-split"></i> @Model.PendingAppointments Bekleyen Kayıt</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="pbi-card" style="border-left: 4px solid var(--powerbi-danger);">
+                <div class="pbi-card-title">İptal / Kayıp</div>
+                <div class="pbi-kpi-value text-danger">@Model.CancelledRevenue.ToString("C0", trCulture)</div>
+                <div class="pbi-kpi-sub"><i class="bi bi-x-circle-fill"></i> @Model.CancelledAppointments İptal Randevu</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row g-3 pbi-canvas-col">
+        <div class="col-lg-8">
+            <div class="pbi-card">
+                <div class="pbi-card-title"><i class="bi bi-graph-up"></i> Gelir ve Tahsilat Trendi</div>
+                <div class="chart-container">
+                    <canvas id="trendChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="pbi-card">
+                <div class="pbi-card-title"><i class="bi bi-pie-chart-fill"></i> Finansal Dağılım</div>
+                <div class="chart-container">
+                    <canvas id="doughnutChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Data Matrix Panel (Who did what) -->
+    <div class="row g-3 pbi-canvas-col">
+        <div class="col-12">
+            <div class="pbi-card">
+                <div class="pbi-card-title mb-4">
+                    <i class="bi bi-table"></i> Doktor Performans ve İstatistiksel Matrix
+                    <span class="ms-auto text-muted fw-normal" style="font-size:12px;">"Kim Ne Kadar Hasta Bakmış, Ne Yapmış?"</span>
+                </div>
+                <div class="table-responsive">
+                    <table id="doctorMatrixTable" class="table table-hover w-100">
+                        <thead>
+                            <tr>
+                                <th>Doktor</th>
+                                <th>Bölüm</th>
+                                <th>Randevu (Tümü)</th>
+                                <th>Benzersiz Hasta</th>
+                                <th>Tamamlanan</th>
+                                <th>İptal Edilen</th>
+                                <th class="text-end">Tahsil Edilen (₺)</th>
+                                <th class="text-end">Bekleyen Tutar (₺)</th>
+                                <th class="text-end">Toplam Tutar (₺)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in Model.DoctorBreakdown)
+                            {
+                                <tr>
+                                    <td class="fw-bold">
+                                        <i class="bi bi-person-circle text-secondary me-2"></i>@doc.DoctorName
+                                    </td>
+                                    <td>@doc.DepartmentName</td>
+                                    <td class="text-center">@doc.AppointmentCount</td>
+                                    <td class="text-center">
+                                        <span class="stat-badge stat-success">@doc.UniquePatientCount Kişi</span>
+                                    </td>
+                                    <td class="text-center text-success fw-bold">@doc.CompletedCount</td>
+                                    <td class="text-center text-danger">@doc.CancelledCount</td>
+                                    <td class="text-end text-success fw-bold">@doc.CollectedRevenue.ToString("N0", trCulture) ₺</td>
+                                    <td class="text-end text-warning fw-bold">@doc.PendingRevenue.ToString("N0", trCulture) ₺</td>
+                                    <td class="text-end fw-bold">@doc.EstimatedRevenue.ToString("N0", trCulture) ₺</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Department Breakdown -->
+    <div class="row g-3 pbi-canvas-col">
+        <div class="col-md-7">
+            <div class="pbi-card">
+                <div class="pbi-card-title"><i class="bi bi-building"></i> Bölüm Bazlı Gelir Karşılaştırması</div>
+                <div class="chart-container">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="pbi-card">
+                <div class="pbi-card-title"><i class="bi bi-trophy-fill"></i> Zirve Özetleri</div>
+                <div class="d-flex flex-column gap-3 mt-3">
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+                        <div class="text-muted small">En İyi Bölüm (Gelir)</div>
+                        <div class="fw-bold text-dark">@Model.TopDepartmentByRevenue</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+                        <div class="text-muted small">En İyi Doktor (Gelir)</div>
+                        <div class="fw-bold text-dark">@Model.TopDoctorByRevenue</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center border-bottom pb-2">
+                        <div class="text-muted small">En Yoğun Bölüm</div>
+                        <div class="fw-bold text-dark">@Model.TopDepartmentByAppointments (@Model.TopDepartmentAppointmentCount Randevu)</div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">En Yoğun Doktor</div>
+                        <div class="fw-bold text-dark">@Model.TopDoctorByAppointments (@Model.TopDoctorAppointmentCount Randevu)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    $(document).ready(function () {
+        // Initialize DataTable
+        $('#doctorMatrixTable').DataTable({
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/tr.json',
+            },
+            pageLength: 10,
+            order: [[6, 'desc']], // Sort by "Tahsil Edilen" descending
+            dom: '<"row"<"col-sm-12 col-md-6"l><"col-sm-12 col-md-6"f>>rt<"row"<"col-sm-12 col-md-5"i><"col-sm-12 col-md-7"p>>',
+        });
+
+        const currencyFormatter = new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", maximumFractionDigits: 0 });
+        
+        // Power BI Palette
+        const colors = {
+            primary: '#118DFF',
+            primaryHover: '#0F7AE5',
+            secondary: '#12239E',
+            success: '#12805c',
+            warning: '#E66C37',
+            danger: '#d13438',
+            extra: ['#118DFF', '#E66C37', '#12239E', '#00B8AA', '#F2C80F', '#5F6B6D', '#8C9C9A']
+        };
+
+        // Charts Data Setup
+        const topDepts = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DepartmentBreakdown.Take(8).Select(x => x.DepartmentName)));
+        const deptCollected = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DepartmentBreakdown.Take(8).Select(x => x.CollectedRevenue)));
+        const deptPending = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DepartmentBreakdown.Take(8).Select(x => x.PendingRevenue)));
+        
+        const trendLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueTrend.Select(x => x.Label)));
+        const trendCollected = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueTrend.Select(x => x.CollectedRevenue)));
+        const trendPending = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RevenueTrend.Select(x => x.PendingRevenue)));
+
+        // Trend Chart
+        const ctxTrend = document.getElementById('trendChart');
+        if (ctxTrend) {
+            new Chart(ctxTrend, {
+                type: 'line',
+                data: {
+                    labels: trendLabels,
+                    datasets: [
+                        { label: 'Tahsil Edilen', data: trendCollected, borderColor: colors.primary, backgroundColor: 'rgba(17, 141, 255, 0.1)', fill: true, tension: 0.4, pointRadius: 4 },
+                        { label: 'Bekleyen', data: trendPending, borderColor: colors.warning, backgroundColor: 'rgba(230, 108, 55, 0.1)', fill: true, tension: 0.4, pointRadius: 4 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }, tooltip: { callbacks: { label: function(c){ return c.dataset.label + ': ' + currencyFormatter.format(c.raw); } } } },
+                    scales: { y: { beginAtZero: true, ticks: { callback: function(v){ return currencyFormatter.format(v); } } } }
+                }
+            });
+        }
+
+        // Doughnut Chart
+        const ctxDoughnut = document.getElementById('doughnutChart');
+        if (ctxDoughnut) {
+            new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tahsil Edilen', 'Bekleyen', 'İptal / Kayıp'],
+                    datasets: [{
+                        data: [@((double)Model.CollectedRevenue), @((double)Model.PendingRevenue), @((double)Model.CancelledRevenue)],
+                        backgroundColor: [colors.success, colors.warning, colors.danger],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: { 
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8 } },
+                        tooltip: { callbacks: { label: function(c){ return c.label + ': ' + currencyFormatter.format(c.raw); } } } 
+                    }
+                }
+            });
+        }
+
+        // Bar Chart (Department)
+        const ctxBar = document.getElementById('barChart');
+        if (ctxBar) {
+            new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: topDepts,
+                    datasets: [
+                        { label: 'Tahsil Edilen', data: deptCollected, backgroundColor: colors.primary, borderRadius: 2 },
+                        { label: 'Bekleyen', data: deptPending, backgroundColor: colors.warning, borderRadius: 2 }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 8 } }, tooltip: { callbacks: { label: function(c){ return c.dataset.label + ': ' + currencyFormatter.format(c.raw); } } } },
+                    scales: {
+                        x: { stacked: true },
+                        y: { stacked: true, beginAtZero: true, ticks: { callback: function(v){ return currencyFormatter.format(v); } } }
+                    }
+                }
+            });
+        }
+    });
+</script>

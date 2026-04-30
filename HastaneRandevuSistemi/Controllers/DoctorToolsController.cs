@@ -1,5 +1,6 @@
-﻿using HastaneRandevuSistemi.Data;
+using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
+using HastaneRandevuSistemi.Services;
 using HastaneRandevuSistemi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -179,104 +180,67 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> Prescription(int appointmentId)
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPrescriptionQr(int appointmentId)
         {
-            var doctor = await GetCurrentDoctorAsync();
-            if (doctor == null)
-            {
-                return NotFound();
-            }
-
             var appointment = await _context.Appointments
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
-                .FirstOrDefaultAsync(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
 
             if (appointment == null)
-            {
                 return NotFound();
-            }
 
-            return View(BuildPrescriptionModel(appointment, doctor));
+            var qrText = $"HRS Recete\nRandevu No: {appointment.Id}\nHasta: {appointment.PatientName} {appointment.PatientSurname}\nDoktor: {appointment.Doctor?.Title} {appointment.Doctor?.Name} {appointment.Doctor?.Surname}\nPoliklinik: {appointment.Doctor?.Department?.Name ?? "-"}\nTarih: {appointment.PrescriptionCreatedAt?.ToString("dd.MM.yyyy") ?? appointment.AppointmentDate.ToString("dd.MM.yyyy")}\nTani: {appointment.PrescriptionDiagnosis ?? "-"}";
+
+            using var qrGenerator = new QRCoder.QRCodeGenerator();
+            var qrCodeData = qrGenerator.CreateQrCode(qrText, QRCoder.QRCodeGenerator.ECCLevel.Q);
+            var qrCode = new QRCoder.PngByteQRCode(qrCodeData);
+            var qrCodeImage = qrCode.GetGraphic(8);
+            return File(qrCodeImage, "image/png");
         }
 
         [HttpGet]
-        public async Task<IActionResult> PrescriptionFromAppointment(int appointmentId)
+        public async Task<IActionResult> DownloadPrescriptionPdf(int appointmentId)
         {
-            return await Prescription(appointmentId);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Prescription(PrescriptionDraftViewModel model)
-        {
-            var doctor = await GetCurrentDoctorAsync();
-            if (doctor == null)
-            {
-                return NotFound();
-            }
-
             var appointment = await _context.Appointments
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
-                .FirstOrDefaultAsync(a => a.Id == model.AppointmentId && a.DoctorId == doctor.Id);
+                .FirstOrDefaultAsync(a => a.Id == appointmentId);
 
             if (appointment == null)
             {
                 return NotFound();
             }
 
-            if (!ModelState.IsValid)
+            var doctor = await GetCurrentDoctorAsync();
+            if (doctor == null || appointment.DoctorId != doctor.Id)
             {
-                model.DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim();
-                model.DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty;
-                model.PatientName = appointment.PatientName;
-                model.PatientSurname = appointment.PatientSurname;
-                return View(model);
+                return Forbid();
             }
 
-            model.DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim();
-            model.DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty;
-            model.PatientName = appointment.PatientName;
-            model.PatientSurname = appointment.PatientSurname;
-            model.PrescriptionDate = DateTime.Now;
-
-            appointment.PrescriptionDiagnosis = model.Diagnosis.Trim();
-            appointment.PrescriptionMedications = model.Medications.Trim();
-            appointment.PrescriptionNotes = string.IsNullOrWhiteSpace(model.Notes) ? null : model.Notes.Trim();
-            appointment.PrescriptionCreatedAt = model.PrescriptionDate;
-            await _context.SaveChangesAsync();
-
-            if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
+            if (appointment.PrescriptionCreatedAt == null || string.IsNullOrWhiteSpace(appointment.PrescriptionMedications))
             {
-                _cache.Remove($"patient:prescriptions:{appointment.PatientUserId}");
-
-                await CreateNotificationAsync(
-                    appointment.PatientUserId,
-                    "Yeni recete olusturuldu",
-                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz icin recete yazildi.",
-                    "Recete",
-                    "/Patient/MedicalHistory#receteler");
+                return BadRequest("PDF oluşturmak için önce reçete kaydı hazırlanmalıdır.");
             }
 
-            TempData["SuccessMessage"] = "Recete kaydedildi.";
-            return View("PrescriptionPreview", model);
-        }
-
-        private PrescriptionDraftViewModel BuildPrescriptionModel(Appointment appointment, Doctor doctor)
-        {
-            return new PrescriptionDraftViewModel
+            var model = new PrescriptionDraftViewModel
             {
                 AppointmentId = appointment.Id,
                 PatientName = appointment.PatientName,
                 PatientSurname = appointment.PatientSurname,
-                DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim(),
+                DoctorName = appointment.Doctor == null
+                    ? "Bilinmeyen Doktor"
+                    : $"{appointment.Doctor.Title} {appointment.Doctor.Name} {appointment.Doctor.Surname}".Trim(),
                 DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty,
                 PrescriptionDate = appointment.PrescriptionCreatedAt ?? DateTime.Now,
                 Diagnosis = appointment.PrescriptionDiagnosis ?? string.Empty,
                 Medications = appointment.PrescriptionMedications ?? string.Empty,
                 Notes = appointment.PrescriptionNotes
             };
+
+            var pdf = SimplePdfGenerator.CreatePrescriptionPdf(model);
+            return File(pdf, "application/pdf", $"recete-{appointment.Id}.pdf");
         }
 
         private async Task<Doctor?> GetCurrentDoctorAsync()

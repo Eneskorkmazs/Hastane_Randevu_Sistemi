@@ -1,0 +1,51 @@
+@model HastaneRandevuSistemi.ViewModels.SymptomViewModel
+
+@{
+    ViewData["Title"] = "AI Semptom Kontrolcüsü";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-4">
+        <div>
+            <h1 class="h3 fw-bold mb-1">AI Semptom Kontrolcüsü</h1>
+            <p class="text-muted mb-0">Semptomlarını seç, uygun poliklinik önerilerini gör.</p>
+        </div>
+        <a asp-controller="Appointment" asp-action="Create" class="btn btn-outline-primary rounded-pill px-4">
+            <i class="fa-solid fa-calendar-plus me-2"></i>Randevu Al
+        </a>
+    </div>
+
+    <form asp-action="Analyze" method="post" class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <span asp-validation-for="SelectedSymptoms" class="text-danger small"></span>
+
+            <div class="row g-3 mt-1">
+                @foreach (var option in HastaneRandevuSistemi.ViewModels.SymptomViewModel.AvailableSymptoms)
+                {
+                    <div class="col-sm-6 col-lg-4">
+                        <input class="btn-check" type="checkbox" name="SelectedSymptoms" value="@option.Key" id="symptom_@option.Key" checked="@(Model.SelectedSymptoms.Contains(option.Key))" />
+                        <label class="btn btn-outline-primary w-100 text-start rounded-3 p-3" for="symptom_@option.Key">
+                            <i class="fa-solid @option.Icon me-2"></i>@option.Label
+                        </label>
+                    </div>
+                }
+            </div>
+
+            <div class="mt-4">
+                <label asp-for="AdditionalNotes" class="form-label fw-semibold"></label>
+                <textarea asp-for="AdditionalNotes" class="form-control rounded-3" rows="3" placeholder="Süre, şiddet, ek belirtiler..."></textarea>
+                <span asp-validation-for="AdditionalNotes" class="text-danger small"></span>
+            </div>
+        </div>
+        <div class="card-footer bg-white border-0 p-4 pt-0 text-end">
+            <button type="submit" class="btn btn-primary rounded-pill px-5 fw-semibold">
+                <i class="fa-solid fa-wand-magic-sparkles me-2"></i>Analiz Et
+            </button>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

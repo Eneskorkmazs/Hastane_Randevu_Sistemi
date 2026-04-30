@@ -94,6 +94,11 @@ namespace HastaneRandevuSistemi.Models
 
         public DateTime? PrescriptionCreatedAt { get; set; }
 
+        public DateTime? PrescriptionSentAt { get; set; }
+
+        [StringLength(200)]
+        public string? PrescriptionSentByName { get; set; }
+
         public virtual ICollection<MedicalReport> MedicalReports { get; set; } = new List<MedicalReport>();
     }
 }

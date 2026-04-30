@@ -1,0 +1,93 @@
+@using HastaneRandevuSistemi.Models
+@{
+    ViewData["Title"] = "Doktor Profili";
+    var doctor = ViewBag.Doctor as Doctor;
+    var reviews = ViewBag.Reviews as List<DoctorReview> ?? new();
+    var avgRating = (double)(ViewBag.AverageRating ?? 0.0);
+    var reviewCount = (int)(ViewBag.ReviewCount ?? 0);
+    var hasReviewed = (bool)(ViewBag.HasReviewed ?? false);
+    var currentUser = ViewBag.CurrentUser as HastaneRandevuSistemi.Models.AppUser;
+    var isAdmin = User.IsInRole("Admin");
+}
+
+<div class="container py-4">
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <!-- Doktor Kartı -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex align-items-center gap-4 flex-wrap">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0"
+                     style="width:90px;height:90px;">
+                    <i class="fa-solid fa-user-doctor fa-3x text-primary"></i>
+                </div>
+                <div>
+                    <h2 class="fw-bold mb-1">@doctor?.Title @doctor?.Name @doctor?.Surname</h2>
+                    <span class="badge bg-light text-secondary border px-3 py-2 rounded-pill">
+                        <i class="fa-solid fa-hospital me-1"></i>@doctor?.Department?.Name
+                    </span>
+                    <div class="mt-2">
+                        <span class="text-muted small">Bu doktor için randevu alarak tedavi sürecinizi başlatabilirsiniz.</span>
+                    </div>
+                </div>
+                <div class="ms-auto">
+                    <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary rounded-pill px-4">
+                        <i class="fa-solid fa-calendar-plus me-2"></i>Randevu Al
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4 text-center py-5">
+                    <i class="fa-solid fa-circle-info fa-3x text-primary opacity-25 mb-3"></i>
+                    <h5 class="fw-bold">Doktor Bilgileri</h5>
+                    <p class="text-muted">Bu sayfa şu an sadece bilgilendirme amaçlıdır. Randevu almak için yukarıdaki butonu kullanabilirsiniz.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const stars = document.querySelectorAll('.star-pick');
+            const input = document.getElementById('ratingInput');
+            const label = document.getElementById('starLabel');
+            const labels = { 1: 'Çok kötü', 2: 'Kötü', 3: 'Orta', 4: 'İyi', 5: 'Çok iyi' };
+
+            function render(val) {
+                stars.forEach(btn => {
+                    const v = +btn.dataset.value;
+                    btn.querySelector('i').className = `fa-solid fa-star ${v <= val ? 'text-warning' : 'text-secondary'}`;
+                });
+                label.textContent = val > 0 ? `${val}/5 — ${labels[val]}` : 'Yıldıza tıklayarak puan verin';
+            }
+
+            stars.forEach(btn => {
+                btn.addEventListener('mouseenter', () => render(+btn.dataset.value));
+                btn.addEventListener('click', () => { input.value = btn.dataset.value; render(+btn.dataset.value); });
+            });
+
+            document.getElementById('starRating')?.addEventListener('mouseleave', () => render(+input.value));
+        })();
+    </script>
+}

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Hastane Randevu Sistemi - Hafta 10 Raporu</title>
+    <style>
+        @page { size: A4; margin: 16mm; }
+        :root { --ink: #1f2937; --muted: #5b6472; --line: #d9e1ea; --accent: #0b5cad; --soft: #eef6ff; --paper: #ffffff; --bg: #f4f7fb; }
+        * { box-sizing: border-box; }
+        body { margin: 0; padding: 24px; background: var(--bg); color: var(--ink); font-family: "Segoe UI", Tahoma, Arial, sans-serif; line-height: 1.6; }
+        .report { max-width: 920px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08); }
+        .hero { padding: 32px; background: linear-gradient(135deg, #eff7ff 0%, #ffffff 60%, #edf5ff 100%); border-bottom: 1px solid var(--line); }
+        .hero h1 { margin: 0 0 10px; font-size: 28px; line-height: 1.2; }
+        .hero p { margin: 0; color: var(--muted); font-size: 15px; }
+        .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
+        .meta-card { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.92); font-size: 14px; }
+        .meta-card strong { display: block; margin-bottom: 4px; color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
+        .section { padding: 26px 32px 0; }
+        h2 { margin: 0 0 12px; font-size: 22px; }
+        h3 { margin: 0 0 10px; font-size: 18px; color: var(--accent); }
+        p { margin: 0 0 12px; }
+        .summary { padding: 16px 18px; border-left: 5px solid var(--accent); border-radius: 12px; background: var(--soft); }
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; margin-right: 4px; }
+        .tag-new { background: #d1fae5; color: #065f46; }
+        .tag-mod { background: #dbeafe; color: #1e40af; }
+        .file-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        .file-table th { background: var(--soft); color: var(--accent); padding: 8px 12px; text-align: left; border-bottom: 2px solid var(--line); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+        .file-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+        .card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
+        .card h4 { margin: 0 0 6px; font-size: 15px; color: var(--accent); }
+        .card p { margin: 0; font-size: 14px; color: var(--muted); }
+        .closing { margin-top: 16px; padding: 18px; border: 1px dashed #b9c7d8; border-radius: 14px; background: #f8fafc; }
+        .footer { padding: 24px 32px 30px; font-size: 12px; color: var(--muted); }
+    </style>
+</head>
+<body>
+    <main class="report">
+        <section class="hero">
+            <h1>Hastane Randevu Sistemi — Hafta 10 Raporu (Final)</h1>
+            <p>Bu rapor, projenin 10. ve son haftasında tamamlanan Hasta Paneli modernizasyonu, ENS Yapay Zeka Asistanı entegrasyonu, Türkçe karakter standardizasyonu ve final düzenlemelerini içermektedir.</p>
+            <div class="meta">
+                <div class="meta-card"><strong>Proje</strong>Hastane Randevu Sistemi</div>
+                <div class="meta-card"><strong>Hafta</strong>10 — Final (30 Nisan 2026)</div>
+                <div class="meta-card"><strong>GitHub</strong>Eneskorkmazs / Hastane_Randevu_Sistemi</div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Genel Değerlendirme</h2>
+            <div class="summary">
+                Onuncu ve son haftada projenin en kapsamlı güncellemesi gerçekleştirilmiştir. Hasta Paneli tamamen yeniden tasarlanarak modern bir dashboard arayüzüne kavuşmuş, <strong>ENS Akıllı Asistanı</strong> entegre edilerek hastalar yapay zeka destekli semptom analizi yapabilir hale gelmiştir. Ayrıca tüm arayüzlerdeki Türkçe karakter bozuklukları düzeltilmiş, reçete yazma kuralları sıkılaştırılmış ve proje dokümantasyonu tamamlanmıştır.
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Bu Hafta Yapılan Çalışmalar</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <h4>🤖 ENS Yapay Zeka Asistanı</h4>
+                    <p>Hastalar şikayetlerini doğal dilde yazarak yapay zeka destekli bölüm önerileri alabiliyor. ENS, soru sorarak teşhisi netleştiren, sağlık dışı konuları kibarca reddeden interaktif bir asistan olarak tasarlandı.</p>
+                </div>
+                <div class="card">
+                    <h4>🏥 Hasta Paneli Modernizasyonu</h4>
+                    <p>Dashboard tamamen yeniden tasarlandı: Akıllı randevu kartı, hızlı istatistik özeti, kritik sağlık bilgileri paneli, sağlık karnesi ve bölüm ücretleri tablosu eklendi. Glassmorphism ve micro-animation efektleri uygulandı.</p>
+                </div>
+                <div class="card">
+                    <h4>🇹🇷 Türkçe Karakter Standardizasyonu</h4>
+                    <p>15'ten fazla View dosyasında ve tüm controller mesajlarında "Bolum", "Islem", "Odeme" gibi karakter bozuklukları "Bölüm", "İşlem", "Ödeme" olarak düzeltildi. Grafik tooltip'leri ve buton metinleri güncellendi.</p>
+                </div>
+                <div class="card">
+                    <h4>📋 Reçete Güvenlik Kuralları</h4>
+                    <p>Tarihi gelmemiş randevulara reçete yazılması engellendi. Bu kural hem doktor hem sekreter panelinde aktif. Doktorlar yalnızca kendi hastalarının geçmiş randevularına reçete yazabiliyor.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" style="padding-top:22px;">
+            <h2>Değişen / Eklenen Dosyalar</h2>
+            <table class="file-table">
+                <thead><tr><th>Durum</th><th>Dosya</th><th>Açıklama</th></tr></thead>
+                <tbody>
+                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Services/ISymptomCheckerService.cs</td><td>Semptom analiz servisi arayüzü oluşturuldu.</td></tr>
+                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Services/SymptomCheckerService.cs</td><td>Kural tabanlı semptom analiz motoru.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/Patient/Dashboard.cshtml</td><td>Komple yeniden tasarım: ENS asistanı, istatistikler, sağlık bilgileri.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Controllers/PatientController.cs</td><td>CheckSymptoms API, sohbet mantığı ve akıllı soru-cevap sistemi.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Controllers/HomeController.cs</td><td>Reçete tarih kontrolü ve Türkçe düzenlemeler.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Controllers/SecretaryController.cs</td><td>Reçete tarih kontrolü eklendi.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/**/*.cshtml</td><td>15+ View'da Türkçe karakter düzenlemeleri.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>README.md</td><td>Proje dokümantasyonu güncellendi, haftalık raporlar eklendi.</td></tr>
+                </tbody>
+            </table>
+        </section>
+
+        <section class="section">
+            <h2>Sonuç</h2>
+            <div class="closing">
+                Onuncu haftanın ve projenin tamamlanmasıyla birlikte Hastane Randevu Sistemi; Admin, Doktor, Sekreter ve Hasta olmak üzere dört farklı rol için kapsamlı, güvenli ve modern bir sağlık yönetim platformu haline gelmiştir. ENS Yapay Zeka Asistanı, dijital reçete sistemi, Dark Mode desteği ve canlı dashboard grafikleri ile projede hedeflenen tüm yaratıcı özellikler başarıyla hayata geçirilmiştir.
+            </div>
+        </section>
+
+        <div class="footer">
+            Bu rapor, 30 Nisan 2026 tarihinde proje kaynak kodu ve geliştirme geçmişi referans alınarak hazırlanmıştır.
+        </div>
+    </main>
+</body>
+</html>

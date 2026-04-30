@@ -1,0 +1,40 @@
+@model HastaneRandevuSistemi.Models.Appointment?
+
+@{
+    ViewData["Title"] = "Randevu QR Doğrulama";
+    var isValid = ViewBag.IsValid is bool value && value;
+}
+
+<div class="container py-5">
+    <div class="card border-0 shadow-sm rounded-4 mx-auto" style="max-width:720px;">
+        <div class="card-body p-4 p-md-5">
+            <div class="d-flex align-items-center gap-3 mb-4">
+                <div class="rounded-circle d-inline-flex align-items-center justify-content-center @(isValid ? "bg-success" : "bg-danger") text-white" style="width:56px;height:56px;">
+                    <i class="fa-solid @(isValid ? "fa-check" : "fa-xmark") fa-lg"></i>
+                </div>
+                <div>
+                    <h1 class="h4 fw-bold mb-1">@ViewBag.Message</h1>
+                    <div class="text-muted">Randevu doğrulama sonucu</div>
+                </div>
+            </div>
+
+            @if (Model != null && isValid)
+            {
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Randevu No</dt>
+                    <dd class="col-sm-8">#@Model.Id</dd>
+                    <dt class="col-sm-4">Hasta</dt>
+                    <dd class="col-sm-8">@Model.PatientName @Model.PatientSurname</dd>
+                    <dt class="col-sm-4">Tarih</dt>
+                    <dd class="col-sm-8">@Model.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</dd>
+                    <dt class="col-sm-4">Doktor</dt>
+                    <dd class="col-sm-8">@($"{Model.Doctor?.Title} {Model.Doctor?.Name} {Model.Doctor?.Surname}".Trim())</dd>
+                    <dt class="col-sm-4">Poliklinik</dt>
+                    <dd class="col-sm-8">@Model.Doctor?.Department?.Name</dd>
+                    <dt class="col-sm-4">Durum</dt>
+                    <dd class="col-sm-8">@Model.Status</dd>
+                </dl>
+            }
+        </div>
+    </div>
+</div>

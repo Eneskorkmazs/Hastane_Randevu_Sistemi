@@ -1,4 +1,4 @@
-﻿@model HastaneRandevuSistemi.ViewModels.DoctorScheduleViewModel
+@model HastaneRandevuSistemi.ViewModels.DoctorScheduleViewModel
 @using System.Linq
 @using System.Text.Json
 
@@ -82,16 +82,16 @@
         <div class="card-body p-4 p-lg-5">
             <div class="hero-grid">
                 <div>
-                    <div class="hero-tag">Akilli Takvim</div>
+                    <div class="hero-tag">Akıllı Takvim</div>
                     <h1 class="hero-title">@Model.DoctorName</h1>
                     <p class="hero-subtitle mb-0">@Model.DepartmentName - @Model.Title</p>
                 </div>
                 <div class="hero-actions">
                     <a asp-controller="Home" asp-action="DoctorDashboard" class="btn btn-light rounded-pill px-4">
-                        <i class="fa-solid fa-gauge-high me-2"></i>Panele Don
+                        <i class="fa-solid fa-gauge-high me-2"></i>Panele Dön
                     </a>
                     <a asp-controller="DoctorTools" asp-action="Index" class="btn btn-outline-light rounded-pill px-4">
-                        <i class="fa-solid fa-suitcase-medical me-2"></i>Araclarim
+                        <i class="fa-solid fa-suitcase-medical me-2"></i>Araçlarım
                     </a>
                 </div>
             </div>
@@ -108,23 +108,23 @@
         </div>
         <div class="col-sm-6 col-xl-3">
             <div class="metric-card metric-blue">
-                <div class="metric-label">Bugun</div>
+                <div class="metric-label">Bugün</div>
                 <div class="metric-value">@Model.TodayAppointmentCount</div>
-                <div class="metric-note">Gunun randevulari</div>
+                <div class="metric-note">Günün randevuları</div>
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">
             <div class="metric-card metric-green">
-                <div class="metric-label">Yaklasan</div>
+                <div class="metric-label">Yaklaşan</div>
                 <div class="metric-value">@Model.UpcomingAppointmentCount</div>
-                <div class="metric-note">Planlanan gorusmeler</div>
+                <div class="metric-note">Planlanan görüşmeler</div>
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">
             <div class="metric-card metric-amber">
-                <div class="metric-label">Calisma Plani</div>
+                <div class="metric-label">Çalışma Planı</div>
                 <div class="metric-value metric-text">@Model.DailyCapacityText</div>
-                <div class="metric-note">Haftalik kapasite</div>
+                <div class="metric-note">Haftalık kapasite</div>
             </div>
         </div>
     </div>
@@ -133,14 +133,14 @@
         <div class="card-body p-3 p-lg-4">
             <div class="toolbar-grid">
                 <div>
-                    <div class="toolbar-label">Aylik Gorunum</div>
+                    <div class="toolbar-label">Aylık Görünüm</div>
                     <h2 class="toolbar-title mb-0">@Model.MonthTitle</h2>
                 </div>
                 <div class="btn-group">
                     <a asp-action="Schedule" asp-route-monthOffset="@(Model.CurrentMonthOffset - 1)" class="btn btn-outline-primary">
-                        <i class="fa-solid fa-chevron-left me-1"></i>Onceki Ay
+                        <i class="fa-solid fa-chevron-left me-1"></i>Önceki Ay
                     </a>
-                    <a asp-action="Schedule" asp-route-monthOffset="0" class="btn btn-primary">Bugun</a>
+                    <a asp-action="Schedule" asp-route-monthOffset="0" class="btn btn-primary">Bugün</a>
                     <a asp-action="Schedule" asp-route-monthOffset="@(Model.CurrentMonthOffset + 1)" class="btn btn-outline-primary">
                         Sonraki Ay <i class="fa-solid fa-chevron-right ms-1"></i>
                     </a>
@@ -185,7 +185,7 @@
                                             <span class="day-pill">@day.AppointmentCount</span>
                                         }
                                     </div>
-                                    <div class="day-state">@(day.IsWorkingDay ? "Calisma gunu" : "Bos gun")</div>
+                                    <div class="day-state">@(day.IsWorkingDay ? "Çalışma günü" : "Boş gün")</div>
                                     @if (day.IsHoliday)
                                     {
                                         <div class="day-holiday">@day.HolidayLabel</div>
@@ -196,7 +196,7 @@
                                     }
                                     @if (day.AppointmentCount > 0)
                                     {
-                                        <div class="day-foot">Detaylar icin sec</div>
+                                        <div class="day-foot">Detaylar için seç</div>
                                     }
                                 </button>
                             }

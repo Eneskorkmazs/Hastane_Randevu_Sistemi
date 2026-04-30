@@ -2,6 +2,7 @@
 
 @{
     Layout = null;
+    var qrUrl = Url.Action("GetPrescriptionQr", "DoctorTools", new { appointmentId = Model.AppointmentId }, Context.Request.Scheme);
 }
 
 <!DOCTYPE html>
@@ -9,57 +10,180 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Reçete Önizleme</title>
+    <title>Dijital Reçete — @Model.PatientName @Model.PatientSurname</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; background: #f4f6f8; color: #111; }
-        .sheet { max-width: 900px; margin: 24px auto; background: #fff; padding: 32px; border-radius: 16px; box-shadow: 0 12px 30px rgba(0,0,0,.08); }
-        .head { display:flex; justify-content:space-between; gap: 20px; border-bottom: 1px solid #e6e8eb; padding-bottom: 16px; margin-bottom: 24px; }
-        .title { font-size: 28px; font-weight: 700; }
-        .muted { color: #667; }
-        .box { background:#f8fafc; border:1px solid #e5e7eb; padding:16px; border-radius:12px; margin-bottom: 16px; }
-        .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #667; margin-bottom: 6px; }
-        .value { font-size: 16px; font-weight: 600; }
-        .actions { display:flex; gap: 12px; justify-content:flex-end; margin-top: 20px; }
-        @@media print { .actions { display:none; } body { background:#fff; } .sheet { box-shadow:none; margin:0; border-radius:0; } }
+        * { box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: #f0f4f8; color: #1a1a2e; }
+        .sheet {
+            max-width: 860px;
+            margin: 28px auto;
+            background: #fff;
+            padding: 40px 44px;
+            border-radius: 18px;
+            box-shadow: 0 16px 40px rgba(0,0,0,.10);
+        }
+        /* Header */
+        .rx-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #004e92;
+            padding-bottom: 18px;
+            margin-bottom: 28px;
+            gap: 20px;
+        }
+        .rx-logo { font-size: 26px; font-weight: 800; color: #004e92; letter-spacing: -0.5px; }
+        .rx-logo span { font-weight: 300; color: #555; font-size: 14px; display: block; margin-top: 2px; }
+        .rx-meta { text-align: right; font-size: 13px; color: #555; line-height: 1.7; }
+        .rx-meta strong { color: #1a1a2e; }
+        /* Sections */
+        .rx-section { margin-bottom: 18px; }
+        .rx-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: .1em;
+            color: #888;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        .rx-value {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a1a2e;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 12px 16px;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+        /* Two-column layout */
+        .rx-row { display: flex; gap: 16px; }
+        .rx-row .rx-section { flex: 1; }
+        /* QR + Footer */
+        .rx-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            border-top: 1px solid #e5e7eb;
+            padding-top: 20px;
+            margin-top: 24px;
+            gap: 20px;
+        }
+        .rx-qr-block { text-align: center; }
+        .rx-qr-block img { width: 110px; height: 110px; border: 1px solid #ddd; border-radius: 8px; padding: 4px; }
+        .rx-qr-block .rx-qr-label { font-size: 11px; color: #888; margin-top: 5px; }
+        .rx-sign { text-align: right; }
+        .rx-sign .sign-line { border-top: 1px solid #aaa; width: 200px; margin-left: auto; margin-bottom: 6px; }
+        .rx-sign .sign-name { font-size: 14px; font-weight: 700; color: #004e92; }
+        .rx-sign .sign-dept { font-size: 12px; color: #666; }
+        /* Action buttons */
+        .rx-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            margin-top: 24px;
+        }
+        .btn-rx {
+            padding: 10px 24px;
+            border-radius: 999px;
+            border: none;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+        .btn-rx-print { background: #004e92; color: #fff; }
+        .btn-rx-print:hover { background: #003a6d; }
+        .btn-rx-back { background: #f1f5f9; color: #333; }
+        .btn-rx-back:hover { background: #e2e8f0; }
+        /* Print styles */
+        @@media print {
+            body { background: #fff; }
+            .rx-actions { display: none !important; }
+            .sheet { box-shadow: none; margin: 0; border-radius: 0; padding: 20px; }
+        }
     </style>
 </head>
 <body>
     <div class="sheet">
-        <div class="head">
+        <!-- Header -->
+        <div class="rx-header">
             <div>
-                <div class="title">Dijital Reçete</div>
-                <div class="muted">@Model.PrescriptionDate.ToString("dd.MM.yyyy HH:mm")</div>
+                <div class="rx-logo">
+                    &#x2665; HRS Hastanesi
+                    <span>Dijital Reçete Belgesi</span>
+                </div>
             </div>
-            <div class="muted text-end">
+            <div class="rx-meta">
+                <div><strong>Tarih:</strong> @Model.PrescriptionDate.ToString("dd.MM.yyyy HH:mm")</div>
+                <div><strong>Randevu No:</strong> #@Model.AppointmentId</div>
                 <div><strong>Doktor:</strong> @Model.DoctorName</div>
                 <div><strong>Poliklinik:</strong> @Model.DepartmentName</div>
             </div>
         </div>
 
-        <div class="box">
-            <div class="label">Hasta</div>
-            <div class="value">@Model.PatientName @Model.PatientSurname</div>
+        <!-- Hasta Bilgisi -->
+        <div class="rx-section">
+            <div class="rx-label">Hasta</div>
+            <div class="rx-value">@Model.PatientName @Model.PatientSurname</div>
         </div>
 
-        <div class="box">
-            <div class="label">Tanı</div>
-            <div class="value">@Model.Diagnosis</div>
+        <!-- Tanı -->
+        <div class="rx-section">
+            <div class="rx-label">Tanı / Teşhis</div>
+            <div class="rx-value">@Model.Diagnosis</div>
         </div>
 
-        <div class="box">
-            <div class="label">İlaçlar</div>
-            <div class="value">@Model.Medications</div>
+        <!-- İlaçlar -->
+        <div class="rx-section">
+            <div class="rx-label">Reçete Edilen İlaçlar</div>
+            <div class="rx-value">@Model.Medications</div>
         </div>
 
-        <div class="box">
-            <div class="label">Notlar</div>
-            <div class="value">@(string.IsNullOrWhiteSpace(Model.Notes) ? "-" : Model.Notes)</div>
+        <!-- Notlar -->
+        <div class="rx-section">
+            <div class="rx-label">Doktor Notları</div>
+            <div class="rx-value">@(string.IsNullOrWhiteSpace(Model.Notes) ? "—" : Model.Notes)</div>
         </div>
 
-        <div class="actions">
-            <button onclick="window.print()" type="button">Yazdır</button>
+        <!-- Footer: QR + İmza -->
+        <div class="rx-footer">
+            <div class="rx-qr-block">
+                <img src="@Url.Action("GetPrescriptionQr", "DoctorTools", new { appointmentId = Model.AppointmentId })"
+                     alt="Reçete QR Kodu"
+                     title="Bu QR kodu ile reçetenin doğruluğunu teyit edebilirsiniz." />
+                <div class="rx-qr-label">Reçete Doğrulama QR</div>
+            </div>
+            <div class="rx-sign">
+                <div class="sign-line"></div>
+                <div class="sign-name">@Model.DoctorName</div>
+                <div class="sign-dept">@Model.DepartmentName</div>
+                <div class="sign-dept" style="font-size:11px;color:#aaa;margin-top:3px;">HRS Hastanesi</div>
+            </div>
+        </div>
+
+        <!-- Aksiyon Butonları -->
+        <div class="rx-actions">
+            <a href="javascript:history.back()" class="btn-rx btn-rx-back">
+                &#8592; Geri Dön
+            </a>
+            <a asp-action="DownloadPrescriptionPdf" asp-route-appointmentId="@Model.AppointmentId" class="btn-rx btn-rx-back">
+                PDF İndir
+            </a>
+            <button onclick="window.print()" type="button" class="btn-rx btn-rx-print">
+                &#128438; Yazdır / PDF Kaydet
+            </button>
         </div>
     </div>
+
+    <script>
+        // Tarayıcı print diyaloğunda "PDF olarak kaydet" seçeneği ile PDF alınabilir.
+        // Otomatik print istenirse aşağıdaki satırı aktif edin:
+        // window.onload = function() { window.print(); };
+    </script>
 </body>
 </html>
-

@@ -1,4 +1,4 @@
-﻿@model IEnumerable<HastaneRandevuSistemi.Models.Doctor>
+@model IEnumerable<HastaneRandevuSistemi.Models.Doctor>
 
 @{
     ViewData["Title"] = "Doktor Listesi";
@@ -51,14 +51,17 @@
                                 </span>
                             </td>
                             <td class="text-end pe-4">
-                                <div class="btn-group shadow-sm rounded-pill bg-white border p-1">
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-link text-warning px-3" title="Düzenle">
-                                        <i class="fa-solid fa-pen-to-square fa-lg"></i>
-                                    </a>
-                                    <div class="vr my-2 opacity-25" style="width: 1px;"></div>
-                                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-link text-danger px-3" title="Sil">
-                                        <i class="fa-solid fa-trash-can fa-lg"></i>
-                                    </a>
+                                <div class="d-flex gap-2 justify-content-end align-items-center">
+
+                                    <div class="btn-group shadow-sm rounded-pill bg-white border p-1">
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-link text-warning px-3" title="Düzenle">
+                                            <i class="fa-solid fa-pen-to-square fa-lg"></i>
+                                        </a>
+                                        <div class="vr my-2 opacity-25" style="width: 1px;"></div>
+                                        <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-sm btn-link text-danger px-3" title="Sil">
+                                            <i class="fa-solid fa-trash-can fa-lg"></i>
+                                        </a>
+                                    </div>
                                 </div>
                             </td>
                         </tr>

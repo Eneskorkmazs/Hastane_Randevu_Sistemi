@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace HastaneRandevuSistemi.ViewModels
 {
@@ -37,8 +37,19 @@ namespace HastaneRandevuSistemi.ViewModels
         [Display(Name = "Adres")]
         public string Adres { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "E-posta zorunludur.")]
+        [EmailAddress(ErrorMessage = "Gecerli bir e-posta adresi giriniz.")]
         [Display(Name = "E-Posta")]
         public string Email { get; set; } = string.Empty;
+
+        [Display(Name = "Kan Grubu")]
+        public string? BloodType { get; set; }
+
+        [Display(Name = "Alerjiler")]
+        public string? Allergies { get; set; }
+
+        [Display(Name = "Acil Durum Kişisi")]
+        public string? EmergencyContact { get; set; }
     }
 }
 

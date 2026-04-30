@@ -1,0 +1,267 @@
+@model HastaneRandevuSistemi.ViewModels.AdminServiceAnalysisViewModel
+
+@{
+    ViewData["Title"] = "Hizmet Analizi";
+    var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <span class="text-uppercase small fw-bold text-primary">Operasyonel Analitik</span>
+            <h1 class="h3 fw-bold mb-1">Hizmet Analiz Merkezi</h1>
+            <p class="text-muted mb-0">Hastanenin hizmet yoğunluğunu, randevu verimliliğini ve kapasite kullanımını izleyin.</p>
+        </div>
+        <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Dön</a>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label class="form-label fw-bold small">Tarih Aralığı</label>
+                    <div class="input-group">
+                        <input type="date" name="fromDate" class="form-control" value="@Model.FromDate.ToString("yyyy-MM-dd")" />
+                        <span class="input-group-text">-</span>
+                        <input type="date" name="toDate" class="form-control" value="@Model.ToDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small">Bölüm Filtresi</label>
+                    <select name="departmentId" class="form-select" asp-items="Model.DepartmentOptions">
+                        <option value="">Tüm Bölümler</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-grid">
+                    <button type="submit" class="btn btn-primary rounded-pill">
+                        <i class="fa-solid fa-filter me-2"></i>Filtrele
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4 border-primary">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-bold text-uppercase mb-1">Toplam Randevu</div>
+                    <div class="h2 fw-bold mb-0">@Model.TotalAppointments</div>
+                    <div class="small text-muted mt-2">İşlem hacmi</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4 border-success">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-bold text-uppercase mb-1">Tamamlanma Oranı</div>
+                    <div class="h2 fw-bold mb-0 text-success">% @Model.CompletionRate.ToString("F1", trCulture)</div>
+                    <div class="small text-muted mt-2">@Model.CompletedAppointments hizmet bitti</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4 border-warning">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-bold text-uppercase mb-1">Bekleyen İşlemler</div>
+                    <div class="h2 fw-bold mb-0 text-warning">@Model.PendingAppointments</div>
+                    <div class="small text-muted mt-2">Kapasite bekleyen</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100 border-start border-4 border-danger">
+                <div class="card-body p-4">
+                    <div class="text-muted small fw-bold text-uppercase mb-1">İptal Oranı</div>
+                    <div class="h2 fw-bold mb-0 text-danger">% @Model.CancellationRate.ToString("F1", trCulture)</div>
+                    <div class="small text-muted mt-2">@Model.CancelledAppointments kayıp hizmet</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Günlük Hizmet Yoğunluğu</h5>
+                        <i class="fa-solid fa-chart-line text-primary"></i>
+                    </div>
+                    <div style="height: 350px;">
+                        <canvas id="volumeTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold mb-0">Hizmet Durumu</h5>
+                        <i class="fa-solid fa-chart-pie text-info"></i>
+                    </div>
+                    <div style="height: 300px;">
+                        <canvas id="statusPieChart"></canvas>
+                    </div>
+                    <div class="mt-4">
+                        @foreach(var item in Model.StatusBreakdown) {
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="small"><i class="fa-solid fa-circle me-2" style="color: @item.Color"></i>@item.StatusLabel</span>
+                                <span class="fw-bold">@item.Count</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Bölüm Bazlı Hizmet Dağılımı</h5>
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr class="text-muted small text-uppercase">
+                                    <th>Bölüm</th>
+                                    <th class="text-center">İşlem</th>
+                                    <th class="text-end">Pay</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach(var dept in Model.DepartmentVolume) {
+                                    <tr>
+                                        <td class="fw-bold text-primary">@dept.DepartmentName</td>
+                                        <td class="text-center">@dept.AppointmentCount</td>
+                                        <td class="text-end">
+                                            <div class="d-flex align-items-center justify-content-end gap-2">
+                                                <span class="small">%@dept.SharePercent.ToString("F1")</span>
+                                                <div class="progress rounded-pill" style="width: 60px; height: 6px;">
+                                                    <div class="progress-bar bg-info" style="width: @dept.SharePercent%"></div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Saatlik Hizmet Yoğunluğu</h5>
+                    <div style="height: 300px;">
+                        <canvas id="peakHoursChart"></canvas>
+                    </div>
+                    <div class="mt-3 p-3 bg-light rounded-3">
+                        <small class="text-muted d-block mb-1">En Yoğun Saat Aralığı</small>
+                        <div class="fw-bold h5 mb-0 text-primary">
+                            @{
+                                var topHour = Model.PeakHours.OrderByDescending(x => x.Count).FirstOrDefault();
+                                if (topHour != null) {
+                                    @($"{topHour.Hour}:00 - {topHour.Hour + 1}:00")
+                                } else {
+                                    @("-")
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Volume Trend Chart
+            const trendLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DailyVolumeTrend.Select(x => x.DateLabel)));
+            const trendData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DailyVolumeTrend.Select(x => x.Count)));
+
+            new Chart(document.getElementById("volumeTrendChart"), {
+                type: 'line',
+                data: {
+                    labels: trendLabels,
+                    datasets: [{
+                        label: 'Randevu Sayısı',
+                        data: trendData,
+                        borderColor: '#0d6efd',
+                        backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#0d6efd'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Status Pie Chart
+            const statusLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StatusBreakdown.Select(x => x.StatusLabel)));
+            const statusData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StatusBreakdown.Select(x => x.Count)));
+            const statusColors = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.StatusBreakdown.Select(x => x.Color)));
+
+            new Chart(document.getElementById("statusPieChart"), {
+                type: 'doughnut',
+                data: {
+                    labels: statusLabels,
+                    datasets: [{
+                        data: statusData,
+                        backgroundColor: statusColors,
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: { legend: { display: false } }
+                }
+            });
+
+            // Peak Hours Chart
+            const peakLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PeakHours.Select(x => x.Hour + ":00")));
+            const peakData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.PeakHours.Select(x => x.Count)));
+
+            new Chart(document.getElementById("peakHoursChart"), {
+                type: 'bar',
+                data: {
+                    labels: peakLabels,
+                    datasets: [{
+                        label: 'İşlem Yoğunluğu',
+                        data: peakData,
+                        backgroundColor: '#6610f2',
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { borderDash: [5, 5] } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+        });
+    </script>
+}

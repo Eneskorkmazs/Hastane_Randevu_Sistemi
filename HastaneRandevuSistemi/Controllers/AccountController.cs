@@ -1,4 +1,4 @@
-﻿using HastaneRandevuSistemi.Data;
+using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.Services;
 using HastaneRandevuSistemi.ViewModels;
@@ -146,6 +146,16 @@ namespace HastaneRandevuSistemi.Controllers
                         return View(model);
                     }
                 }
+                else if (selectedRole.Equals("Sekreter", StringComparison.OrdinalIgnoreCase))
+                {
+                    var canLoginFromSecretaryEntry = roles.Contains("Sekreter") || roles.Contains("Admin");
+                    if (!canLoginFromSecretaryEntry)
+                    {
+                        await SignOutAndClearUserAsync();
+                        ModelState.AddModelError(string.Empty, "Bu hesap sekreter girişinden kullanılamaz.");
+                        return View(model);
+                    }
+                }
 
                 if (roles.Contains("Admin"))
                 {
@@ -158,6 +168,11 @@ namespace HastaneRandevuSistemi.Controllers
                 }
 
 
+
+                if (roles.Contains("Sekreter"))
+                {
+                    return RedirectToAction("Dashboard", "Secretary");
+                }
 
                 if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
                 {

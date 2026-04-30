@@ -1,0 +1,244 @@
+@model IEnumerable<HastaneRandevuSistemi.ViewModels.QueueItemViewModel>
+@using HastaneRandevuSistemi.Models
+
+@{
+    ViewData["Title"] = "Sıra Takip Ekranı";
+    var departments = ViewBag.Departments as List<HastaneRandevuSistemi.Models.Department> ?? new();
+    var selectedDeptId = ViewBag.SelectedDepartmentId as int?;
+    var completedCount = (int)(ViewBag.CompletedCount ?? 0);
+    var pendingCount = (int)(ViewBag.PendingCount ?? 0);
+    var currentItem = ViewBag.CurrentItem as HastaneRandevuSistemi.ViewModels.QueueItemViewModel;
+    var today = ViewBag.Today as string ?? DateTime.Today.ToString("dd.MM.yyyy");
+    var items = Model.ToList();
+
+    // Giriş yapan hastanın kendi randevusunu bul
+    var myAppointmentId = ViewBag.MyAppointmentId as int?;
+}
+
+<div class="container-fluid px-3 px-md-4 mt-2">
+
+    <!-- Başlık -->
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+        <div>
+            <h2 class="fw-bold mb-1">
+                <i class="fa-solid fa-list-ol text-primary me-2"></i>Sıra Takip Ekranı
+            </h2>
+            <p class="text-muted mb-0 small">
+                <i class="fa-regular fa-calendar me-1"></i>@today
+                &nbsp;·&nbsp;
+                <span id="live-clock" class="fw-semibold"></span>
+            </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap align-items-center">
+            <form method="get" asp-action="QueueStatus" class="d-flex gap-2 align-items-center">
+                <select name="departmentId" class="form-select form-select-sm rounded-pill" style="min-width:200px;"
+                        onchange="this.form.submit()">
+                    <option value="">Tüm Poliklinikler</option>
+                    @foreach (var dept in departments)
+                    {
+                        if (selectedDeptId == dept.Id)
+                        {
+                            <option value="@dept.Id" selected>@dept.Name</option>
+                        }
+                        else
+                        {
+                            <option value="@dept.Id">@dept.Name</option>
+                        }
+                    }
+                </select>
+            </form>
+            <button onclick="location.reload()" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+                <i class="fa-solid fa-rotate-right me-1"></i>Yenile
+            </button>
+        </div>
+    </div>
+
+    <!-- Özet Kartlar -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body text-center py-3">
+                    <div class="fs-1 fw-black text-primary">@items.Count</div>
+                    <div class="text-muted small">Toplam Randevu</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body text-center py-3">
+                    <div class="fs-1 fw-black text-success">@completedCount</div>
+                    <div class="text-muted small">Tamamlanan</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body text-center py-3">
+                    <div class="fs-1 fw-black text-warning">@pendingCount</div>
+                    <div class="text-muted small">Bekleyen</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body text-center py-3">
+                    @if (currentItem != null)
+                    {
+                        <div class="fs-5 fw-bold text-info">@currentItem.AppointmentTime.ToString("HH:mm")</div>
+                        <div class="text-muted small">Şu An Muayenede</div>
+                        <div class="small fw-semibold text-truncate" title="@currentItem.DoctorName">@currentItem.DoctorName</div>
+                    }
+                    else
+                    {
+                        <div class="fs-1 fw-black text-secondary">—</div>
+                        <div class="text-muted small">Şu An Muayene Yok</div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sıra Mantığı Açıklaması -->
+    <div class="alert alert-info border-0 rounded-4 small mb-4 py-2 px-3">
+        <i class="fa-solid fa-circle-info me-2"></i>
+        <strong>Sıra nasıl hesaplanır?</strong>
+        Her doktorun kendi sırası ayrı tutulur. Sıranız = o doktorda sizden önce gelen ve henüz tamamlanmamış randevu sayısıdır.
+        Tahmini bekleme = önünüzdeki kişi sayısı × 15 dakika.
+    </div>
+
+    <!-- Sıra Listesi -->
+    @if (!items.Any())
+    {
+        <div class="text-center py-5 text-muted">
+            <i class="fa-solid fa-calendar-xmark fa-3x mb-3 opacity-50"></i>
+            <p class="mb-0 fs-5">Bugün için randevu bulunmuyor.</p>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr class="text-muted small border-bottom">
+                                <th class="ps-4 py-3">Durum</th>
+                                <th>Saat</th>
+                                <th>Hasta</th>
+                                <th>Doktor / Poliklinik</th>
+                                <th>Doktorda Sıra</th>
+                                <th class="pe-4">Tahmini Bekleme</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in items)
+                            {
+                                var rowClass = item.IsCompleted
+                                    ? "opacity-50"
+                                    : item.IsCurrent
+                                        ? "table-info"
+                                        : "";
+                                <tr class="@rowClass">
+                                    <td class="ps-4">
+                                        @if (item.IsCurrent)
+                                        {
+                                            <span class="badge bg-info text-dark rounded-pill px-3 py-2 pulse-animation">
+                                                <i class="fa-solid fa-stethoscope me-1"></i>Muayenede
+                                            </span>
+                                        }
+                                        else if (item.IsCompleted)
+                                        {
+                                            <span class="badge bg-success rounded-pill px-3 py-2">
+                                                <i class="fa-solid fa-check me-1"></i>Tamamlandı
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            var (badgeClass, badgeText, badgeIcon) = item.Status switch
+                                            {
+                                                AppointmentStatus.Onaylandi => ("bg-primary", "Onaylı", "fa-circle-check"),
+                                                AppointmentStatus.Bekliyor => ("bg-warning text-dark", "Bekliyor", "fa-clock"),
+                                                _ => ("bg-secondary", item.Status.ToString(), "fa-circle")
+                                            };
+                                            <span class="badge @badgeClass rounded-pill px-3 py-2">
+                                                <i class="fa-solid @badgeIcon me-1"></i>@badgeText
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="fw-semibold">@item.AppointmentTime.ToString("HH:mm")</td>
+                                    <td>
+                                        @if (User.IsInRole("Doktor") || User.IsInRole("Sekreter"))
+                                        {
+                                            <span>@item.PatientName</span>
+                                        }
+                                        else
+                                        {
+                                            @* Gizlilik: sadece baş harfler *@
+                                            var parts = item.PatientName.Split(' ');
+                                            <span>@string.Join(" ", parts.Select(p => p.Length > 0 ? p[0] + "***" : ""))</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="fw-semibold small">@item.DoctorName</div>
+                                        <div class="text-muted x-small">@item.DepartmentName</div>
+                                    </td>
+                                    <td>
+                                        @if (item.IsCompleted)
+                                        {
+                                            <span class="text-muted small">—</span>
+                                        }
+                                        else if (item.IsCurrent)
+                                        {
+                                            <span class="badge bg-info text-dark rounded-pill">Şu An</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="fw-bold text-primary">#@item.QueuePosition</span>
+                                            <span class="text-muted small ms-1">/ bu doktorda</span>
+                                        }
+                                    </td>
+                                    <td class="pe-4">
+                                        @if (item.IsCompleted || item.IsCurrent)
+                                        {
+                                            <span class="text-muted small">—</span>
+                                        }
+                                        else if (item.EstimatedWaitMinutes == 0)
+                                        {
+                                            <span class="text-success fw-semibold small">
+                                                <i class="fa-solid fa-bell me-1"></i>Sıra sende!
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="small">~@item.EstimatedWaitMinutes dk</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <p class="text-muted small mt-3 text-center">
+            <i class="fa-solid fa-circle-info me-1"></i>
+            Sayfa her 60 saniyede bir otomatik yenilenir.
+        </p>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function updateClock() {
+            const el = document.getElementById('live-clock');
+            if (el) {
+                const now = new Date();
+                el.textContent = now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            }
+        }
+        updateClock();
+        setInterval(updateClock, 1000);
+        setTimeout(function () { location.reload(); }, 60000);
+    </script>
+}

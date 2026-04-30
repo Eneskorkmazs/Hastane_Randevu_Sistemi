@@ -10,8 +10,8 @@ namespace HastaneRandevuSistemi.ViewModels
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
 
-        public string SelectedDoctorName { get; set; } = "Tum Doktorlar";
-        public string SelectedDepartmentName { get; set; } = "Tum Bolumler";
+        public string SelectedDoctorName { get; set; } = "Tüm Doktorlar";
+        public string SelectedDepartmentName { get; set; } = "Tüm Bölümler";
 
         public int TotalAppointments { get; set; }
         public int UniquePatientCount { get; set; }
@@ -65,6 +65,7 @@ namespace HastaneRandevuSistemi.ViewModels
         public int AppointmentId { get; set; }
         public DateTime AppointmentDate { get; set; }
         public string PatientName { get; set; } = string.Empty;
+        public string DoctorName { get; set; } = string.Empty;
         public string DepartmentName { get; set; } = string.Empty;
         public AppointmentStatus Status { get; set; }
         public bool IsCollected { get; set; }

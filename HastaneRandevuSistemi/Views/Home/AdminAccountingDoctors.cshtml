@@ -1,0 +1,117 @@
+@model HastaneRandevuSistemi.ViewModels.AdminAccountingViewModel
+@{
+    ViewData["Title"] = "Muhasebe - Doktor Analizi";
+    var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+}
+
+<div class="container py-4">
+    @await Html.PartialAsync("_AdminAccountingHeader", Model)
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+                <div>
+                    <h5 class="fw-bold mb-1">Doktor Performans Matrisi</h5>
+                    <p class="text-muted small mb-0">Hangi doktorun ne kadar hasta baktığı ve finansal başarısı.</p>
+                </div>
+                <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.DoctorBreakdown.Count doktor</span>
+            </div>
+
+            @if (!Model.DoctorBreakdown.Any())
+            {
+                <div class="text-muted border rounded-4 p-4 bg-light text-center">
+                    <i class="fa-solid fa-user-doctor fa-3x opacity-25 mb-3"></i>
+                    <p>Doktor analizi için veri bulunamadı.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle hover-table">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Doktor</th>
+                                <th>Bölüm</th>
+                                <th class="text-center">Randevu</th>
+                                <th class="text-center">Hasta</th>
+                                <th class="text-center">Tamamlanan</th>
+                                <th class="text-center text-danger">İptal</th>
+                                <th class="text-end text-success">Tahsilat</th>
+                                <th class="text-end text-warning">Bekleyen</th>
+                                <th class="text-end fw-bold">Başarı %</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doc in Model.DoctorBreakdown)
+                            {
+                                var successRate = doc.AppointmentCount == 0 ? 0 : (double)doc.CompletedCount / doc.AppointmentCount * 100;
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="rounded-circle bg-primary bg-opacity-10 p-2">
+                                                <i class="fa-solid fa-user-doctor text-primary"></i>
+                                            </div>
+                                            <span class="fw-bold">@doc.DoctorName</span>
+                                        </div>
+                                    </td>
+                                    <td>@doc.DepartmentName</td>
+                                    <td class="text-center">@doc.AppointmentCount</td>
+                                    <td class="text-center">@doc.UniquePatientCount</td>
+                                    <td class="text-center">@doc.CompletedCount</td>
+                                    <td class="text-center text-danger">@doc.CancelledCount</td>
+                                    <td class="text-end text-success fw-bold">@doc.CollectedRevenue.ToString("C0", trCulture)</td>
+                                    <td class="text-end text-warning">@doc.PendingRevenue.ToString("C0", trCulture)</td>
+                                    <td class="text-end">
+                                        <span class="badge @(successRate > 80 ? "bg-success" : (successRate > 50 ? "bg-warning" : "bg-danger")) rounded-pill px-3">
+                                            %@successRate.ToString("F1")
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3"><i class="fa-solid fa-trophy text-warning me-2"></i>En Çok Randevu Alan 5 Doktor</h6>
+                    <ul class="list-group list-group-flush">
+                        @foreach (var doc in Model.DoctorBreakdown.OrderByDescending(x => x.AppointmentCount).Take(5))
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span>@doc.DoctorName <small class="text-muted d-block">@doc.DepartmentName</small></span>
+                                <span class="badge bg-primary rounded-pill">@doc.AppointmentCount</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3"><i class="fa-solid fa-coins text-success me-2"></i>En Yüksek Tahsilat Yapan 5 Doktor</h6>
+                    <ul class="list-group list-group-flush">
+                        @foreach (var doc in Model.DoctorBreakdown.OrderByDescending(x => x.CollectedRevenue).Take(5))
+                        {
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span>@doc.DoctorName <small class="text-muted d-block">@doc.DepartmentName</small></span>
+                                <span class="text-success fw-bold">@doc.CollectedRevenue.ToString("C0", trCulture)</span>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hover-table tbody tr:hover { background-color: #f8f9fa; }
+    .bg-light { background-color: #f8f9fa !important; }
+</style>

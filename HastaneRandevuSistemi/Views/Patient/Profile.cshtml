@@ -1,4 +1,4 @@
-﻿@model HastaneRandevuSistemi.ViewModels.PatientProfileViewModel
+@model HastaneRandevuSistemi.ViewModels.PatientProfileViewModel
 
 @{
     ViewData["Title"] = "Profilim";
@@ -59,12 +59,44 @@
 
                 <div class="col-12">
                     <label asp-for="Email" class="form-label fw-semibold"></label>
-                    <input asp-for="Email" class="form-control form-control-lg" readonly />
+                    <input asp-for="Email" class="form-control form-control-lg" autocomplete="email" />
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                    <small class="text-muted">Yeni e-posta adresinizi girerek hesabiniza baglayabilirsiniz.</small>
+                </div>
+
+                <div class="col-12 mt-4">
+                    <h5 class="fw-bold text-danger border-bottom pb-2 mb-3"><i class="fa-solid fa-hospital-user me-2"></i>Kritik Sağlık Bilgileri</h5>
+                    <p class="small text-muted mb-3">Bu bilgiler acil durumlarda sağlık personelinin size daha hızlı müdahale etmesini sağlar.</p>
+                </div>
+
+                <div class="col-md-4">
+                    <label asp-for="BloodType" class="form-label fw-semibold"></label>
+                    <select asp-for="BloodType" class="form-select form-select-lg">
+                        <option value="">Seçiniz</option>
+                        <option>A+</option>
+                        <option>A-</option>
+                        <option>B+</option>
+                        <option>B-</option>
+                        <option>AB+</option>
+                        <option>AB-</option>
+                        <option>0+</option>
+                        <option>0-</option>
+                    </select>
+                </div>
+
+                <div class="col-md-8">
+                    <label asp-for="EmergencyContact" class="form-label fw-semibold">Acil Durum Kişisi (Ad ve Telefon)</label>
+                    <input asp-for="EmergencyContact" class="form-control form-control-lg" placeholder="Örn: Ahmet Yılmaz - 0532..." />
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Allergies" class="form-label fw-semibold"></label>
+                    <textarea asp-for="Allergies" class="form-control" rows="2" placeholder="Varsa ilaç, gıda veya diğer alerjilerinizi belirtin..."></textarea>
                 </div>
 
                 <div class="col-12">
                     <label asp-for="Adres" class="form-label fw-semibold"></label>
-                    <textarea asp-for="Adres" class="form-control" rows="4"></textarea>
+                    <textarea asp-for="Adres" class="form-control" rows="2"></textarea>
                     <span asp-validation-for="Adres" class="text-danger small"></span>
                 </div>
 

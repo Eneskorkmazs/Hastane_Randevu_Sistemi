@@ -1,0 +1,78 @@
+@model HastaneRandevuSistemi.ViewModels.PrescriptionDraftViewModel
+
+@{
+    ViewData["Title"] = "Reçete Yaz";
+}
+
+<div class="container py-4">
+    <div class="card border-0 shadow-sm rounded-5 mb-4 overflow-hidden">
+        <div class="card-body p-4 p-md-5 text-white" style="background: linear-gradient(135deg, #004e92 0%, #000428 100%);">
+            <div class="d-flex flex-column flex-md-row justify-content-between gap-3 align-items-md-center">
+                <div>
+                    <span class="text-uppercase opacity-75 small fw-bold">Tıbbi Değerlendirme & Reçete</span>
+                    <h2 class="fw-bold mb-1">@Model.PatientName @Model.PatientSurname</h2>
+                    <p class="mb-0 opacity-75">@Model.DepartmentName - @Model.DoctorName</p>
+                </div>
+                <a asp-action="DoctorDashboard" class="btn btn-outline-light rounded-pill px-4 border-2">İptal Et ve Dön</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-5">
+        <div class="card-body p-4 p-md-5">
+            <form asp-action="DoctorPrescription" method="post" class="row g-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="AppointmentId" />
+                <input type="hidden" asp-for="DoctorName" />
+                <input type="hidden" asp-for="DepartmentName" />
+                <input type="hidden" asp-for="PatientName" />
+                <input type="hidden" asp-for="PatientSurname" />
+
+                <div class="col-md-12">
+                    <div class="form-floating mb-3">
+                        <input asp-for="Diagnosis" class="form-control border-0 bg-light rounded-4" placeholder="Tanı" required />
+                        <label asp-for="Diagnosis">Tanı / Klinik Durum</label>
+                    </div>
+                    <span asp-validation-for="Diagnosis" class="text-danger small"></span>
+                </div>
+
+                <div class="col-md-12">
+                    <div class="form-floating mb-3">
+                        <textarea asp-for="Medications" class="form-control border-0 bg-light rounded-4" style="min-height: 120px" placeholder="İlaçlar" required></textarea>
+                        <label asp-for="Medications">Yazılacak İlaçlar (Doz ve süre belirtiniz)</label>
+                    </div>
+                    <span asp-validation-for="Medications" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <div class="form-floating mb-3">
+                        <textarea asp-for="Notes" class="form-control border-0 bg-light rounded-4" style="min-height: 100px" placeholder="Notlar"></textarea>
+                        <label asp-for="Notes">Hasta Notları & Kullanım Talimatları (Opsiyonel)</label>
+                    </div>
+                    <span asp-validation-for="Notes" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 d-flex gap-2 justify-content-end mt-4">
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-sm">
+                        <i class="fa-solid fa-file-signature me-2"></i>Reçeteyi Tamamla ve Kaydet
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        background-color: #fff !important;
+        box-shadow: 0 0 0 0.25rem rgba(0, 78, 146, 0.1);
+        border: 1px solid #004e92 !important;
+    }
+    .form-floating > .form-control:focus ~ label,
+    .form-floating > .form-control:not(:placeholder-shown) ~ label {
+        opacity: .8;
+        transform: scale(.85) translateY(-0.75rem) translateX(0.15rem);
+        color: #004e92;
+        font-weight: bold;
+    }
+</style>

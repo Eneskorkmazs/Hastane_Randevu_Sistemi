@@ -1,0 +1,158 @@
+@model HastaneRandevuSistemi.ViewModels.AdminAccountingViewModel
+@{
+    ViewData["Title"] = "Muhasebe - Bölüm Analizi";
+    var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+}
+
+<div class="container py-4">
+    @await Html.PartialAsync("_AdminAccountingHeader", Model)
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Bölüm Bazlı Gelir ve Performans</h5>
+                    @if (!Model.DepartmentBreakdown.Any())
+                    {
+                        <div class="text-muted text-center py-5">Veri bulunamadı.</div>
+                    }
+                    else
+                    {
+                        <div class="table-responsive">
+                            <table class="table align-middle">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th>Bölüm</th>
+                                        <th class="text-center">Doktor</th>
+                                        <th class="text-center">Randevu</th>
+                                        <th class="text-center">Hasta</th>
+                                        <th class="text-end text-success">Tahsilat</th>
+                                        <th class="text-end text-warning">Bekleyen</th>
+                                        <th class="text-end">Pay %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var dept in Model.DepartmentBreakdown)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold text-primary">@dept.DepartmentName</td>
+                                            <td class="text-center">@dept.DoctorCount</td>
+                                            <td class="text-center">@dept.AppointmentCount</td>
+                                            <td class="text-center">@dept.UniquePatientCount</td>
+                                            <td class="text-end text-success fw-bold">@dept.CollectedRevenue.ToString("C0", trCulture)</td>
+                                            <td class="text-end text-warning">@dept.PendingRevenue.ToString("C0", trCulture)</td>
+                                            <td class="text-end">
+                                                <div class="d-flex align-items-center justify-content-end gap-2">
+                                                    <span class="small text-muted">%@dept.RevenueSharePercent.ToString("F1")</span>
+                                                    <div class="progress rounded-pill" style="width: 60px; height: 6px;">
+                                                        <div class="progress-bar bg-info" style="width: @dept.RevenueSharePercent%"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Bölüm Gelir Dağılımı</h5>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="deptPieChart"></canvas>
+                    </div>
+                    <div class="mt-4">
+                        <h6 class="fw-bold small text-muted mb-3">Öne Çıkanlar</h6>
+                        <div class="p-3 bg-light rounded-3 mb-2">
+                            <div class="small text-muted">En Yüksek Gelirli Bölüm</div>
+                            <div class="fw-bold">@Model.TopDepartmentByRevenue</div>
+                        </div>
+                        <div class="p-3 bg-light rounded-3">
+                            <div class="small text-muted">En Yoğun Bölüm</div>
+                            <div class="fw-bold">@Model.TopDepartmentByAppointments</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-4">Aylık Performans Değişimi</h5>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="monthlyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const labels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DepartmentBreakdown.Select(x => x.DepartmentName)));
+        const data = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.DepartmentBreakdown.Select(x => (double)x.CollectedRevenue)));
+
+        new Chart(document.getElementById("deptPieChart"), {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0', '#6610f2', '#fd7e14', '#20c997'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // Monthly Trend
+        const monthlyLabels = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyDepartmentStats.Select(x => x.Label)));
+        const monthlyRevenue = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyDepartmentStats.Select(x => (double)x.CollectedRevenue)));
+        const monthlyAppointments = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.MonthlyDepartmentStats.Select(x => x.AppointmentCount)));
+
+        new Chart(document.getElementById("monthlyTrendChart"), {
+            type: 'bar',
+            data: {
+                labels: monthlyLabels,
+                datasets: [
+                    {
+                        label: 'Gelir (₺)',
+                        data: monthlyRevenue,
+                        backgroundColor: '#198754',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'Randevu Sayısı',
+                        data: monthlyAppointments,
+                        type: 'line',
+                        borderColor: '#0d6efd',
+                        backgroundColor: '#0d6efd',
+                        yAxisID: 'y1'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { type: 'linear', display: true, position: 'left', beginAtZero: true },
+                    y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, beginAtZero: true }
+                }
+            }
+        });
+    });
+</script>

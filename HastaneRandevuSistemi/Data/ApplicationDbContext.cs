@@ -16,6 +16,8 @@ namespace HastaneRandevuSistemi.Data
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<MedicalReport> MedicalReports { get; set; }
         public DbSet<MedicalHistory> MedicalHistories { get; set; }
+        public DbSet<HospitalReview> HospitalReviews { get; set; }
+        public DbSet<DoctorReview> DoctorReviews { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -111,6 +113,45 @@ namespace HastaneRandevuSistemi.Data
                 .WithMany()
                 .HasForeignKey(m => m.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<HospitalReview>()
+                .Property(r => r.CreatedAt)
+                .HasColumnType(dateTimeColumnType);
+
+            modelBuilder.Entity<HospitalReview>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<HospitalReview>()
+                .HasIndex(r => r.UserId)
+                .HasDatabaseName("UX_HospitalReviews_UserId_NotNull")
+                .IsUnique()
+                .HasFilter(@"""UserId"" IS NOT NULL");
+
+            modelBuilder.Entity<DoctorReview>()
+                .Property(r => r.CreatedAt)
+                .HasColumnType(dateTimeColumnType);
+
+            modelBuilder.Entity<DoctorReview>()
+                .HasOne(r => r.Doctor)
+                .WithMany()
+                .HasForeignKey(r => r.DoctorId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<DoctorReview>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Her kullanıcı her doktora yalnızca bir yorum bırakabilir
+            modelBuilder.Entity<DoctorReview>()
+                .HasIndex(r => new { r.DoctorId, r.UserId })
+                .HasDatabaseName("UX_DoctorReviews_DoctorId_UserId")
+                .IsUnique()
+                .HasFilter(@"""UserId"" IS NOT NULL");
         }
     }
 }

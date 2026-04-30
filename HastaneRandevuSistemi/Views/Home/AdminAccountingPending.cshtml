@@ -1,0 +1,101 @@
+@model HastaneRandevuSistemi.ViewModels.AdminAccountingViewModel
+@{
+    ViewData["Title"] = "Muhasebe - Bekleyen Ödemeler";
+    var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+}
+
+<div class="container py-4">
+    @await Html.PartialAsync("_AdminAccountingHeader", Model)
+
+    <div class="row g-4 mb-4">
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-warning bg-opacity-10 border-start border-4 border-warning">
+                <div class="card-body p-4">
+                    <h6 class="text-warning fw-bold text-uppercase small mb-2">Bekleyen Toplam</h6>
+                    <div class="display-6 fw-bold text-dark">@Model.PendingCollectionQueueTotal.ToString("C0", trCulture)</div>
+                    <p class="text-muted small mb-0">@Model.PendingCollectionQueueCount adet tahsilat bekleyen işlem.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h6 class="fw-bold mb-3">Bilgilendirme</h6>
+                    <p class="text-muted small mb-0">
+                        Aşağıdaki listede randevusu tamamlanmış ancak henüz ödemesi alınmamış hastalar listelenmektedir. 
+                        "Tahsil Et" butonu ile ödemeyi onaylayabilir ve kasaya giriş yapabilirsiniz.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-bold mb-0">Tahsilat Kuyruğu</h5>
+                <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.PendingCollectionQueue.Count kayıt</span>
+            </div>
+
+            @if (!Model.PendingCollectionQueue.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="fa-solid fa-check-circle fa-4x text-success opacity-25 mb-3"></i>
+                    <h5 class="text-muted">Tüm ödemeler güncel!</h5>
+                    <p class="text-muted small">Tahsilat bekleyen randevu bulunmuyor.</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Hasta</th>
+                                <th>Doktor / Bölüm</th>
+                                <th>Durum</th>
+                                <th class="text-end">Tutar</th>
+                                <th class="text-end">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var payment in Model.PendingCollectionQueue)
+                            {
+                                <tr>
+                                    <td>@payment.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
+                                    <td><div class="fw-bold">@payment.PatientName</div></td>
+                                    <td>
+                                        <div>@payment.DoctorName</div>
+                                        <small class="text-muted">@payment.DepartmentName</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(payment.IsHoliday ? "bg-danger" : "bg-warning") rounded-pill px-3">
+                                            @payment.StatusLabel
+                                        </span>
+                                    </td>
+                                    <td class="text-end fw-bold text-dark">@payment.Amount.ToString("C0", trCulture)</td>
+                                    <td class="text-end">
+                                        @if (!payment.IsHoliday)
+                                        {
+                                            <form asp-action="MarkCollected" asp-route-id="@payment.AppointmentId" asp-route-returnUrl="@Context.Request.Path@Context.Request.QueryString" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-success rounded-pill px-4 shadow-sm">
+                                                    <i class="fa-solid fa-check me-2"></i>Tahsil Et
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-danger small">Tatil: İşlem Yok</span>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

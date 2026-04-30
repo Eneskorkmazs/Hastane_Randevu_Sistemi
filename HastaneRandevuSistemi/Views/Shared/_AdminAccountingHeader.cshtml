@@ -1,0 +1,114 @@
+@model HastaneRandevuSistemi.ViewModels.AdminAccountingViewModel
+@{
+    var departmentOptions = ViewData["DepartmentOptions"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
+    var doctorOptions = ViewData["DoctorOptions"] as IEnumerable<SelectListItem> ?? Array.Empty<SelectListItem>();
+    var currentAction = ViewContext.RouteData.Values["action"]?.ToString();
+    var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
+}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div>
+        <span class="text-uppercase small fw-bold text-success">Admin Finans Yönetimi</span>
+        <h1 class="h3 fw-bold mb-1">Muhasebe Merkezi</h1>
+        <p class="text-muted mb-0">Hizmet analizi, doktor-hasta yoğunluğu ve tahsilat takibi.</p>
+    </div>
+    <div class="d-flex align-items-center flex-wrap gap-2">
+        <div class="bg-success text-white px-4 py-2 rounded-pill shadow-sm d-flex align-items-center gap-2">
+            <i class="fa-solid fa-vault"></i>
+            <div class="text-start">
+                <div class="small opacity-75 lh-1" style="font-size: 0.7rem;">TOPLAM KASA</div>
+                <div class="fw-bold lh-1 fs-6">@Model.CollectedRevenue.ToString("C0", trCulture)</div>
+            </div>
+        </div>
+        <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Dön</a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 mb-4">
+    <div class="card-body p-4">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Başlangıç</label>
+                <input type="date" name="fromDate" value="@Model.FromDate.ToString("yyyy-MM-dd")" class="form-control rounded-3" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-bold text-muted">Bitiş</label>
+                <input type="date" name="toDate" value="@Model.ToDate.ToString("yyyy-MM-dd")" class="form-control rounded-3" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Bölüm</label>
+                <select name="departmentId" class="form-select rounded-3">
+                    <option value="">Tüm Bölümler</option>
+                    @foreach (var item in departmentOptions)
+                    {
+                        <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-bold text-muted">Doktor</label>
+                <select name="doctorId" class="form-select rounded-3">
+                    <option value="">Tüm Doktorlar</option>
+                    @foreach (var item in doctorOptions)
+                    {
+                        <option value="@item.Value" selected="@item.Selected">@item.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-success rounded-pill w-100 fw-bold">Uygula</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<ul class="nav nav-pills gap-2 mb-4 p-2 bg-white rounded-pill shadow-sm d-inline-flex" style="border: 1px solid #eee;">
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 @(currentAction == "AdminAccounting" ? "active bg-success" : "text-dark")" 
+           asp-action="AdminAccounting" asp-all-route-data="@GetRouteData()">
+            <i class="fa-solid fa-chart-pie me-2"></i>Genel Özet
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 @(currentAction == "AdminAccountingDepartments" ? "active bg-success" : "text-dark")" 
+           asp-action="AdminAccountingDepartments" asp-all-route-data="@GetRouteData()">
+            <i class="fa-solid fa-building me-2"></i>Bölüm Analizi
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 @(currentAction == "AdminAccountingDoctors" ? "active bg-success" : "text-dark")" 
+           asp-action="AdminAccountingDoctors" asp-all-route-data="@GetRouteData()">
+            <i class="fa-solid fa-user-md me-2"></i>Doktor Analizi
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 @(currentAction == "AdminAccountingTransactions" ? "active bg-success" : "text-dark")" 
+           asp-action="AdminAccountingTransactions" asp-all-route-data="@GetRouteData()">
+            <i class="fa-solid fa-list-ul me-2"></i>Tüm İşlemler
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 @(currentAction == "AdminAccountingPending" ? "active bg-success" : "text-dark")" 
+           asp-action="AdminAccountingPending" asp-all-route-data="@GetRouteData()">
+            <i class="fa-solid fa-clock me-2"></i>Bekleyenler
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link rounded-pill px-4 @(currentAction == "AdminAccountingStats" ? "active bg-success" : "text-dark")" 
+           asp-action="AdminAccountingStats" asp-all-route-data="@GetRouteData()">
+            <i class="fa-solid fa-bolt me-2"></i>Akıllı Panel
+        </a>
+    </li>
+</ul>
+
+@functions {
+    public IDictionary<string, string> GetRouteData()
+    {
+        var dict = new Dictionary<string, string>();
+        dict["fromDate"] = Model.FromDate.ToString("yyyy-MM-dd");
+        dict["toDate"] = Model.ToDate.ToString("yyyy-MM-dd");
+        if (Model.DepartmentId.HasValue) dict["departmentId"] = Model.DepartmentId.Value.ToString();
+        if (Model.DoctorId.HasValue) dict["doctorId"] = Model.DoctorId.Value.ToString();
+        return dict;
+    }
+}

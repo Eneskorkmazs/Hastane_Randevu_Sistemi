@@ -68,14 +68,14 @@ namespace HastaneRandevuSistemi.Services
                     var user = appointment.PatientUser;
                     if (user == null)
                     {
-                        _logger.LogWarning("Hatirlatma atlandi. Kullanici eksik. AppointmentId: {AppointmentId}", appointment.Id);
+                        _logger.LogWarning("Hatırlatma atlandı. Kullanıcı eksik. AppointmentId: {AppointmentId}", appointment.Id);
                         continue;
                     }
 
                     var doctorName = appointment.Doctor == null
                         ? "doktorunuz"
                         : $"{appointment.Doctor.Title} {appointment.Doctor.Name} {appointment.Doctor.Surname}".Trim();
-                    var departmentName = appointment.Doctor?.Department?.Name ?? "ilgili bolum";
+                    var departmentName = appointment.Doctor?.Department?.Name ?? "ilgili bölüm";
 
                     var title = "Randevu hatirlatmasi";
                     var message = $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli {departmentName} / {doctorName} randevunuz yarin. Lutfen zamaninda hastanede olunuz.";
@@ -108,7 +108,7 @@ namespace HastaneRandevuSistemi.Services
                         UserId = user.Id,
                         Title = title,
                         Message = message,
-                        Type = "Hatirlatma",
+                        Type = "Hatırlatma",
                         Link = "/Appointment/Index",
                         CreatedDate = reminderCreatedAt
                     });

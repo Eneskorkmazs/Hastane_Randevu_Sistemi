@@ -1,4 +1,4 @@
-﻿using System.Data;
+using System.Data;
 using HastaneRandevuSistemi.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -32,17 +32,22 @@ namespace HastaneRandevuSistemi.Data
             await EnsurePrescriptionColumnsAsync(context);
             await EnsureMedicalReportsTableAsync(context);
             await EnsureMedicalHistoryTableAsync(context);
+            await EnsureHospitalReviewsTableAsync(context);
+            await EnsureDoctorReviewsTableAsync(context);
             await EnsureAdminAsync(userManager, configuration, environment, logger);
+            await EnsureDemoPatientAsync(userManager, configuration, environment, logger);
+            await EnsureDemoSecretaryAsync(userManager, configuration, environment, logger);
             await NormalizeDepartmentsAsync(context);
             await SeedDepartmentsAndDoctorsAsync(context, userManager, configuration, environment, logger);
             await SeedDemoAppointmentsAsync(context, environment, logger);
+            await SeedTodayQueueAppointmentsAsync(context, environment, logger);
 
             await context.SaveChangesAsync();
         }
 
         private static async Task EnsureRolesAsync(RoleManager<IdentityRole> roleManager)
         {
-            string[] roles = { "Admin", "Doktor", "Hasta" };
+            string[] roles = { "Admin", "Doktor", "Hasta", "Sekreter" };
             foreach (var role in roles)
             {
                 if (!await roleManager.RoleExistsAsync(role))
@@ -58,6 +63,11 @@ namespace HastaneRandevuSistemi.Data
 
             if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
             {
+                if (!await TableExistsAsync(context, "Appointments"))
+                {
+                    return;
+                }
+
                 if (!await ColumnExistsAsync(context, "Appointments", "IsCollected"))
                 {
                     await context.Database.ExecuteSqlRawAsync(
@@ -208,6 +218,11 @@ namespace HastaneRandevuSistemi.Data
 
             if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
             {
+                if (!await TableExistsAsync(context, "AspNetUsers"))
+                {
+                    return;
+                }
+
                 await context.Database.ExecuteSqlRawAsync(
                     """
                     CREATE TABLE IF NOT EXISTS "MedicalHistories" (
@@ -262,6 +277,11 @@ namespace HastaneRandevuSistemi.Data
 
             if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
             {
+                if (!await TableExistsAsync(context, "Appointments"))
+                {
+                    return;
+                }
+
                 await context.Database.ExecuteSqlRawAsync(
                     """
                     CREATE TABLE IF NOT EXISTS "MedicalReports" (
@@ -300,12 +320,160 @@ namespace HastaneRandevuSistemi.Data
             }
         }
 
+        private static async Task EnsureHospitalReviewsTableAsync(ApplicationDbContext context)
+        {
+            var provider = context.Database.ProviderName ?? string.Empty;
+
+            if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!await TableExistsAsync(context, "AspNetUsers"))
+                {
+                    return;
+                }
+
+                await context.Database.ExecuteSqlRawAsync(
+                    """
+                    CREATE TABLE IF NOT EXISTS "HospitalReviews" (
+                        "Id" INTEGER NOT NULL CONSTRAINT "PK_HospitalReviews" PRIMARY KEY AUTOINCREMENT,
+                        "Rating" INTEGER NOT NULL,
+                        "Comment" TEXT NULL,
+                        "ReviewerName" TEXT NOT NULL,
+                        "UserId" TEXT NULL,
+                        "CreatedAt" TEXT NOT NULL,
+                        CONSTRAINT "FK_HospitalReviews_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE SET NULL
+                    );
+                    """);
+
+                await context.Database.ExecuteSqlRawAsync(
+                    """
+                    DELETE FROM "HospitalReviews"
+                    WHERE "UserId" IS NOT NULL
+                      AND "Id" NOT IN (
+                        SELECT MAX("Id")
+                        FROM "HospitalReviews"
+                        WHERE "UserId" IS NOT NULL
+                        GROUP BY "UserId"
+                    );
+                    """);
+                await context.Database.ExecuteSqlRawAsync(
+                    @"DROP INDEX IF EXISTS ""IX_HospitalReviews_UserId"";");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE UNIQUE INDEX IF NOT EXISTS ""UX_HospitalReviews_UserId_NotNull"" ON ""HospitalReviews"" (""UserId"") WHERE ""UserId"" IS NOT NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE INDEX IF NOT EXISTS ""IX_HospitalReviews_CreatedAt"" ON ""HospitalReviews"" (""CreatedAt"");");
+
+                if (!await ColumnExistsAsync(context, "HospitalReviews", "AdminReply"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""HospitalReviews"" ADD COLUMN ""AdminReply"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "HospitalReviews", "AdminReplyDate"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""HospitalReviews"" ADD COLUMN ""AdminReplyDate"" TEXT NULL;");
+                }
+
+                return;
+            }
+
+            if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.ExecuteSqlRawAsync(
+                    """
+                    CREATE TABLE IF NOT EXISTS "HospitalReviews" (
+                        "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                        "Rating" integer NOT NULL,
+                        "Comment" character varying(500) NULL,
+                        "ReviewerName" character varying(120) NOT NULL,
+                        "UserId" character varying(450) NULL,
+                        "CreatedAt" timestamp without time zone NOT NULL,
+                        CONSTRAINT "FK_HospitalReviews_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE SET NULL
+                    );
+                    """);
+
+                await context.Database.ExecuteSqlRawAsync(
+                    """
+                    DELETE FROM "HospitalReviews" h
+                    USING (
+                        SELECT "UserId", MAX("Id") AS "KeepId"
+                        FROM "HospitalReviews"
+                        WHERE "UserId" IS NOT NULL
+                        GROUP BY "UserId"
+                    ) keep
+                    WHERE h."UserId" IS NOT NULL
+                      AND h."UserId" = keep."UserId"
+                      AND h."Id" <> keep."KeepId";
+                    """);
+                await context.Database.ExecuteSqlRawAsync(
+                    @"DROP INDEX IF EXISTS ""IX_HospitalReviews_UserId"";");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE UNIQUE INDEX IF NOT EXISTS ""UX_HospitalReviews_UserId_NotNull"" ON ""HospitalReviews"" (""UserId"") WHERE ""UserId"" IS NOT NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE INDEX IF NOT EXISTS ""IX_HospitalReviews_CreatedAt"" ON ""HospitalReviews"" (""CreatedAt"");");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""HospitalReviews"" ADD COLUMN IF NOT EXISTS ""AdminReply"" character varying(1000) NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""HospitalReviews"" ADD COLUMN IF NOT EXISTS ""AdminReplyDate"" timestamp without time zone NULL;");
+            }
+        }
+
+        private static async Task EnsureDoctorReviewsTableAsync(ApplicationDbContext context)
+        {
+            var provider = context.Database.ProviderName ?? string.Empty;
+            if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
+            {
+                if (!await TableExistsAsync(context, "AspNetUsers")) return;
+                await context.Database.ExecuteSqlRawAsync("""
+                    CREATE TABLE IF NOT EXISTS "DoctorReviews" (
+                        "Id" INTEGER NOT NULL CONSTRAINT "PK_DoctorReviews" PRIMARY KEY AUTOINCREMENT,
+                        "DoctorId" INTEGER NOT NULL,
+                        "Rating" INTEGER NOT NULL,
+                        "Comment" TEXT NULL,
+                        "ReviewerName" TEXT NOT NULL,
+                        "UserId" TEXT NULL,
+                        "CreatedAt" TEXT NOT NULL,
+                        CONSTRAINT "FK_DoctorReviews_Doctors_DoctorId" FOREIGN KEY ("DoctorId") REFERENCES "Doctors" ("Id") ON DELETE CASCADE,
+                        CONSTRAINT "FK_DoctorReviews_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE SET NULL
+                    );
+                    """);
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE INDEX IF NOT EXISTS ""IX_DoctorReviews_DoctorId"" ON ""DoctorReviews"" (""DoctorId"");");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE UNIQUE INDEX IF NOT EXISTS ""UX_DoctorReviews_DoctorId_UserId"" ON ""DoctorReviews"" (""DoctorId"", ""UserId"") WHERE ""UserId"" IS NOT NULL;");
+                return;
+            }
+            if (provider.Contains("Npgsql", StringComparison.OrdinalIgnoreCase))
+            {
+                await context.Database.ExecuteSqlRawAsync("""
+                    CREATE TABLE IF NOT EXISTS "DoctorReviews" (
+                        "Id" integer GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
+                        "DoctorId" integer NOT NULL,
+                        "Rating" integer NOT NULL,
+                        "Comment" character varying(500) NULL,
+                        "ReviewerName" character varying(120) NOT NULL,
+                        "UserId" character varying(450) NULL,
+                        "CreatedAt" timestamp without time zone NOT NULL,
+                        CONSTRAINT "FK_DoctorReviews_Doctors_DoctorId" FOREIGN KEY ("DoctorId") REFERENCES "Doctors" ("Id") ON DELETE CASCADE,
+                        CONSTRAINT "FK_DoctorReviews_AspNetUsers_UserId" FOREIGN KEY ("UserId") REFERENCES "AspNetUsers" ("Id") ON DELETE SET NULL
+                    );
+                    """);
+                await context.Database.ExecuteSqlRawAsync(
+                    @"CREATE UNIQUE INDEX IF NOT EXISTS ""UX_DoctorReviews_DoctorId_UserId"" ON ""DoctorReviews"" (""DoctorId"", ""UserId"") WHERE ""UserId"" IS NOT NULL;");
+            }
+        }
+
         private static async Task EnsureReminderColumnsAsync(ApplicationDbContext context)
         {
             var provider = context.Database.ProviderName ?? string.Empty;
 
             if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
             {
+                if (!await TableExistsAsync(context, "Appointments"))
+                {
+                    return;
+                }
+
                 if (!await ColumnExistsAsync(context, "Appointments", "ReminderSentAt"))
                 {
                     await context.Database.ExecuteSqlRawAsync(
@@ -328,6 +496,11 @@ namespace HastaneRandevuSistemi.Data
 
             if (provider.Contains("Sqlite", StringComparison.OrdinalIgnoreCase))
             {
+                if (!await TableExistsAsync(context, "Appointments"))
+                {
+                    return;
+                }
+
                 if (!await ColumnExistsAsync(context, "Appointments", "PrescriptionDiagnosis"))
                 {
                     await context.Database.ExecuteSqlRawAsync(
@@ -352,6 +525,18 @@ namespace HastaneRandevuSistemi.Data
                         @"ALTER TABLE ""Appointments"" ADD COLUMN ""PrescriptionCreatedAt"" TEXT NULL;");
                 }
 
+                if (!await ColumnExistsAsync(context, "Appointments", "PrescriptionSentAt"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""PrescriptionSentAt"" TEXT NULL;");
+                }
+
+                if (!await ColumnExistsAsync(context, "Appointments", "PrescriptionSentByName"))
+                {
+                    await context.Database.ExecuteSqlRawAsync(
+                        @"ALTER TABLE ""Appointments"" ADD COLUMN ""PrescriptionSentByName"" TEXT NULL;");
+                }
+
                 return;
             }
 
@@ -365,6 +550,10 @@ namespace HastaneRandevuSistemi.Data
                     @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""PrescriptionNotes"" character varying(500) NULL;");
                 await context.Database.ExecuteSqlRawAsync(
                     @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""PrescriptionCreatedAt"" timestamp without time zone NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""PrescriptionSentAt"" timestamp without time zone NULL;");
+                await context.Database.ExecuteSqlRawAsync(
+                    @"ALTER TABLE ""Appointments"" ADD COLUMN IF NOT EXISTS ""PrescriptionSentByName"" character varying(200) NULL;");
             }
         }
 
@@ -394,6 +583,31 @@ namespace HastaneRandevuSistemi.Data
             return false;
         }
 
+        private static async Task<bool> TableExistsAsync(ApplicationDbContext context, string tableName)
+        {
+            await using var connection = context.Database.GetDbConnection();
+            if (connection.State != ConnectionState.Open)
+            {
+                await connection.OpenAsync();
+            }
+
+            await using var command = connection.CreateCommand();
+            command.CommandText = """
+                SELECT 1
+                FROM sqlite_master
+                WHERE type = 'table'
+                  AND name = $tableName
+                LIMIT 1;
+                """;
+            var parameter = command.CreateParameter();
+            parameter.ParameterName = "$tableName";
+            parameter.Value = tableName;
+            command.Parameters.Add(parameter);
+
+            var result = await command.ExecuteScalarAsync();
+            return result != null;
+        }
+
         private static async Task EnsureAdminAsync(
             UserManager<AppUser> userManager,
             IConfiguration configuration,
@@ -401,11 +615,6 @@ namespace HastaneRandevuSistemi.Data
             ILogger logger)
         {
             const string adminEmail = "admin@havatakip.com.tr";
-            if (await userManager.FindByEmailAsync(adminEmail) != null)
-            {
-                return;
-            }
-
             var adminPassword = ResolveSeedPassword(
                 configuration["SeedSettings:AdminPassword"],
                 environment,
@@ -418,19 +627,138 @@ namespace HastaneRandevuSistemi.Data
                 return;
             }
 
-            var admin = new AppUser
+            var admin = await userManager.FindByEmailAsync(adminEmail);
+            if (admin == null)
             {
-                UserName = adminEmail,
-                Email = adminEmail,
-                Name = "Sistem",
-                Surname = "Yoneticisi",
-                EmailConfirmed = true
-            };
+                admin = new AppUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    Name = "Sistem",
+                    Surname = "Yoneticisi",
+                    EmailConfirmed = true
+                };
 
-            var createAdminResult = await userManager.CreateAsync(admin, adminPassword);
-            if (createAdminResult.Succeeded)
+                var createAdminResult = await userManager.CreateAsync(admin, adminPassword);
+                if (!createAdminResult.Succeeded)
+                {
+                    return;
+                }
+            }
+
+            await EnsurePasswordAsync(userManager, admin, adminPassword);
+
+            if (!await userManager.IsInRoleAsync(admin, "Admin"))
             {
                 await userManager.AddToRoleAsync(admin, "Admin");
+            }
+        }
+
+        private static async Task EnsureDemoPatientAsync(
+            UserManager<AppUser> userManager,
+            IConfiguration configuration,
+            IHostEnvironment environment,
+            ILogger logger)
+        {
+            var patientEmail = configuration["SeedSettings:PatientEmail"];
+            if (string.IsNullOrWhiteSpace(patientEmail))
+            {
+                patientEmail = "hasta@havatakip.com.tr";
+            }
+
+            var patientPassword = ResolveSeedPassword(
+                configuration["SeedSettings:PatientPassword"],
+                environment,
+                "DevPatient123!",
+                logger,
+                "Hasta");
+
+            if (string.IsNullOrWhiteSpace(patientPassword))
+            {
+                return;
+            }
+
+            var patient = await userManager.FindByEmailAsync(patientEmail);
+            if (patient == null)
+            {
+                patient = new AppUser
+                {
+                    UserName = patientEmail,
+                    Email = patientEmail,
+                    Name = "Demo",
+                    Surname = "Hasta",
+                    Telefon = "05000000000",
+                    EmailConfirmed = true
+                };
+
+                var createPatientResult = await userManager.CreateAsync(patient, patientPassword);
+                if (!createPatientResult.Succeeded)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                await EnsurePasswordAsync(userManager, patient, patientPassword);
+            }
+
+            if (!await userManager.IsInRoleAsync(patient, "Hasta"))
+            {
+                await userManager.AddToRoleAsync(patient, "Hasta");
+            }
+        }
+
+        private static async Task EnsureDemoSecretaryAsync(
+            UserManager<AppUser> userManager,
+            IConfiguration configuration,
+            IHostEnvironment environment,
+            ILogger logger)
+        {
+            var secretaryEmail = configuration["SeedSettings:SecretaryEmail"];
+            if (string.IsNullOrWhiteSpace(secretaryEmail))
+            {
+                secretaryEmail = "sekreter@havatakip.com.tr";
+            }
+
+            var secretaryPassword = ResolveSeedPassword(
+                configuration["SeedSettings:SecretaryPassword"],
+                environment,
+                "DevSecretary123!",
+                logger,
+                "Sekreter");
+
+            if (string.IsNullOrWhiteSpace(secretaryPassword))
+            {
+                return;
+            }
+
+            var secretary = await userManager.FindByEmailAsync(secretaryEmail);
+            if (secretary == null)
+            {
+                secretary = new AppUser
+                {
+                    UserName = secretaryEmail,
+                    Email = secretaryEmail,
+                    Name = "Demo",
+                    Surname = "Sekreter",
+                    Telefon = "05000000001",
+                    EmailConfirmed = true
+                };
+
+                var createResult = await userManager.CreateAsync(secretary, secretaryPassword);
+                if (!createResult.Succeeded)
+                {
+                    return;
+                }
+            }
+            else
+            {
+                await EnsurePasswordAsync(userManager, secretary, secretaryPassword);
+            }
+
+            if (!await userManager.IsInRoleAsync(secretary, "Sekreter"))
+            {
+                await userManager.AddToRoleAsync(secretary, "Sekreter");
             }
         }
 
@@ -571,6 +899,8 @@ namespace HastaneRandevuSistemi.Data
                     {
                         await userManager.AddToRoleAsync(existingUser, "Doktor");
                     }
+
+                    await EnsurePasswordAsync(userManager, existingUser, doctorPassword);
 
                     var doctorExists = await context.Doctors.AnyAsync(d => d.UserId == existingUser.Id ||
                         (d.Name == name && d.Surname == surname && d.DepartmentId == department.Id));
@@ -814,6 +1144,109 @@ namespace HastaneRandevuSistemi.Data
                 "{AccountType} seed sifresi konfigurasyonda bulunamadigi icin varsayilan hesap olusturma atlandi.",
                 accountType);
             return null;
+        }
+
+        private static async Task EnsurePasswordAsync(
+            UserManager<AppUser> userManager,
+            AppUser user,
+            string expectedPassword)
+        {
+            var passwordMatches = await userManager.CheckPasswordAsync(user, expectedPassword);
+            if (passwordMatches)
+            {
+                return;
+            }
+
+            var resetToken = await userManager.GeneratePasswordResetTokenAsync(user);
+            await userManager.ResetPasswordAsync(user, resetToken, expectedPassword);
+        }
+
+        /// <summary>
+        /// Her uygulama başlangıcında bugün için eksik saatleri tamamlar.
+        /// </summary>
+        private static async Task SeedTodayQueueAppointmentsAsync(
+            ApplicationDbContext context,
+            IHostEnvironment environment,
+            ILogger logger)
+        {
+            if (!environment.IsDevelopment()) return;
+
+            const string queueMarker = "BOT-QUEUE-";
+            var today = DateTime.Today;
+
+            // Bugün için zaten queue randevusu var mı?
+            var alreadyHasToday = await context.Appointments.AnyAsync(a =>
+                a.PatientPhone != null &&
+                a.PatientPhone.StartsWith(queueMarker) &&
+                a.AppointmentDate.Date == today);
+
+            if (alreadyHasToday) return;
+
+            // İlk 3 doktoru al
+            var doctors = await context.Doctors
+                .Include(d => d.Department)
+                .Where(d => d.Department != null)
+                .OrderBy(d => d.Id)
+                .Take(3)
+                .ToListAsync();
+
+            if (doctors.Count == 0) return;
+
+            var patients = new[]
+            {
+                ("Ali",    "Yılmaz"),
+                ("Fatma",  "Kaya"),
+                ("Hasan",  "Çelik"),
+                ("Ayşe",   "Demir"),
+                ("Murat",  "Şahin"),
+                ("Zeynep", "Arslan"),
+                ("Ömer",   "Kurt"),
+                ("Elif",   "Yıldız"),
+                ("Emre",   "Aydın"),
+                ("Selin",  "Koç"),
+                ("Burak",  "Özkan"),
+                ("Merve",  "Doğan"),
+            };
+
+            var now = DateTime.Now;
+            var appointments = new List<Appointment>();
+            int patientIdx = 0;
+
+            foreach (var doctor in doctors)
+            {
+                // Her doktor için bugün 09:00 - 14:00 arası 4 randevu
+                var hours = new[] { 9, 10, 11, 12 };
+                foreach (var hour in hours)
+                {
+                    var apptTime = today.AddHours(hour);
+                    var (name, surname) = patients[patientIdx % patients.Length];
+                    patientIdx++;
+
+                    // Geçmiş saatler tamamlandı, gelecek saatler onaylı
+                    var status = apptTime < now
+                        ? AppointmentStatus.Tamamlandi
+                        : AppointmentStatus.Onaylandi;
+
+                    appointments.Add(new Appointment
+                    {
+                        AppointmentDate = apptTime,
+                        PatientName = name,
+                        PatientSurname = surname,
+                        PatientPhone = $"{queueMarker}{doctor.Id}-{hour}",
+                        DoctorId = doctor.Id,
+                        Status = status,
+                        CreatedDate = now.AddHours(-2),
+                        ApprovedByName = "Demo Bot",
+                        ApprovedDate = now.AddHours(-1),
+                        IsCollected = status == AppointmentStatus.Tamamlandi,
+                        CollectedDate = status == AppointmentStatus.Tamamlandi ? apptTime.AddMinutes(30) : null
+                    });
+                }
+            }
+
+            await context.Appointments.AddRangeAsync(appointments);
+            await context.SaveChangesAsync();
+            logger.LogInformation("Bugün için {Count} sıra takip demo randevusu eklendi.", appointments.Count);
         }
     }
 }

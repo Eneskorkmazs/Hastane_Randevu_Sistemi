@@ -2,114 +2,260 @@
 
 @{
     ViewData["Title"] = "Hasta Paneli";
+    var nextAppointment = Model.PendingAppointments.OrderBy(a => a.AppointmentDate).FirstOrDefault();
 }
 
-<div class="container py-4">
-    <div class="patient-hero mb-4">
-        <div>
-            <span class="eyebrow text-white-50">Hasta Paneli</span>
-            <h1 class="mb-2">Merhaba, @Model.FullName</h1>
-            <p class="mb-0">Randevu durumlarınızı, profil bilgilerinizi ve bildirimlerinizi tek ekrandan yönetin.</p>
-        </div>
-        <div class="patient-hero-actions">
-            <a asp-controller="Appointment" asp-action="Create" class="btn btn-light text-primary fw-bold rounded-pill px-4">
-                <i class="fa-solid fa-calendar-plus me-2"></i>Yeni Randevu
-            </a>
-            <a asp-action="Profile" class="btn btn-outline-light rounded-pill px-4">
-                <i class="fa-solid fa-user-pen me-2"></i>Profilim
-            </a>
-            <a asp-action="MedicalHistory" class="btn btn-outline-light rounded-pill px-4">
-                <i class="fa-solid fa-notes-medical me-2"></i>Saglik Gecmisim
-                <span class="badge rounded-pill bg-light text-dark ms-2">@Model.MedicalHistoryCount / @Model.PrescriptionCount</span>
-            </a>
-        </div>
-    </div>
+@section Scripts {
+    <script>
+        document.getElementById('btnCheckSymptom').addEventListener('click', function() {
+            const input = document.getElementById('symptomInput');
+            const text = input.value.trim();
+            if (!text) return;
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-6 col-xl-3">
-            <a asp-controller="Appointment" asp-action="Index" asp-route-onlyUpcoming="true" class="dashboard-stat-card stat-link text-decoration-none text-reset d-block">
-                <span>Bekleyen Randevu</span>
-                <strong>@Model.PendingAppointmentsCount</strong>
-            </a>
-        </div>
-        <div class="col-md-6 col-xl-3">
-            <a asp-controller="Appointment" asp-action="Index" asp-route-status="@( (int)AppointmentStatus.Tamamlandi )" class="dashboard-stat-card alt stat-link text-decoration-none text-reset d-block">
-                <span>Tamamlanan</span>
-                <strong>@Model.CompletedAppointmentsCount</strong>
-            </a>
-        </div>
-        <div class="col-md-6 col-xl-3">
-            <a asp-controller="Appointment" asp-action="Index" asp-route-status="@( (int)AppointmentStatus.Iptal )" class="dashboard-stat-card alt-2 stat-link text-decoration-none text-reset d-block">
-                <span>İptal Edilen</span>
-                <strong>@Model.CancelledAppointmentsCount</strong>
-            </a>
-        </div>
-        <div class="col-md-6 col-xl-3">
-            <div class="dashboard-stat-card alt-3">
-                <span>Okunmamış Bildirim</span>
-                <strong>@Model.UnreadNotificationsCount</strong>
+            const list = document.getElementById('symptomList');
+            const results = document.getElementById('symptomResults');
+            const loading = document.getElementById('symptomLoading');
+            const placeholder = document.getElementById('symptomPlaceholder');
+
+            placeholder.style.display = 'none';
+            results.style.display = 'none';
+            loading.style.display = 'block';
+
+            fetch('@Url.Action("CheckSymptoms", "Patient")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ text: text })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loading.style.display = 'none';
+                list.innerHTML = '';
+                
+                if (data.isChat) {
+                    // Chat response
+                    const div = document.createElement('div');
+                    div.className = 'p-3 rounded-4 bg-primary-soft text-primary border border-primary border-opacity-10 mb-2 small';
+                    div.innerHTML = `<i class="fa-solid fa-comment-dots me-2"></i><strong>ENS:</strong> ${data.message}`;
+                    list.appendChild(div);
+                    results.style.display = 'block';
+                } else if (data.suggestions && data.suggestions.length > 0) {
+                    // Suggestions response
+                    data.suggestions.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'symptom-item p-3 rounded-4 bg-white border border-light-subtle d-flex flex-column flex-sm-row justify-content-between align-items-sm-center gap-3 transition-all hover-shadow mb-2';
+                        div.innerHTML = `
+                            <div class="d-flex align-items-center gap-3 flex-grow-1 overflow-hidden">
+                                <div class="icon-box bg-primary-soft text-primary rounded-4" style="width: 45px; height: 45px; min-width: 45px;">
+                                    <i class="fa-solid ${item.icon || 'fa-user-doctor'}"></i>
+                                </div>
+                                <div class="overflow-hidden">
+                                    <div class="fw-bold text-dark text-truncate" style="font-size: 0.95rem;">${item.departmentName}</div>
+                                    <div class="x-small text-muted text-truncate">${item.reasoning}</div>
+                                </div>
+                            </div>
+                            <div class="d-flex flex-row flex-sm-column align-items-center align-items-sm-end gap-2 flex-shrink-0">
+                                <span class="badge bg-success-soft text-success border border-success border-opacity-10 rounded-pill px-2 py-1" style="font-size: 0.65rem;">%${item.confidenceScore} Uygun</span>
+                                <a href="/Appointment/Create?deptId=${item.departmentId}" class="btn btn-primary btn-sm rounded-pill px-3 py-1 fw-bold shadow-sm" style="font-size: 0.75rem;">Randevu Al</a>
+                            </div>
+                        `;
+                        list.appendChild(div);
+                    });
+                    results.style.display = 'block';
+                } else {
+                    list.innerHTML = '<p class="text-center x-small text-muted p-3">Anlayamadım, lütfen daha detaylı belirtir misiniz?</p>';
+                    results.style.display = 'block';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                loading.style.display = 'none';
+                placeholder.style.display = 'block';
+                alert('Semptom analizi sırasında bir hata oluştu.');
+            });
+        });
+
+        document.getElementById('symptomInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('btnCheckSymptom').click();
+            }
+        });
+    </script>
+}
+
+<div class="container-fluid px-md-4 py-4">
+    <!-- Hero Section -->
+    <div class="card border-0 rounded-4 shadow-sm overflow-hidden mb-4 hero-card" style="background: linear-gradient(135deg, #0d6efd 0%, #052c65 100%);">
+        <div class="card-body p-3 p-md-4 position-relative">
+            <div class="row align-items-center g-3">
+                <div class="col-lg-8 position-relative z-1">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge bg-white bg-opacity-10 text-white rounded-pill px-2 py-1 fw-normal small" style="backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);">
+                            <i class="fa-solid fa-sparkles me-1 text-warning x-small"></i> Sağlıklı Günler
+                        </span>
+                    </div>
+                    <h2 class="fw-bold text-white mb-2">Merhaba, <span class="text-info">@Model.FullName</span></h2>
+                    <p class="text-white opacity-75 mb-3 small">Sağlık durumunuzu ve randevularınızı buradan yönetebilirsiniz.</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a asp-controller="Appointment" asp-action="Create" class="btn btn-light btn-sm rounded-pill px-3 py-1 fw-bold text-primary shadow-sm hover-up">
+                            <i class="fa-solid fa-calendar-plus me-1"></i>Yeni Randevu
+                        </a>
+                        <a asp-controller="Patient" asp-action="MedicalHistory" class="btn btn-outline-light btn-sm rounded-pill px-3 py-1 fw-bold bg-white bg-opacity-10 border-white border-opacity-25 hover-up" style="backdrop-filter: blur(5px);">
+                            <i class="fa-solid fa-file-medical me-1"></i>Sağlık Geçmişim
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <!-- Decorative Elements -->
+            <div class="position-absolute top-50 end-0 translate-middle-y p-4 opacity-10 d-none d-lg-block">
+                <i class="fa-solid fa-heart-pulse" style="font-size: 8rem; color: white;"></i>
             </div>
         </div>
     </div>
 
     <div class="row g-4">
+        <!-- Main Column (Left) -->
         <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h3 class="h5 fw-bold mb-1">Bekleyen Randevular</h3>
-                            <p class="text-muted small mb-0">Henüz gerçekleşmemiş randevularınız burada listelenir.</p>
+            
+            <!-- Smart Alert / Next Appointment -->
+            @if (nextAppointment != null)
+            {
+                <div class="card border-0 shadow-sm rounded-4 mb-4 bg-primary text-white overflow-hidden">
+                    <div class="card-body p-4 position-relative">
+                        <div class="row align-items-center position-relative z-1">
+                            <div class="col-auto">
+                                <div class="date-badge text-center bg-white text-primary rounded-4 p-3 shadow-sm" style="min-width: 85px;">
+                                    <div class="h3 fw-bold mb-0">@nextAppointment.AppointmentDate.Day</div>
+                                    <div class="small text-uppercase fw-bold">@nextAppointment.AppointmentDate.ToString("MMM")</div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <h5 class="fw-bold mb-1">Sıradaki Randevunuz</h5>
+                                <div class="h4 fw-bold mb-2">Dr. @nextAppointment.Doctor?.Name @nextAppointment.Doctor?.Surname</div>
+                                <div class="d-flex flex-wrap gap-3 small opacity-75">
+                                    <span><i class="fa-solid fa-clock me-1"></i> @nextAppointment.AppointmentDate.ToString("HH:mm")</span>
+                                    <span><i class="fa-solid fa-hospital me-1"></i> @nextAppointment.Doctor?.Department?.Name</span>
+                                </div>
+                            </div>
+                            <div class="col-auto position-relative z-2">
+                                <a asp-controller="Appointment" asp-action="Details" asp-route-id="@nextAppointment.Id" class="btn btn-light rounded-pill px-4 text-primary fw-bold shadow-sm">Detaylar</a>
+                            </div>
                         </div>
-                        <a asp-controller="Appointment" asp-action="Index" asp-route-onlyUpcoming="true" class="btn btn-sm btn-outline-primary rounded-pill">Tüm Bekleyenler</a>
+                        <div class="position-absolute top-50 end-0 translate-middle-y opacity-05 me-n3 d-none d-sm-block">
+                            <i class="fa-solid fa-calendar-check" style="font-size: 6rem;"></i>
+                        </div>
                     </div>
+                </div>
+            }
 
+            <!-- Quick Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="stat-card p-3 rounded-4 bg-white shadow-sm border-0 h-100">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="icon-box bg-warning-soft text-warning rounded-3 flex-shrink-0"><i class="fa-solid fa-clock"></i></div>
+                            <div class="overflow-hidden">
+                                <div class="x-small text-muted text-truncate">Bekleyen</div>
+                                <div class="h5 fw-bold mb-0">@Model.PendingAppointmentsCount</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card p-3 rounded-4 bg-white shadow-sm border-0 h-100">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="icon-box bg-success-soft text-success rounded-3 flex-shrink-0"><i class="fa-solid fa-check-double"></i></div>
+                            <div class="overflow-hidden">
+                                <div class="x-small text-muted text-truncate">Tamamlanan</div>
+                                <div class="h5 fw-bold mb-0">@Model.CompletedAppointmentsCount</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card p-3 rounded-4 bg-white shadow-sm border-0 h-100">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="icon-box bg-info-soft text-info rounded-3 flex-shrink-0"><i class="fa-solid fa-file-prescription"></i></div>
+                            <div class="overflow-hidden">
+                                <div class="x-small text-muted text-truncate">Reçete</div>
+                                <div class="h5 fw-bold mb-0">@Model.PrescriptionCount</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="stat-card p-3 rounded-4 bg-white shadow-sm border-0 h-100">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="icon-box bg-primary-soft text-primary rounded-3 flex-shrink-0"><i class="fa-solid fa-bell"></i></div>
+                            <div class="overflow-hidden">
+                                <div class="x-small text-muted text-truncate">Bildirim</div>
+                                <div class="h5 fw-bold mb-0">@Model.UnreadNotificationsCount</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Appointments Table -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+                <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold mb-0">Bekleyen Randevular</h5>
+                    <a asp-controller="Appointment" asp-action="Index" class="btn btn-sm btn-link text-decoration-none">Tümü <i class="fa-solid fa-chevron-right ms-1"></i></a>
+                </div>
+                <div class="card-body p-0">
                     @if (!Model.PendingAppointments.Any())
                     {
-                        <div class="empty-state">
-                            <i class="fa-regular fa-calendar-xmark"></i>
-                            <p class="mb-0">Bekleyen randevunuz bulunmuyor.</p>
+                        <div class="text-center py-5">
+                            <i class="fa-solid fa-calendar-day fa-3x text-light mb-3"></i>
+                            <p class="text-muted">Yaklaşan bir randevunuz bulunmuyor.</p>
                         </div>
                     }
                     else
                     {
                         <div class="table-responsive">
-                            <table class="table align-middle mb-0">
-                                <thead>
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light small text-uppercase text-muted">
                                     <tr>
-                                        <th>Tarih</th>
+                                        <th class="ps-4">Tarih</th>
                                         <th>Doktor</th>
-                                        <th>Branş</th>
                                         <th>Durum</th>
-                                        <th class="text-end">İşlem</th>
+                                        <th class="text-end pe-4">İşlem</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach (var item in Model.PendingAppointments)
                                     {
-                                        var canCancel = item.AppointmentDate > DateTime.Now
-                                            && item.Status != AppointmentStatus.Iptal
-                                            && item.Status != AppointmentStatus.Tamamlandi;
                                         <tr>
-                                            <td>@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
-                                            <td>@item.Doctor?.Name @item.Doctor?.Surname</td>
-                                            <td>@item.Doctor?.Department?.Name</td>
+                                            <td class="ps-4">
+                                                <div class="fw-bold text-dark">@item.AppointmentDate.ToString("dd.MM.yyyy")</div>
+                                                <div class="small text-muted">@item.AppointmentDate.ToString("HH:mm")</div>
+                                            </td>
                                             <td>
-                                                <span class="badge rounded-pill @(item.Status == AppointmentStatus.Onaylandi ? "bg-success" : "bg-warning text-dark")">
+                                                <div class="fw-bold">Dr. @item.Doctor?.Name @item.Doctor?.Surname</div>
+                                                <div class="small text-muted">@item.Doctor?.Department?.Name</div>
+                                            </td>
+                                            <td>
+                                                <span class="badge rounded-pill @(item.Status == AppointmentStatus.Onaylandi ? "bg-success-soft text-success" : "bg-warning-soft text-warning")">
                                                     @item.Status
                                                 </span>
                                             </td>
-                                            <td class="text-end">
-                                                @if (canCancel) {
-                                                    <form asp-controller="Appointment" asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill">
-                                                            İptal Et
-                                                        </button>
-                                                    </form>
-                                                } else {
-                                                    <span class="badge bg-light text-secondary border">Tamamlanacak</span>
-                                                }
+                                            <td class="text-end pe-4">
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-light rounded-circle" data-bs-toggle="dropdown"><i class="fa-solid fa-ellipsis-vertical"></i></button>
+                                                    <ul class="dropdown-menu dropdown-menu-end border-0 shadow-sm rounded-3">
+                                                        <li><a class="dropdown-item py-2" asp-controller="Appointment" asp-action="Details" asp-route-id="@item.Id"><i class="fa-solid fa-info-circle me-2 text-primary"></i>Detaylar</a></li>
+                                                        @if (item.AppointmentDate > DateTime.Now && item.Status != AppointmentStatus.Iptal) {
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li>
+                                                                <form asp-controller="Appointment" asp-action="Cancel" asp-route-id="@item.Id" method="post" onsubmit="return confirm('Randevuyu iptal etmek istiyor musunuz?');">
+                                                                    @Html.AntiForgeryToken()
+                                                                    <button type="submit" class="dropdown-item py-2 text-danger"><i class="fa-solid fa-calendar-xmark me-2"></i>İptal Et</button>
+                                                                </form>
+                                                            </li>
+                                                        }
+                                                    </ul>
+                                                </div>
                                             </td>
                                         </tr>
                                     }
@@ -120,121 +266,171 @@
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body p-4">
-                    <h3 class="h5 fw-bold mb-3">Son Randevu Hareketleri</h3>
+            <!-- Health History / Symptom Guide (New Section) -->
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 overflow-hidden">
+                        <div class="card-body p-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="fw-bold mb-0"><i class="fa-solid fa-robot text-primary me-2"></i>Akıllı Asistan ENS</h5>
+                                <span class="badge bg-primary-soft text-primary rounded-pill x-small px-2">Aktif</span>
+                            </div>
+                            <p class="small text-muted mb-3">Merhaba, ben ENS. Şikayetinizi yazın, size en uygun bölümü önereyim.</p>
+                            
+                            <div class="input-group mb-3">
+                                <input type="text" id="symptomInput" class="form-control rounded-start-pill border-end-0 ps-4 symptom-input-focus" placeholder="Örn: Başım ağrıyor ve ateşim var...">
+                                <button class="btn btn-primary rounded-end-pill px-4" type="button" id="btnCheckSymptom">
+                                    <i class="fa-solid fa-magnifying-glass"></i>
+                                </button>
+                            </div>
 
-                    @if (!Model.RecentAppointments.Any())
-                    {
-                        <div class="empty-state">
-                            <i class="fa-regular fa-folder-open"></i>
-                            <p class="mb-0">Henüz randevu geçmişi oluşmadı.</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="list-group list-group-flush">
-                            @foreach (var item in Model.RecentAppointments)
-                            {
-                                <div class="list-group-item px-0 py-3">
-                                    <div class="d-flex justify-content-between align-items-start gap-3">
-                                        <div>
-                                            <div class="fw-semibold">@item.Doctor?.Name @item.Doctor?.Surname</div>
-                                            <div class="small text-muted">@item.Doctor?.Department?.Name</div>
-                                        </div>
-                                        <div class="text-end small">
-                                            <div class="fw-semibold">@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</div>
-                                            <span class="badge rounded-pill bg-light text-dark border">@item.Status</span>
-                                        </div>
-                                    </div>
+                            <div id="symptomResults" style="display: none;">
+                                <div class="small fw-bold text-muted mb-2 text-uppercase tracking-wider">Önerilen Bölümler:</div>
+                                <div id="symptomList" class="d-flex flex-column gap-2">
+                                    <!-- Results will be injected here -->
                                 </div>
-                            }
+                            </div>
+
+                            <div id="symptomPlaceholder" class="text-center py-4 opacity-50">
+                                <i class="fa-solid fa-comment-medical fa-2x mb-2"></i>
+                                <p class="x-small mb-0">ENS şikayetinizi analiz etmek için hazır...</p>
+                            </div>
+
+                            <div id="symptomLoading" style="display: none;" class="text-center py-4">
+                                <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                <p class="x-small text-muted mt-2">Analiz ediliyor...</p>
+                            </div>
                         </div>
-                    }
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-4 h-100 bg-light-soft">
+                        <div class="card-body p-4 text-center">
+                            <div class="mb-3 text-primary display-6"><i class="fa-solid fa-shield-heart"></i></div>
+                            <h5 class="fw-bold mb-2">Sağlık Karneniz</h5>
+                            <p class="small text-muted mb-3">Tüm tıbbi verilerinizi, reçetelerinizi ve analizlerinizi tek bir rapor halinde görün.</p>
+                            <a asp-action="MedicalHistory" class="btn btn-primary rounded-pill px-4 fw-bold">Geçmişi İncele</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
+        <!-- Sidebar (Right) -->
         <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-body p-4">
-                    <h3 class="h5 fw-bold mb-3">Profil Özeti</h3>
-                    <dl class="profile-summary mb-0">
-                        <div><dt>E-Posta</dt><dd>@Model.Email</dd></div>
-                        <div><dt>Telefon</dt><dd>@Model.Telefon</dd></div>
-                        <div><dt>TC</dt><dd>@Model.TC</dd></div>
-                        <div><dt>Doğum Tarihi</dt><dd>@Model.DogumTarihi?.ToString("dd.MM.yyyy")</dd></div>
-                        <div><dt>Cinsiyet</dt><dd>@Model.Cinsiyet</dd></div>
-                    </dl>
+            <!-- Emergency Health Card (New) -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden bg-white">
+                <div class="card-header bg-danger text-white py-3 px-4 border-0">
+                    <h6 class="fw-bold mb-0"><i class="fa-solid fa-hospital-user me-2"></i>Kritik Sağlık Bilgileri</h6>
                 </div>
-            </div>
-
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div class="d-flex align-items-center gap-3 mb-4 p-3 rounded-4 bg-danger-soft border border-danger border-opacity-10">
+                        <div class="blood-type-circle bg-danger text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 50px; height: 50px; font-size: 1.2rem;">
+                            @(Model.BloodType ?? "??")
+                        </div>
                         <div>
-                            <h3 class="h5 fw-bold mb-1">Bölüm Ücretleri</h3>
-                            <p class="text-muted small mb-0">Randevu planlamasında kullanılan yaklaşık muayene ücretleri.</p>
+                            <div class="x-small text-muted text-uppercase fw-bold">Kan Grubu</div>
+                            <div class="fw-bold text-danger">@(Model.BloodType != null ? Model.BloodType : "Tanımlanmamış")</div>
                         </div>
-                        <span class="badge bg-light text-dark border rounded-pill">Bilgilendirme</span>
                     </div>
-
-                    @if (!Model.DepartmentFees.Any())
-                    {
-                        <div class="empty-state compact">
-                            <i class="fa-regular fa-money-bill-1"></i>
-                            <p class="mb-0">Ücret bilgisi bulunamadı.</p>
+                    <div class="health-meta mb-4">
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="x-small text-muted fw-bold">ALERJİLER</span>
+                            <span class="small fw-bold text-dark text-end">@(Model.Allergies ?? "Yok")</span>
                         </div>
-                    }
-                    else
-                    {
-                        <div class="department-fee-list">
-                            @foreach (var item in Model.DepartmentFees)
-                            {
-                                <div class="department-fee-row">
-                                    <span>@item.DepartmentName</span>
-                                    <strong>@item.Fee.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</strong>
-                                </div>
-                            }
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <span class="x-small text-muted fw-bold">KRONİK</span>
+                            <span class="small fw-bold text-dark">Yok</span>
                         </div>
-                        <div class="small text-muted mt-3">
-                            Not: Bu tutarlar bilgilendirme amaçlıdır. Nihai ücret işlem, tetkik ve ek hizmetlere göre değişebilir.
+                        <div class="d-flex justify-content-between align-items-center py-2">
+                            <span class="x-small text-muted fw-bold">ACİL DURUM</span>
+                            <span class="small fw-bold text-dark">@(Model.EmergencyContact ?? "-")</span>
                         </div>
-                    }
+                    </div>
+                    <a asp-action="Profile" class="btn btn-danger w-100 rounded-pill py-2 fw-bold shadow-sm">
+                        <i class="fa-solid fa-user-pen me-2"></i>Bilgileri Güncelle
+                    </a>
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm rounded-4">
+            <!-- Department Fees -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
                 <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h3 class="h5 fw-bold mb-0">Son Bildirimler</h3>
-                        <a asp-action="Notifications" class="btn btn-sm btn-outline-primary rounded-pill">Tümü</a>
+                    <h6 class="fw-bold mb-3"><i class="fa-solid fa-turkish-lira-sign text-success me-2"></i>Bölüm Muayene Ücretleri</h6>
+                    <div class="fee-list" style="max-height: 300px; overflow-y: auto; padding-right: 5px;">
+                        @foreach (var fee in Model.DepartmentFees)
+                        {
+                            <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
+                                <span class="small text-dark fw-semibold">@fee.DepartmentName</span>
+                                <span class="small fw-bold text-success">@fee.Fee.ToString("C0", System.Globalization.CultureInfo.GetCultureInfo("tr-TR"))</span>
+                            </div>
+                        }
                     </div>
+                    <div class="x-small text-muted mt-3 italic">
+                        * Ücretler yaklaşık olup, SGK ve ek işlemlere göre değişiklik gösterebilir.
+                    </div>
+                </div>
+            </div>
 
-                    @if (!Model.RecentNotifications.Any())
-                    {
-                        <div class="empty-state compact">
-                            <i class="fa-regular fa-bell-slash"></i>
-                            <p class="mb-0">Henüz bildiriminiz yok.</p>
-                        </div>
-                    }
-                    else
-                    {
-                        <div class="notification-stack">
-                            @foreach (var item in Model.RecentNotifications)
-                            {
-                                <div class="notification-card @(item.IsRead ? "is-read" : "is-unread")">
-                                    <div class="d-flex justify-content-between gap-3">
-                                        <div>
-                                            <div class="fw-semibold">@item.Title</div>
-                                            <p class="small text-muted mb-0">@item.Message</p>
-                                        </div>
-                                        <span class="small text-muted">@item.CreatedDate.ToString("dd.MM")</span>
-                                    </div>
+            <!-- Recent Notifications -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0">Son Bildirimler</h6>
+                    <a asp-action="Notifications" class="x-small text-decoration-none">Tümü</a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        @foreach (var note in Model.RecentNotifications)
+                        {
+                            <a href="@note.Link" class="list-group-item list-group-item-action p-3 @(note.IsRead ? "opacity-75" : "bg-primary-soft")">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <div class="fw-bold small text-dark">@note.Title</div>
+                                    <div class="x-small text-muted">@note.CreatedDate.ToString("dd MMM")</div>
                                 </div>
-                            }
+                                <p class="x-small text-muted mb-0">@note.Message</p>
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Symptom Guide Modal -->
+<div class="modal fade" id="symptomGuideModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow rounded-5">
+            <div class="modal-header border-0 p-4">
+                <h5 class="modal-title fw-bold">Branş Seçim Rehberi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 pt-0">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-4">
+                            <h6 class="fw-bold text-primary mb-2">Dahiliye</h6>
+                            <p class="x-small text-muted mb-0">Genel hastalıklar, şeker, tansiyon, karın ağrısı, vitamin eksiklikleri.</p>
                         </div>
-                    }
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-4">
+                            <h6 class="fw-bold text-primary mb-2">Ortopedi</h6>
+                            <p class="x-small text-muted mb-0">Eklem ağrıları, kırıklar, burkulmalar, bel ve boyun fıtıkları.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-4">
+                            <h6 class="fw-bold text-primary mb-2">KBB</h6>
+                            <p class="x-small text-muted mb-0">Boğaz ağrısı, kulak çınlaması, burun tıkanıklığı, sinüzit.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-4">
+                            <h6 class="fw-bold text-primary mb-2">Cildiye</h6>
+                            <p class="x-small text-muted mb-0">Akne, saç dökülmesi, ben kontrolü, cilt lekeleri.</p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -242,216 +438,25 @@
 </div>
 
 <style>
-    .patient-hero {
-        border-radius: 30px;
-        padding: 2rem;
-        display: flex;
-        justify-content: space-between;
-        gap: 2rem;
-        color: #fff;
-        background: linear-gradient(135deg, #0b3b66 0%, #031c33 100%);
-        box-shadow: 0 24px 60px rgba(3, 28, 51, 0.18);
-    }
-
-    .patient-hero h1 {
-        font-size: clamp(2rem, 3vw, 3rem);
-        font-weight: 700;
-        line-height: 1.1;
-    }
-
-    .patient-hero p {
-        color: rgba(255, 255, 255, 0.82);
-        max-width: 42rem;
-    }
-
-    .patient-hero-actions {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.75rem;
-        flex-wrap: wrap;
-    }
-
-    .eyebrow {
-        display: inline-block;
-        font-size: 0.78rem;
-        text-transform: uppercase;
-        letter-spacing: 0.18em;
-        font-weight: 700;
-        margin-bottom: 0.75rem;
-    }
-
-    .dashboard-stat-card {
-        background: #fff;
-        border-radius: 24px;
-        padding: 1.25rem;
-        box-shadow: 0 15px 35px rgba(22, 36, 56, 0.08);
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .stat-link:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 18px 40px rgba(22, 36, 56, 0.12);
-    }
-
-    .dashboard-stat-card span {
-        display: block;
-        color: #66788a;
-        margin-bottom: 0.6rem;
-    }
-
-    .dashboard-stat-card strong {
-        font-size: 2rem;
-        line-height: 1;
-    }
-
-    .dashboard-stat-card.alt {
-        background: linear-gradient(180deg, #fffdf4 0%, #fff6d7 100%);
-    }
-
-    .dashboard-stat-card.alt-2 {
-        background: linear-gradient(180deg, #fff7f6 0%, #ffe2dc 100%);
-    }
-
-    .dashboard-stat-card.alt-3 {
-        background: linear-gradient(180deg, #f3fbff 0%, #dff4ff 100%);
-    }
-
-    .empty-state {
-        min-height: 180px;
-        display: grid;
-        place-items: center;
-        text-align: center;
-        color: #7d8a97;
-        gap: 0.75rem;
-    }
-
-    .empty-state i {
-        font-size: 2.5rem;
-    }
-
-    .empty-state.compact {
-        min-height: 120px;
-    }
-
-    .profile-summary {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .profile-summary div {
-        display: flex;
-        justify-content: space-between;
-        gap: 1rem;
-        padding-bottom: 0.75rem;
-        border-bottom: 1px solid #edf1f5;
-    }
-
-    .profile-summary dt {
-        color: #728091;
-        font-weight: 600;
-    }
-
-    .profile-summary dd {
-        margin: 0;
-        text-align: right;
-        font-weight: 600;
-    }
-
-    .notification-stack {
-        display: grid;
-        gap: 1rem;
-    }
-
-    .department-fee-list {
-        display: grid;
-        gap: 0.75rem;
-        max-height: 360px;
-        overflow-y: auto;
-        padding-right: 0.25rem;
-    }
-
-    .department-fee-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 1rem;
-        padding: 0.85rem 1rem;
-        border-radius: 18px;
-        background: linear-gradient(180deg, #f9fbfd 0%, #eef4f8 100%);
-        border: 1px solid #e2eaf1;
-    }
-
-    .department-fee-row span {
-        color: #415262;
-        font-weight: 600;
-    }
-
-    .department-fee-row strong {
-        color: #0b3b66;
-        white-space: nowrap;
-    }
-
-    .notification-card {
-        border-radius: 20px;
-        padding: 1rem 1.1rem;
-        background: #fff;
-        border: 1px solid #edf1f5;
-    }
-
-    .notification-card.is-unread {
-        border-color: #b8ddff;
-        background: linear-gradient(180deg, #f8fcff 0%, #eef7ff 100%);
-    }
-
-    .notification-card.is-read {
-        opacity: 0.85;
-    }
-
-    [data-theme="dark"] .dashboard-stat-card {
-        background: var(--bg-surface);
-        color: var(--text-primary);
-        box-shadow: var(--card-shadow);
-    }
-
-    [data-theme="dark"] .dashboard-stat-card span {
-        color: var(--text-secondary);
-    }
-
-    [data-theme="dark"] .dashboard-stat-card strong {
-        color: var(--text-primary);
-    }
-
-    [data-theme="dark"] .department-fee-row {
-        background: linear-gradient(180deg, #111827 0%, #1e293b 100%);
-        border-color: var(--border-color);
-    }
-
-    [data-theme="dark"] .department-fee-row span {
-        color: var(--text-primary);
-    }
-
-    [data-theme="dark"] .department-fee-row strong {
-        color: #8bd5ff;
-    }
-
-    [data-theme="dark"] .notification-card {
-        background: var(--bg-surface);
-        border-color: var(--border-color);
-    }
-
-    [data-theme="dark"] .notification-card.is-unread {
-        background: linear-gradient(180deg, #0f172a 0%, #162235 100%);
-        border-color: #2b4e73;
-    }
-
-    [data-theme="dark"] .profile-summary div {
-        border-bottom-color: var(--border-color);
-    }
-
-    @@media (max-width: 991px) {
-        .patient-hero {
-            flex-direction: column;
-        }
-    }
+    .patient-hero { border-radius: 2rem; }
+    .btn-white { background: #fff; color: #1a2a6c; }
+    .whitespace-nowrap { white-space: nowrap; }
+    .transition-all { transition: all 0.3s ease; }
+    .hover-shadow:hover { transform: translateY(-2px); box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08) !important; cursor: pointer; }
+    .symptom-input-focus:focus { border-color: #0d6efd; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15); }
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.05); }
+    .bg-success-soft { background-color: rgba(25, 135, 84, 0.05); }
+    .bg-warning-soft { background-color: rgba(255, 193, 7, 0.05); }
+    .bg-info-soft { background-color: rgba(13, 202, 240, 0.05); }
+    .bg-danger-soft { background-color: rgba(220, 53, 69, 0.05); }
+    .opacity-05 { opacity: 0.05; }
+    .bg-light-soft { background-color: #f8f9fa; border: 1px dashed #dee2e6; }
+    .icon-box { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+    .x-small { font-size: 0.75rem; }
+    .italic { font-style: italic; }
+    .rounded-5 { border-radius: 1.5rem !important; }
+    .date-badge { min-width: 70px; line-height: 1.2; }
+    .tracking-wider { letter-spacing: 0.1em; }
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-thumb { background: #e2eaf1; border-radius: 10px; }
 </style>
-

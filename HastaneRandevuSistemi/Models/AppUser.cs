@@ -25,5 +25,14 @@ namespace HastaneRandevuSistemi.Models
 
         [StringLength(250)]
         public string? Adres { get; set; }
+
+        [StringLength(5)]
+        public string? BloodType { get; set; }
+
+        [StringLength(500)]
+        public string? Allergies { get; set; }
+
+        [StringLength(100)]
+        public string? EmergencyContact { get; set; }
     }
 }

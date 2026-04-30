@@ -1,4 +1,5 @@
-﻿@{
+@model HastaneRandevuSistemi.ViewModels.HomeIndexViewModel
+@{
     ViewData["Title"] = "Ana Sayfa";
 }
 
@@ -95,8 +96,133 @@
     </div>
 </div>
 
+<div class="container mb-5">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <span class="eyebrow text-primary">Hasta Deneyimi</span>
+                <h3 class="fw-bold mb-3">Genel Hastane Değerlendirmesi</h3>
+                <p class="text-muted mb-4">Hizmet kalitemizi geliştirmek için puan ve yorum bırakabilirsiniz.</p>
+
+                <div class="d-flex align-items-center gap-3 mb-2">
+                    <div class="display-6 fw-bold text-primary">@Model.AverageRating.ToString("0.0")</div>
+                    <div class="text-muted">/ 5 ortalama puan</div>
+                </div>
+                <div class="text-muted mb-3">@Model.TotalReviewCount değerlendirme</div>
+
+                <form asp-action="SubmitHospitalReview" method="post" class="row g-3">
+                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-0" role="alert"></div>
+                    @if (Model.HasCurrentUserReview)
+                    {
+                        <div class="alert alert-info small mb-0" role="alert">
+                            Bu hesap ile daha önce değerlendirme yaptınız. Her hesap yalnızca bir yorum bırakabilir.
+                        </div>
+                    }
+
+                    <div class="col-12">
+                        <label asp-for="Rating" class="form-label fw-semibold">Puan</label>
+                        <input asp-for="Rating" type="hidden" id="RatingInput" />
+                        <div id="ratingStars" class="trendyol-stars" role="radiogroup" aria-label="Puan">
+                            <button type="button" class="star-btn" data-value="1" aria-label="1 yıldız"><i class="fa-solid fa-star"></i></button>
+                            <button type="button" class="star-btn" data-value="2" aria-label="2 yıldız"><i class="fa-solid fa-star"></i></button>
+                            <button type="button" class="star-btn" data-value="3" aria-label="3 yıldız"><i class="fa-solid fa-star"></i></button>
+                            <button type="button" class="star-btn" data-value="4" aria-label="4 yıldız"><i class="fa-solid fa-star"></i></button>
+                            <button type="button" class="star-btn" data-value="5" aria-label="5 yıldız"><i class="fa-solid fa-star"></i></button>
+                        </div>
+                        <small id="ratingText" class="text-muted d-block mt-1">Puanınızı seçin</small>
+                        <span asp-validation-for="Rating" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="ReviewerName" class="form-label fw-semibold">Ad Soyad</label>
+                        <input asp-for="ReviewerName" class="form-control" placeholder="Örnek: Ali Yılmaz" />
+                        <span asp-validation-for="ReviewerName" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Comment" class="form-label fw-semibold">Yorum (Opsiyonel)</label>
+                        <textarea asp-for="Comment" class="form-control" rows="4" placeholder="Deneyiminizi kısaca yazabilirsiniz"></textarea>
+                        <span asp-validation-for="Comment" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12 d-grid">
+                        @if (Model.HasCurrentUserReview)
+                        {
+                            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold" disabled>
+                                <i class="fa-solid fa-star me-2"></i>Değerlendirmeyi Gönder
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold">
+                                <i class="fa-solid fa-star me-2"></i>Değerlendirmeyi Gönder
+                            </button>
+                        }
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <h4 class="fw-bold mb-3">Son Değerlendirmeler</h4>
+
+                @if (!Model.RecentReviews.Any())
+                {
+                    <div class="text-muted">Henüz değerlendirme bulunmuyor.</div>
+                }
+                else
+                {
+                    @for (var idx = 0; idx < Model.RecentReviews.Count; idx++)
+                    {
+                        var review = Model.RecentReviews[idx];
+                        <article class="review-item py-3 @(idx < Model.RecentReviews.Count - 1 ? "border-bottom" : "")">
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                                <strong>@review.ReviewerName</strong>
+                                <small class="text-muted">@review.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                            </div>
+                            <div class="rating-stars mb-2">
+                                @for (var i = 1; i <= 5; i++)
+                                {
+                                    <i class="fa-solid fa-star @(i <= review.Rating ? "text-warning" : "text-secondary opacity-25")"></i>
+                                }
+                                <span class="ms-2 small text-muted">(@review.Rating/5)</span>
+                            </div>
+                            @if (!string.IsNullOrWhiteSpace(review.Comment))
+                            {
+                                <p class="mb-2 text-muted">@review.Comment</p>
+                            }
+                            @if (!string.IsNullOrWhiteSpace(review.AdminReply))
+                            {
+                                <div class="mt-2 p-3 bg-light rounded-3 border-start border-4 border-primary">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <i class="fa-solid fa-hospital text-primary me-2"></i>
+                                        <strong class="text-dark small">Hastane Yönetimi</strong>
+                                        @if (review.AdminReplyDate.HasValue)
+                                        {
+                                            <span class="text-muted small ms-auto">@review.AdminReplyDate.Value.ToString("dd.MM.yyyy")</span>
+                                        }
+                                    </div>
+                                    <p class="mb-0 small text-muted">@review.AdminReply</p>
+                                </div>
+                            }
+                        </article>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
 <style>
-    /* LAYOUT CONTAINER'INI BU SAYFA İÇİN KIRAN SİHİRLİ CSS */
     .full-width-hero {
         width: 100vw;
         position: relative;
@@ -110,9 +236,9 @@
         transition: transform 0.3s ease;
     }
 
-        .hover-grow:hover {
-            transform: scale(1.05);
-        }
+    .hover-grow:hover {
+        transform: scale(1.05);
+    }
 
     .hover-shadow:hover {
         box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
@@ -126,4 +252,96 @@
     .tracking-wider {
         letter-spacing: 2px;
     }
+
+    .eyebrow {
+        display: inline-block;
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+        font-weight: 700;
+        margin-bottom: 0.75rem;
+    }
+
+    .trendyol-stars {
+        display: inline-flex;
+        gap: 0.25rem;
+        align-items: center;
+    }
+
+    .star-btn {
+        border: none;
+        background: transparent;
+        padding: 0;
+        line-height: 1;
+        font-size: 1.65rem;
+        color: #d2d8e0;
+        transition: transform 0.12s ease, color 0.12s ease;
+    }
+
+    .star-btn:hover {
+        transform: translateY(-1px) scale(1.05);
+    }
+
+    .star-btn.active {
+        color: #ff9800;
+    }
 </style>
+
+@section Scripts {
+    <script>
+        (function () {
+            const starsWrap = document.getElementById("ratingStars");
+            const ratingInput = document.getElementById("RatingInput");
+            const ratingText = document.getElementById("ratingText");
+            if (!starsWrap || !ratingInput || !ratingText) {
+                return;
+            }
+
+            const labels = {
+                1: "Çok kötü",
+                2: "Kötü",
+                3: "Orta",
+                4: "İyi",
+                5: "Çok iyi"
+            };
+
+            const starButtons = Array.from(starsWrap.querySelectorAll(".star-btn"));
+
+            function render(value) {
+                starButtons.forEach((btn) => {
+                    const starValue = Number(btn.getAttribute("data-value"));
+                    btn.classList.toggle("active", starValue <= value);
+                });
+
+                ratingText.textContent = value > 0
+                    ? `${value}/5 - ${labels[value]}`
+                    : "Puanınızı seçin";
+            }
+
+            starButtons.forEach((btn) => {
+                const val = Number(btn.getAttribute("data-value"));
+
+                btn.addEventListener("mouseenter", function () {
+                    render(val);
+                });
+
+                btn.addEventListener("click", function () {
+                    ratingInput.value = String(val);
+                    render(val);
+                });
+            });
+
+            starsWrap.addEventListener("mouseleave", function () {
+                const current = Number(ratingInput.value || "0");
+                render(current);
+            });
+
+            const initial = Number(ratingInput.value || "0");
+            render(initial);
+        })();
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+

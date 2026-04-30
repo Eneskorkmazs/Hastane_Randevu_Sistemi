@@ -1,0 +1,179 @@
+@model HastaneRandevuSistemi.ViewModels.AdminHospitalReviewsViewModel
+
+@{
+    ViewData["Title"] = "Hastane Yorumları";
+}
+
+<div class="container-fluid px-md-5 py-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm rounded-4" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 border-bottom pb-4">
+        <div class="mb-3 mb-md-0">
+            <h6 class="text-primary fw-bold text-uppercase ls-2 small mb-1">Hasta Geri Bildirimleri</h6>
+            <h1 class="display-6 fw-bold mb-0">Genel Hastane Yorumları</h1>
+        </div>
+        <a asp-action="AdminDashboard" class="btn btn-outline-dark rounded-pill px-4">Yönetim Paneline Dön</a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-md-4">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <div class="text-muted small fw-bold">ORTALAMA PUAN</div>
+                <div class="display-6 fw-bold text-primary">@Model.AverageRating.ToString("0.0")</div>
+                <div class="small text-muted">@Model.TotalCount toplam yorum</div>
+            </div>
+        </div>
+        <div class="col-12 col-md-8">
+            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                <div class="row g-2 text-center">
+                    <div class="col"><span class="badge bg-success-subtle text-success w-100 py-2">5★: @Model.FiveStarCount</span></div>
+                    <div class="col"><span class="badge bg-info-subtle text-info w-100 py-2">4★: @Model.FourStarCount</span></div>
+                    <div class="col"><span class="badge bg-primary-subtle text-primary w-100 py-2">3★: @Model.ThreeStarCount</span></div>
+                    <div class="col"><span class="badge bg-warning-subtle text-warning w-100 py-2">2★: @Model.TwoStarCount</span></div>
+                    <div class="col"><span class="badge bg-danger-subtle text-danger w-100 py-2">1★: @Model.OneStarCount</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <form method="get" asp-action="AdminHospitalReviews" class="row g-3 mb-4">
+                <div class="col-12 col-md-3">
+                    <label class="form-label small fw-semibold">Puan Filtresi</label>
+                    <select name="rating" class="form-select">
+                        <option value="">Hepsi</option>
+                        @for (var i = 5; i >= 1; i--)
+                        {
+                            if (Model.SelectedRating == i)
+                            {
+                                <option value="@i" selected>@i Yıldız</option>
+                            }
+                            else
+                            {
+                                <option value="@i">@i Yıldız</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-12 col-md-7">
+                    <label class="form-label small fw-semibold">Yorumda Ara</label>
+                    <input type="text" name="search" value="@Model.Search" class="form-control" placeholder="Ad soyad veya yorum metni" />
+                </div>
+                <div class="col-12 col-md-2 d-grid">
+                    <label class="form-label small fw-semibold d-none d-md-block">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary">Filtrele</button>
+                </div>
+            </form>
+
+            @if (!Model.Reviews.Any())
+            {
+                        <div class="text-muted">Filtreye uygun yorum bulunamadı.</div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table align-middle table-hover">
+                        <thead>
+                            <tr>
+                                <th>Tarih</th>
+                                <th>Değerlendiren</th>
+                                <th>Puan</th>
+                                <th>Yorum</th>
+                                <th class="text-end">İşlem</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var item in Model.Reviews)
+                        {
+                            <tr>
+                                <td class="text-muted">@item.CreatedAt.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>
+                                    <div class="fw-semibold">@item.ReviewerName</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.UserId))
+                                    {
+                                        <small class="text-muted">Üye hesabı</small>
+                                    }
+                                </td>
+                                <td>
+                                    @for (var i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fa-solid fa-star @(i <= item.Rating ? "text-warning" : "text-secondary opacity-25")"></i>
+                                    }
+                                </td>
+                                <td class="text-muted">
+                                    <div class="mb-2">@(string.IsNullOrWhiteSpace(item.Comment) ? "-" : item.Comment)</div>
+                                    @if (!string.IsNullOrWhiteSpace(item.AdminReply))
+                                    {
+                                        <div class="p-2 bg-light rounded border-start border-3 border-success small mt-2">
+                                            <div class="fw-bold text-success mb-1">
+                                                <i class="fa-solid fa-reply me-1"></i> Yanıtınız (@item.AdminReplyDate?.ToString("dd.MM.yyyy HH:mm"))
+                                            </div>
+                                            @item.AdminReply
+                                        </div>
+                                    }
+                                </td>
+                                <td class="text-end text-nowrap">
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill me-1" data-bs-toggle="modal" data-bs-target="#replyModal_@item.Id">
+                                        <i class="fa-solid fa-reply"></i> Yanıtla
+                                    </button>
+                                    <form asp-action="DeleteHospitalReview" method="post" class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="id" value="@item.Id" />
+                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill"
+                                                onclick="return confirm('Bu yorumu silmek istediğinize emin misiniz?');">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </form>
+
+                                    <!-- Reply Modal -->
+                                    <div class="modal fade" id="replyModal_@item.Id" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content border-0 shadow rounded-4 text-start">
+                                                <form asp-action="ReplyHospitalReview" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <input type="hidden" name="id" value="@item.Id" />
+                                                    <div class="modal-header border-0 pb-0">
+                                                        <h5 class="modal-title fw-bold">Yoruma Yanıt Ver</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                    </div>
+                                                    <div class="modal-body pb-0">
+                                                        <div class="mb-3 p-3 bg-light rounded text-muted small border">
+                                                            "@(string.IsNullOrWhiteSpace(item.Comment) ? "Sadece Puan Verilmiş" : item.Comment)"
+                                                        </div>
+                                                        <div class="form-group mb-3">
+                                                            <label class="form-label fw-bold">Kurumsal Yanıtınız</label>
+                                                            <textarea name="reply" class="form-control rounded-3" rows="4" placeholder="Hastaya verilecek kurumsal yanıtı buraya yazın..." required>@item.AdminReply</textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer border-0 pt-0">
+                                                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">İptal</button>
+                                                        <button type="submit" class="btn btn-primary rounded-pill px-4">Yanıtı Gönder</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

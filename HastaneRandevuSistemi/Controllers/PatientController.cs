@@ -1,439 +1,176 @@
-﻿using HastaneRandevuSistemi.Data;
+using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
-using HastaneRandevuSistemi.Services;
 using HastaneRandevuSistemi.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using HastaneRandevuSistemi.Services;
 
 namespace HastaneRandevuSistemi.Controllers
 {
     [Authorize(Roles = "Hasta")]
     public class PatientController : Controller
     {
-        private static readonly IReadOnlyDictionary<string, decimal> DepartmentPriceMap =
-            new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
-            {
-                ["Diş Sağlığı ve Hastalıkları"] = 1250m,
-                ["Dahiliye (İç Hastalıkları)"] = 1100m,
-                ["Kardiyoloji"] = 2200m,
-                ["Nöroloji"] = 2100m,
-                ["Ortopedi ve Travmatoloji"] = 1850m,
-                ["Göz Hastalıkları"] = 1450m,
-                ["Kulak Burun Boğaz"] = 1400m,
-                ["Genel Cerrahi"] = 2300m,
-                ["Dermatoloji"] = 1200m,
-                ["Pediatri"] = 1150m,
-                ["Psikiyatri"] = 1600m,
-                ["Üroloji"] = 1750m,
-                ["Fizik Tedavi ve Rehabilitasyon"] = 1350m,
-                ["Kadın Hastalıkları ve Doğum"] = 1900m,
-                ["Göğüs Hastalıkları"] = 1550m,
-                ["Enfeksiyon Hastalıkları"] = 1300m,
-                ["Beyin ve Sinir Cerrahisi"] = 2750m
-            };
-
-        private const decimal DefaultDepartmentFee = 1350m;
-        private static readonly HashSet<string> AllowedMedicalHistoryExtensions =
-            new(StringComparer.OrdinalIgnoreCase) { ".pdf", ".jpeg", ".jpg", ".png", ".doc", ".docx" };
-        private const long MaxMedicalHistoryFileSizeInBytes = 8 * 1024 * 1024;
-
         private readonly ApplicationDbContext _context;
         private readonly UserManager<AppUser> _userManager;
-        private readonly SignInManager<AppUser> _signInManager;
+        private readonly ISymptomCheckerService _symptomCheckerService;
 
-        public PatientController(
-            ApplicationDbContext context,
-            UserManager<AppUser> userManager,
-            SignInManager<AppUser> signInManager)
+        public PatientController(ApplicationDbContext context, UserManager<AppUser> userManager, ISymptomCheckerService symptomCheckerService)
         {
             _context = context;
             _userManager = userManager;
-            _signInManager = signInManager;
+            _symptomCheckerService = symptomCheckerService;
         }
 
         public async Task<IActionResult> Dashboard()
         {
-            await AppointmentStatusSync.CompleteExpiredAppointmentsAsync(_context);
-
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
+            if (user == null) return Challenge();
 
-            var appointments = await GetPatientAppointmentsQuery(user)
-                .OrderByDescending(a => a.CreatedDate)
-                .ThenByDescending(a => a.Id)
+            var appointments = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .Where(a => a.PatientUserId == user.Id)
                 .ToListAsync();
 
+            var pendingAppointments = appointments.Where(a => a.Status != AppointmentStatus.Tamamlandi && a.Status != AppointmentStatus.Iptal).ToList();
+            
             var notifications = await _context.Notifications
                 .Where(n => n.UserId == user.Id)
                 .OrderByDescending(n => n.CreatedDate)
+                .Take(5)
                 .ToListAsync();
+
+            var prescriptionCount = appointments.Count(a => a.PrescriptionCreatedAt != null);
             var medicalHistoryCount = await _context.MedicalHistories.CountAsync(m => m.UserId == user.Id);
-            var prescriptionCount = appointments.Count(a => !string.IsNullOrWhiteSpace(a.PrescriptionMedications));
+            var unreadNotificationsCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
 
-            var now = DateTime.Now;
-            var pendingAppointments = appointments
-                .Where(a => a.AppointmentDate >= now && a.Status != AppointmentStatus.Iptal && a.Status != AppointmentStatus.Tamamlandi)
-                .OrderByDescending(a => a.CreatedDate)
-                .ThenByDescending(a => a.Id)
-                .ToList();
-
-            var departments = await _context.Departments
-                .OrderBy(d => d.Name)
+            var departmentFees = await _context.Departments
+                .Select(d => new DepartmentFeeItem { DepartmentName = d.Name, Fee = 150.00m }) 
                 .ToListAsync();
-
-            var departmentFees = departments
-                .Select(d => new DepartmentFeeItem
-                {
-                    DepartmentName = d.Name,
-                    Fee = DepartmentPriceMap.TryGetValue(d.Name, out var fee) ? fee : DefaultDepartmentFee
-                })
-                .ToList();
 
             var model = new PatientDashboardViewModel
             {
-                FullName = $"{user.Name} {user.Surname}".Trim(),
+                FullName = $"{user.Name} {user.Surname}",
                 Email = user.Email,
-                Telefon = user.Telefon ?? user.PhoneNumber,
+                Telefon = user.Telefon,
                 TC = user.TC,
                 DogumTarihi = user.DogumTarihi,
                 Cinsiyet = user.Cinsiyet,
+                BloodType = user.BloodType,
+                Allergies = user.Allergies,
+                EmergencyContact = user.EmergencyContact,
                 PendingAppointmentsCount = pendingAppointments.Count,
                 CompletedAppointmentsCount = appointments.Count(a => a.Status == AppointmentStatus.Tamamlandi),
                 CancelledAppointmentsCount = appointments.Count(a => a.Status == AppointmentStatus.Iptal),
                 PrescriptionCount = prescriptionCount,
-                UnreadNotificationsCount = notifications.Count(n => !n.IsRead),
+                UnreadNotificationsCount = unreadNotificationsCount,
                 MedicalHistoryCount = medicalHistoryCount,
                 DepartmentFees = departmentFees,
-                PendingAppointments = pendingAppointments.Take(5).ToList(),
-                RecentAppointments = appointments.Take(5).ToList(),
-                RecentNotifications = notifications.Take(5).ToList()
+                PendingAppointments = pendingAppointments,
+                RecentAppointments = appointments.OrderByDescending(a => a.AppointmentDate).Take(5).ToList(),
+                RecentNotifications = notifications
             };
 
             return View(model);
         }
 
-        [HttpGet]
         public async Task<IActionResult> Profile()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
+            if (user == null) return Challenge();
 
-            return View(new PatientProfileViewModel
+            var model = new PatientProfileViewModel
             {
                 Name = user.Name ?? string.Empty,
                 Surname = user.Surname ?? string.Empty,
                 TC = user.TC ?? string.Empty,
-                Telefon = user.Telefon ?? user.PhoneNumber ?? string.Empty,
+                Email = user.Email ?? string.Empty,
+                Telefon = user.Telefon ?? string.Empty,
                 DogumTarihi = user.DogumTarihi,
                 Cinsiyet = user.Cinsiyet ?? string.Empty,
                 Adres = user.Adres ?? string.Empty,
-                Email = user.Email ?? string.Empty
-            });
+                BloodType = user.BloodType,
+                Allergies = user.Allergies,
+                EmergencyContact = user.EmergencyContact,
+            };
+
+            return View(model);
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Profile(PatientProfileViewModel model)
         {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
+            if (!ModelState.IsValid) return View(model);
 
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
+            if (user == null) return Challenge();
 
             user.Name = model.Name;
             user.Surname = model.Surname;
             user.TC = model.TC;
+            user.Email = model.Email;
+            user.UserName = model.Email;
             user.Telefon = model.Telefon;
-            user.PhoneNumber = model.Telefon;
             user.DogumTarihi = model.DogumTarihi;
             user.Cinsiyet = model.Cinsiyet;
             user.Adres = model.Adres;
+            user.BloodType = model.BloodType;
+            user.Allergies = model.Allergies;
+            user.EmergencyContact = model.EmergencyContact;
 
             var result = await _userManager.UpdateAsync(user);
-            if (!result.Succeeded)
+            if (result.Succeeded)
             {
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-
-                return View(model);
+                TempData["SuccessMessage"] = "Profiliniz başarıyla güncellendi.";
+                return RedirectToAction(nameof(Dashboard));
             }
 
-            await CreateNotificationAsync(
-                user.Id,
-                "Profiliniz güncellendi",
-                "Kişisel bilgileriniz başarıyla güncellendi.",
-                "Profil",
-                "/Patient/Profile");
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
 
-            TempData["SuccessMessage"] = "Profil bilgileriniz güncellendi.";
-            return RedirectToAction(nameof(Profile));
+            return View(model);
         }
 
-        [HttpGet]
-        public IActionResult ChangePassword()
-        {
-            return View(new ChangePasswordViewModel());
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(model);
-            }
-
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
-
-            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
-            if (!result.Succeeded)
-            {
-                foreach (var error in result.Errors)
-                {
-                    ModelState.AddModelError(string.Empty, error.Description);
-                }
-
-                return View(model);
-            }
-
-            await _signInManager.RefreshSignInAsync(user);
-
-            await CreateNotificationAsync(
-                user.Id,
-                "Parolaniz degistirildi",
-                "Hesap guvenliginiz icin parola degisikligi basariyla tamamlandi.",
-                "Guvenlik",
-                "/Patient/ChangePassword");
-
-            TempData["SuccessMessage"] = "Parolaniz basariyla guncellendi.";
-            return RedirectToAction(nameof(ChangePassword));
-        }
-
-        public async Task<IActionResult> Notifications()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
-
-            var notifications = await _context.Notifications
-                .Where(n => n.UserId == user.Id)
-                .OrderByDescending(n => n.CreatedDate)
-                .ToListAsync();
-
-            return View(notifications);
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkAsRead(int id)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
-
-            var notification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == user.Id);
-
-            if (notification != null && !notification.IsRead)
-            {
-                notification.IsRead = true;
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(Notifications));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkAsReadAjax(int id)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Json(new { success = false });
-            }
-
-            var notification = await _context.Notifications
-                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == user.Id);
-
-            if (notification != null && !notification.IsRead)
-            {
-                notification.IsRead = true;
-                await _context.SaveChangesAsync();
-            }
-
-            var unreadCount = await GetUnreadNotificationCountAsync(user.Id);
-            return Json(new { success = true, unreadCount });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkAllAsRead()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
-
-            var notifications = await _context.Notifications
-                .Where(n => n.UserId == user.Id && !n.IsRead)
-                .ToListAsync();
-
-            foreach (var notification in notifications)
-            {
-                notification.IsRead = true;
-            }
-
-            if (notifications.Count > 0)
-            {
-                await _context.SaveChangesAsync();
-            }
-
-            return RedirectToAction(nameof(Notifications));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> MarkAllAsReadAjax()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Json(new { success = false });
-            }
-
-            var notifications = await _context.Notifications
-                .Where(n => n.UserId == user.Id && !n.IsRead)
-                .ToListAsync();
-
-            foreach (var notification in notifications)
-            {
-                notification.IsRead = true;
-            }
-
-            if (notifications.Count > 0)
-            {
-                await _context.SaveChangesAsync();
-            }
-
-            return Json(new { success = true, unreadCount = 0 });
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteSelected(int[] ids)
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
-
-            if (ids == null || ids.Length == 0)
-            {
-                TempData["ErrorMessage"] = "Silinecek bildirim seçilmedi.";
-                return RedirectToAction(nameof(Notifications));
-            }
-
-            var toDelete = await _context.Notifications
-                .Where(n => n.UserId == user.Id && ids.Contains(n.Id))
-                .ToListAsync();
-
-            if (toDelete.Count == 0)
-            {
-                TempData["ErrorMessage"] = "Silinecek bildirim bulunamadı.";
-                return RedirectToAction(nameof(Notifications));
-            }
-
-            _context.Notifications.RemoveRange(toDelete);
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = $"{toDelete.Count} bildirim silindi.";
-            return RedirectToAction(nameof(Notifications));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteAll()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
-
-            var all = await _context.Notifications
-                .Where(n => n.UserId == user.Id)
-                .ToListAsync();
-
-            if (all.Count == 0)
-            {
-                TempData["InfoMessage"] = "Silinecek bildirim yok.";
-                return RedirectToAction(nameof(Notifications));
-            }
-
-            _context.Notifications.RemoveRange(all);
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Tüm bildirimler silindi.";
-            return RedirectToAction(nameof(Notifications));
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> UnreadNotificationCount()
-        {
-            var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Json(new { count = 0 });
-            }
-
-            var count = await GetUnreadNotificationCountAsync(user.Id);
-            return Json(new { count });
-        }
-
-        [HttpGet]
         public async Task<IActionResult> MedicalHistory()
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            if (user == null) return Challenge();
+
+            var records = await _context.MedicalHistories
+                .Where(m => m.UserId == user.Id)
+                .OrderByDescending(m => m.VisitDate)
+                .ToListAsync();
+
+            var prescriptions = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .Where(a => a.PatientUserId == user.Id && a.PrescriptionCreatedAt != null)
+                .OrderByDescending(a => a.PrescriptionCreatedAt)
+                .Select(a => new PatientPrescriptionItemViewModel
+                {
+                    AppointmentId = a.Id,
+                    DoctorName = $"Dr. {a.Doctor!.Name} {a.Doctor.Surname}",
+                    DepartmentName = a.Doctor.Department!.Name,
+                    PrescriptionDate = a.PrescriptionCreatedAt!.Value,
+                    Diagnosis = a.PrescriptionDiagnosis ?? "-",
+                    Medications = a.PrescriptionMedications ?? "-",
+                    Notes = a.PrescriptionNotes
+                })
+                .ToListAsync();
+
+            var model = new PatientMedicalHistoryViewModel
             {
-                return Challenge();
-            }
+                Records = records,
+                Prescriptions = prescriptions
+            };
 
-            return View(await BuildMedicalHistoryViewModelAsync(user.Id));
-        }
-
-        [HttpGet]
-        public IActionResult Prescriptions()
-        {
-            return Redirect("/Patient/MedicalHistory#receteler");
+            return View(model);
         }
 
         [HttpPost]
@@ -441,81 +178,46 @@ namespace HastaneRandevuSistemi.Controllers
         public async Task<IActionResult> AddMedicalHistory(PatientMedicalHistoryViewModel model, IFormFile? attachmentFile)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
-            {
-                return Challenge();
-            }
+            if (user == null) return Challenge();
 
-            if (model.VisitDate > DateTime.Today.AddDays(1))
-            {
-                ModelState.AddModelError(nameof(model.VisitDate), "Muayene tarihi gelecekte olamaz.");
-            }
-
-            string? relativeAttachmentPath = null;
-            string? originalAttachmentName = null;
+            string? attachmentPath = null;
             if (attachmentFile != null && attachmentFile.Length > 0)
             {
-                if (attachmentFile.Length > MaxMedicalHistoryFileSizeInBytes)
+                if (!IsValidFile(attachmentFile))
                 {
-                    ModelState.AddModelError(string.Empty, "Dosya boyutu en fazla 8 MB olabilir.");
+                    TempData["ErrorMessage"] = "Geçersiz dosya formatı. Sadece PDF, JPG ve PNG yükleyebilirsiniz.";
+                    return RedirectToAction(nameof(MedicalHistory));
                 }
 
-                var extension = Path.GetExtension(attachmentFile.FileName);
-                if (!AllowedMedicalHistoryExtensions.Contains(extension))
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(attachmentFile.FileName)}";
+                var uploadPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "medical_history");
+                
+                if (!Directory.Exists(uploadPath)) Directory.CreateDirectory(uploadPath);
+                
+                var filePath = Path.Combine(uploadPath, fileName);
+                using (var stream = new FileStream(filePath, FileMode.Create))
                 {
-                    ModelState.AddModelError(string.Empty, "Sadece PDF, JPG, PNG, DOC ve DOCX dosyalari yuklenebilir.");
-                }
-
-                if (ModelState.IsValid)
-                {
-                    var uploadsRoot = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "medical-history");
-                    if (!Directory.Exists(uploadsRoot))
-                    {
-                        Directory.CreateDirectory(uploadsRoot);
-                    }
-
-                    var generatedName = $"{Guid.NewGuid():N}{extension.ToLowerInvariant()}";
-                    var fullPath = Path.Combine(uploadsRoot, generatedName);
-                    await using var stream = new FileStream(fullPath, FileMode.Create);
                     await attachmentFile.CopyToAsync(stream);
-
-                    relativeAttachmentPath = $"/uploads/medical-history/{generatedName}";
-                    originalAttachmentName = attachmentFile.FileName;
                 }
+                attachmentPath = $"/uploads/medical_history/{fileName}";
             }
 
-            if (!ModelState.IsValid)
-            {
-                var history = await BuildMedicalHistoryViewModelAsync(user.Id);
-                model.Records = history.Records;
-                model.Prescriptions = history.Prescriptions;
-                return View("MedicalHistory", model);
-            }
-
-            _context.MedicalHistories.Add(new MedicalHistory
+            var record = new MedicalHistory
             {
                 UserId = user.Id,
-                Title = model.Title.Trim(),
-                Diagnosis = string.IsNullOrWhiteSpace(model.Diagnosis) ? null : model.Diagnosis.Trim(),
-                Medications = string.IsNullOrWhiteSpace(model.Medications) ? null : model.Medications.Trim(),
-                AllergyInfo = string.IsNullOrWhiteSpace(model.AllergyInfo) ? null : model.AllergyInfo.Trim(),
-                Notes = string.IsNullOrWhiteSpace(model.Notes) ? null : model.Notes.Trim(),
-                VisitDate = model.VisitDate.Date,
-                AttachmentName = originalAttachmentName,
-                AttachmentPath = relativeAttachmentPath,
+                Title = model.Title,
+                VisitDate = model.VisitDate,
+                Diagnosis = model.Diagnosis,
+                Medications = model.Medications,
+                Notes = model.Notes,
+                AttachmentPath = attachmentPath,
                 CreatedAt = DateTime.Now
-            });
+            };
 
+            _context.MedicalHistories.Add(record);
             await _context.SaveChangesAsync();
 
-            await CreateNotificationAsync(
-                user.Id,
-                "Tibbi gecmis kaydi eklendi",
-                $"{model.VisitDate:dd.MM.yyyy} tarihli yeni tibbi gecmis kaydiniz olusturuldu.",
-                "TibbiGecmis",
-                "/Patient/MedicalHistory");
-
-            TempData["SuccessMessage"] = "Tibbi gecmis kaydi eklendi.";
+            TempData["SuccessMessage"] = "Tıbbi kayıt başarıyla eklendi.";
             return RedirectToAction(nameof(MedicalHistory));
         }
 
@@ -524,105 +226,184 @@ namespace HastaneRandevuSistemi.Controllers
         public async Task<IActionResult> DeleteMedicalHistory(int id)
         {
             var user = await _userManager.GetUserAsync(User);
-            if (user == null)
+            if (user == null) return Challenge();
+
+            var record = await _context.MedicalHistories.FirstOrDefaultAsync(m => m.Id == id && m.UserId == user.Id);
+            if (record != null)
             {
-                return Challenge();
-            }
-
-            var record = await _context.MedicalHistories
-                .FirstOrDefaultAsync(m => m.Id == id && m.UserId == user.Id);
-
-            if (record == null)
-            {
-                TempData["ErrorMessage"] = "Silinecek tibbi gecmis kaydi bulunamadi.";
-                return RedirectToAction(nameof(MedicalHistory));
-            }
-
-            if (!string.IsNullOrWhiteSpace(record.AttachmentPath))
-            {
-                var physicalPath = Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "wwwroot",
-                    record.AttachmentPath.TrimStart('/').Replace('/', Path.DirectorySeparatorChar));
-
-                if (System.IO.File.Exists(physicalPath))
+                if (!string.IsNullOrEmpty(record.AttachmentPath))
                 {
-                    System.IO.File.Delete(physicalPath);
+                    var fullPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", record.AttachmentPath.TrimStart('/'));
+                    if (System.IO.File.Exists(fullPath)) System.IO.File.Delete(fullPath);
                 }
+                _context.MedicalHistories.Remove(record);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Kayıt başarıyla silindi.";
             }
 
-            _context.MedicalHistories.Remove(record);
-            await _context.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Tibbi gecmis kaydi silindi.";
             return RedirectToAction(nameof(MedicalHistory));
         }
 
-        private IQueryable<Appointment> GetPatientAppointmentsQuery(AppUser user)
+        public async Task<IActionResult> Notifications()
         {
-            return _context.Appointments
-                .AsNoTracking()
-                .Include(a => a.Doctor)
-                .ThenInclude(d => d!.Department)
-                .Where(a =>
-                    a.PatientUserId == user.Id ||
-                    (a.PatientUserId == null && a.PatientName == user.Name && a.PatientSurname == user.Surname));
-        }
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
 
-        private async Task<int> GetUnreadNotificationCountAsync(string userId)
-        {
-            return await _context.Notifications
-                .CountAsync(n => n.UserId == userId && !n.IsRead);
-        }
-
-        private async Task<PatientMedicalHistoryViewModel> BuildMedicalHistoryViewModelAsync(string userId)
-        {
-            var records = await _context.MedicalHistories
-                .Where(m => m.UserId == userId)
-                .OrderByDescending(m => m.VisitDate)
-                .ThenByDescending(m => m.CreatedAt)
-                .ToListAsync();
-            var prescriptions = await _context.Appointments
-                .AsNoTracking()
-                .Include(a => a.Doctor)
-                .ThenInclude(d => d!.Department)
-                .Where(a => a.PatientUserId == userId && !string.IsNullOrWhiteSpace(a.PrescriptionMedications))
-                .OrderByDescending(a => a.PrescriptionCreatedAt ?? a.AppointmentDate)
-                .ThenByDescending(a => a.Id)
-                .Select(a => new PatientPrescriptionItemViewModel
-                {
-                    AppointmentId = a.Id,
-                    AppointmentDate = a.AppointmentDate,
-                    PrescriptionDate = a.PrescriptionCreatedAt ?? a.AppointmentDate,
-                    DoctorName = ((a.Doctor!.Title ?? string.Empty) + " " + a.Doctor.Name + " " + a.Doctor.Surname).Trim(),
-                    DepartmentName = a.Doctor!.Department != null ? a.Doctor.Department.Name : string.Empty,
-                    Diagnosis = a.PrescriptionDiagnosis ?? "-",
-                    Medications = a.PrescriptionMedications!,
-                    Notes = a.PrescriptionNotes
-                })
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == user.Id)
+                .OrderByDescending(n => n.CreatedDate)
                 .ToListAsync();
 
-            return new PatientMedicalHistoryViewModel
+            // Mark all as read
+            var unread = notifications.Where(n => !n.IsRead).ToList();
+            if (unread.Any())
             {
-                Records = records,
-                Prescriptions = prescriptions
+                unread.ForEach(n => n.IsRead = true);
+                await _context.SaveChangesAsync();
+            }
+
+            return View(notifications);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DownloadPrescriptionPdf(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .FirstOrDefaultAsync(a => a.Id == id && a.PatientUserId == user.Id);
+
+            if (appointment == null)
+            {
+                TempData["ErrorMessage"] = "Reçete bulunamadı veya bu reçeteye erişim yetkiniz yok.";
+                return RedirectToAction(nameof(MedicalHistory));
+            }
+
+            if (appointment.PrescriptionCreatedAt == null || string.IsNullOrWhiteSpace(appointment.PrescriptionMedications))
+            {
+                TempData["ErrorMessage"] = "Bu randevu için henüz bir reçete oluşturulmamış.";
+                return RedirectToAction(nameof(MedicalHistory));
+            }
+
+            var model = new HastaneRandevuSistemi.ViewModels.PrescriptionDraftViewModel
+            {
+                AppointmentId = appointment.Id,
+                PatientName = appointment.PatientName,
+                PatientSurname = appointment.PatientSurname,
+                DoctorName = $"{appointment.Doctor?.Title} {appointment.Doctor?.Name} {appointment.Doctor?.Surname}".Trim(),
+                DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty,
+                PrescriptionDate = appointment.PrescriptionCreatedAt.Value,
+                Diagnosis = appointment.PrescriptionDiagnosis ?? "-",
+                Medications = appointment.PrescriptionMedications,
+                Notes = appointment.PrescriptionNotes
+            };
+
+            var pdf = SimplePdfGenerator.CreatePrescriptionPdf(model);
+            return File(pdf, "application/pdf", $"recete-{appointment.Id}.pdf");
+        }
+
+        [HttpPost]
+        [IgnoreAntiforgeryToken]
+        public IActionResult CheckSymptoms([FromBody] SymptomRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request?.Text))
+                    return BadRequest("Lütfen şikayetinizi belirtin.");
+
+                var lowerText = request.Text.ToLower(new System.Globalization.CultureInfo("tr-TR"));
+
+                // 1. Selamlaşma
+                var greetings = new[] { "selam", "merhaba", "naber", "nasılsın", "kimsin", "ismin ne" };
+                if (greetings.Any(g => lowerText.Contains(g)))
+                {
+                    return Json(new { IsChat = true, Message = "Merhaba! Ben ENS. Bugün kendinizi nasıl hissediyorsunuz? Şikayetinizi kısaca yazar mısınız?" });
+                }
+
+                // 2. Akıllı Soru-Cevap Mantığı (Dinamik Teşhis)
+                // Baş Ağrısı Akışı
+                if ((lowerText.Contains("baş") || lowerText.Contains("bas")) && lowerText.Contains("ağrı"))
+                {
+                    if (!lowerText.Contains("mide") && !lowerText.Contains("bulantı") && !lowerText.Contains("ışık"))
+                    {
+                        return Json(new { IsChat = true, Message = "Baş ağrınızın yanında mide bulantısı veya ışığa karşı hassasiyet var mı? (Bu bilgiler migren olasılığını değerlendirmem için önemli)" });
+                    }
+                }
+
+                // Karın Ağrısı Akışı
+                if ((lowerText.Contains("karın") || lowerText.Contains("karin") || lowerText.Contains("mide")) && lowerText.Contains("ağrı"))
+                {
+                    if (!lowerText.Contains("şiddet") && !lowerText.Contains("sağ") && !lowerText.Contains("sol"))
+                    {
+                        return Json(new { IsChat = true, Message = "Anladım. Ağrınız karnınızın tam olarak neresinde? Sağ alt tarafta bir batma hissi veya şiddetli bir kramp var mı?" });
+                    }
+                }
+
+                // Göğüs Ağrısı Akışı
+                if (lowerText.Contains("göğüs") || lowerText.Contains("gogus") || lowerText.Contains("kalp"))
+                {
+                    if (!lowerText.Contains("nefes") && !lowerText.Contains("kol") && !lowerText.Contains("çarpıntı"))
+                    {
+                        return Json(new { IsChat = true, Message = "Göğüs ağrınızla birlikte nefes darlığı veya sol kolunuzda bir uyuşma hissediyor musunuz?" });
+                    }
+                }
+
+                // 3. Semptom Analizi
+                var symptomMap = new Dictionary<string, string[]>
+                {
+                    { "bas_agrisi", new[] { "baş", "bas", "agri", "ağrı", "şakak", "zonklama", "migren", "ışık", "hassasiyet" } },
+                    { "bas_donmesi", new[] { "dönme", "donme", "denge", "sersemlik", "tansiyon" } },
+                    { "ates", new[] { "ateş", "ates", "sıcaklık", "titreme", "soğuk algınlığı" } },
+                    { "gogus_agrisi", new[] { "göğüs", "gogus", "kalp", "sıkışma", "nefes", "çarpıntı", "uyuşma" } },
+                    { "karin_agrisi", new[] { "karın", "karin", "mide", "bulantı", "kusma", "kramp", "batma" } },
+                    { "eklem_agrisi", new[] { "eklem", "diz", "omuz", "kemik", "romatizma" } },
+                    { "bogaz_agrisi", new[] { "boğaz", "yutkunma", "öksürük", "faranjit" } },
+                    { "dokuntu", new[] { "kaşıntı", "döküntü", "egzama", "alerji" } }
+                };
+
+                var detectedKeys = new List<string>();
+                foreach (var mapping in symptomMap)
+                {
+                    if (mapping.Value.Any(keyword => lowerText.Contains(keyword)))
+                        detectedKeys.Add(mapping.Key);
+                }
+
+                if (!detectedKeys.Any())
+                {
+                    return Json(new { IsChat = true, Message = "Üzgünüm, şikayetinizi tam anlayamadım. Biraz daha detay verebilir misiniz ya da 'Dahiliye' gibi genel bir bölüm önermemi ister misiniz?" });
+                }
+
+                var suggestions = _symptomCheckerService.Analyze(detectedKeys);
+                return Json(new { IsChat = false, Suggestions = suggestions });
+            }
+            catch
+            {
+                return Json(new { IsChat = true, Message = "Küçük bir teknik aksaklık oldu, lütfen şikayetinizi tekrar yazar mısınız?" });
+            }
+        }
+
+        private bool IsValidFile(IFormFile file)
+        {
+            var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
+            var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png" };
+            if (!allowedExtensions.Contains(extension)) return false;
+
+            Span<byte> header = stackalloc byte[8];
+            using var stream = file.OpenReadStream();
+            var read = stream.Read(header);
+
+            return extension.ToLowerInvariant() switch
+            {
+                ".pdf" => read >= 4 && header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46,
+                ".png" => read >= 8 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
+                ".jpg" or ".jpeg" => read >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
+                _ => false
             };
         }
 
-        private async Task CreateNotificationAsync(string userId, string title, string message, string type, string link)
-        {
-            _context.Notifications.Add(new Notification
-            {
-                UserId = userId,
-                Title = title,
-                Message = message,
-                Type = type,
-                Link = link,
-                CreatedDate = DateTime.Now
-            });
-
-            await _context.SaveChangesAsync();
-        }
+        public class SymptomRequest { public string Text { get; set; } }
     }
 }
-

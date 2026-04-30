@@ -1,4 +1,4 @@
-﻿@model HastaneRandevuSistemi.ViewModels.PrescriptionDraftViewModel
+@model HastaneRandevuSistemi.ViewModels.PrescriptionDraftViewModel
 
 @{
     ViewData["Title"] = "Reçete Oluştur";
@@ -13,7 +13,7 @@
                     <h2 class="fw-bold mb-1">@Model.PatientName @Model.PatientSurname</h2>
                     <p class="mb-0 text-muted">@Model.DepartmentName - @Model.DoctorName</p>
                 </div>
-                <a asp-controller="Home" asp-action="DoctorDashboard" class="btn btn-outline-primary rounded-pill px-4">Panele Dön</a>
+                <a asp-controller="Secretary" asp-action="Dashboard" class="btn btn-outline-primary rounded-pill px-4">Panele Dön</a>
             </div>
         </div>
     </div>

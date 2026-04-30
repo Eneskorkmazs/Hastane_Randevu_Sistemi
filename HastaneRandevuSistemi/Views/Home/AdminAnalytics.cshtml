@@ -1,0 +1,261 @@
+@model HastaneRandevuSistemi.Models.DashboardViewModel
+
+@{
+    ViewData["Title"] = "Grafikler ve Analitik";
+}
+
+<div class="container-fluid px-md-5 py-4">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4 border-bottom pb-4">
+        <div>
+            <h6 class="text-primary fw-bold text-uppercase small mb-1">Yönetim Analitiği</h6>
+            <h1 class="display-6 fw-bold text-dark mb-1">Grafikler ve Analitik</h1>
+            <p class="text-muted mb-0">Randevu dağılımı, haftalık trend ve poliklinik yoğunluğunu ayrı ekranda takip edin.</p>
+        </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">
+                <i class="fa-solid fa-arrow-left me-2"></i>Yönetim Merkezi
+            </a>
+            <a asp-action="AdminReport" class="btn btn-outline-primary rounded-pill px-4">Detaylı Rapor</a>
+            <a asp-action="AdminDoctorInsights" class="btn btn-outline-primary rounded-pill px-4">Doktor Analizi</a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 h-100">
+                <p class="text-muted x-small fw-bold mb-1">TOPLAM RANDEVU</p>
+                <h2 class="fw-bold mb-0">@Model.TotalAppointments</h2>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 h-100">
+                <p class="text-muted x-small fw-bold mb-1">AKTİF RANDEVU</p>
+                <h2 class="fw-bold mb-0">@Model.ActiveAppointments</h2>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 h-100">
+                <p class="text-muted x-small fw-bold mb-1">BU HAFTA</p>
+                <h2 class="fw-bold mb-0">@Model.ThisWeekAppointments</h2>
+            </div>
+        </div>
+        <div class="col-12 col-md-6 col-xl-3">
+            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 h-100">
+                <p class="text-muted x-small fw-bold mb-1">TEKİL HASTA</p>
+                <h2 class="fw-bold mb-0">@Model.UniquePatientCount</h2>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-12 col-xl-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fa-solid fa-chart-pie text-primary me-2"></i>Randevu Durum Dağılımı
+                    </h5>
+                    <div class="analytics-chart-box">
+                        <canvas id="statusDonutChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-xl-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">
+                        <i class="fa-solid fa-chart-bar text-success me-2"></i>Haftalık Randevu Trendi
+                    </h5>
+                    <div class="analytics-chart-box">
+                        <canvas id="weeklyTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-xl-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="fw-bold mb-1">Haftalık Randevu Trendi</h5>
+                            <p class="text-muted small mb-0">Grafiğin tablo karşılığı.</p>
+                        </div>
+                    </div>
+
+                    @if (!Model.WeeklyTrend.Any())
+                    {
+                        <div class="text-muted">Trend verisi bulunamadı.</div>
+                    }
+                    else
+                    {
+                        var maxTrend = Math.Max(Model.WeeklyTrend.Max(x => x.TotalCount), 1);
+                        <div class="trend-grid">
+                            @foreach (var point in Model.WeeklyTrend)
+                            {
+                                var width = Math.Max(10, (int)Math.Round(point.TotalCount * 100.0 / maxTrend));
+                                <div class="trend-row">
+                                    <div class="trend-label">@point.Label</div>
+                                    <div class="trend-bar-wrap">
+                                        <div class="trend-bar" style="width:@width%">
+                                            <span>@point.TotalCount</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3">En Yoğun Poliklinikler</h5>
+
+                    @if (!Model.DepartmentStats.Any())
+                    {
+                        <div class="text-muted">Bölüm istatistiği bulunamadı.</div>
+                    }
+                    else
+                    {
+                        <div class="list-group list-group-flush">
+                            @foreach (var item in Model.DepartmentStats)
+                            {
+                                <div class="list-group-item px-0 py-3">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <strong>@item.DepartmentName</strong>
+                                        <span class="badge bg-light text-dark border">@item.AppointmentCount randevu</span>
+                                    </div>
+                                    <small class="text-muted">@item.DoctorCount doktor aktif</small>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .analytics-chart-box {
+        position: relative;
+        min-height: 360px;
+    }
+
+    .analytics-chart-box canvas {
+        width: 100% !important;
+        height: 360px !important;
+    }
+
+    .trend-grid {
+        display: grid;
+        gap: 0.9rem;
+    }
+
+    .trend-row {
+        display: grid;
+        grid-template-columns: 56px 1fr;
+        align-items: center;
+        gap: 0.9rem;
+    }
+
+    .trend-label {
+        font-weight: 600;
+        color: #526173;
+    }
+
+    .trend-bar-wrap {
+        background: #edf3f8;
+        border-radius: 999px;
+        overflow: hidden;
+        min-height: 36px;
+    }
+
+    .trend-bar {
+        min-height: 36px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 0.85rem;
+        color: #fff;
+        font-weight: 700;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #0b5cad 0%, #0d8bd6 100%);
+    }
+</style>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        (function () {
+            const ctx = document.getElementById('statusDonutChart');
+            if (!ctx) return;
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Bekleyen', 'Onaylanan', 'Tamamlanan', 'İptal'],
+                    datasets: [{
+                        data: [
+                            @Model.PendingAppointments,
+                            @Model.ApprovedAppointments,
+                            @Model.CompletedAppointments,
+                            @Model.CancelledAppointments
+                        ],
+                        backgroundColor: ['#ffc107', '#198754', '#0d6efd', '#dc3545'],
+                        borderWidth: 2,
+                        borderColor: '#fff',
+                        hoverOffset: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '65%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 16, font: { size: 13 } } },
+                        tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.parsed} randevu` } }
+                    },
+                    animation: { animateRotate: true, duration: 900 }
+                }
+            });
+        })();
+
+        (function () {
+            const ctx = document.getElementById('weeklyTrendChart');
+            if (!ctx) return;
+            const labels = [@Html.Raw(string.Join(",", Model.WeeklyTrend.Select(t => $"\"{t.Label}\"")))];
+            const data = [@Html.Raw(string.Join(",", Model.WeeklyTrend.Select(t => t.TotalCount)))];
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels,
+                    datasets: [{
+                        label: 'Randevu Sayısı',
+                        data,
+                        backgroundColor: 'rgba(13,110,253,0.75)',
+                        borderRadius: 8,
+                        borderSkipped: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { callbacks: { label: ctx => ` ${ctx.parsed.y} randevu` } }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, ticks: { stepSize: 1 }, grid: { color: 'rgba(0,0,0,0.05)' } },
+                        x: { grid: { display: false } }
+                    },
+                    animation: { duration: 800 }
+                }
+            });
+        })();
+    </script>
+}

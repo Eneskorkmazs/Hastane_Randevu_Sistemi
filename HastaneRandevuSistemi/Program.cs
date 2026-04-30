@@ -11,7 +11,23 @@ using Microsoft.EntityFrameworkCore;
 using System.IO;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Serilog;
+using Serilog.Events;
 using System.Text;
+
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .WriteTo.Debug()
+    .WriteTo.File(
+        Path.Combine("Logs", "hrs-.log"),
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 14,
+        shared: true)
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,11 +36,22 @@ if (string.IsNullOrWhiteSpace(builder.Configuration["ASPNETCORE_URLS"]))
     builder.WebHost.UseUrls("http://localhost:5087");
 }
 
-// Varsayilan EventLog provider'i bu ortamda yetki hatasi uretebildigi icin
-// explicit olarak guvenli provider'lara dusuyoruz.
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddDebug();
+builder.Host.UseSerilog((context, services, configuration) =>
+{
+    configuration
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext()
+        .MinimumLevel.Information()
+        .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
+        .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+        .WriteTo.Console()
+        .WriteTo.Debug()
+        .WriteTo.File(
+            Path.Combine(context.HostingEnvironment.ContentRootPath, "Logs", "hrs-.log"),
+            rollingInterval: RollingInterval.Day,
+            retainedFileCountLimit: 14,
+            shared: true);
+}, preserveStaticLogger: true);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 var localConnectionString = builder.Configuration.GetConnectionString("LocalDefaultConnection")
@@ -90,6 +117,7 @@ builder.Services.AddIdentity<AppUser, IdentityRole>(options =>
 .AddDefaultTokenProviders();
 
 builder.Services.AddScoped<HastaneRandevuSistemi.Services.EmailService>();
+builder.Services.AddScoped<HastaneRandevuSistemi.Services.ISymptomCheckerService, HastaneRandevuSistemi.Services.SymptomCheckerService>();
 builder.Services.AddHttpClient<HastaneRandevuSistemi.Services.SmsService>();
 builder.Services.AddHostedService<HastaneRandevuSistemi.Services.AppointmentReminderService>();
 builder.Services.AddMemoryCache();
@@ -104,6 +132,7 @@ builder.Services.AddAntiforgery(options =>
     options.Cookie.Name = "__HRS-CSRF";
     options.Cookie.HttpOnly = true;
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        || builder.Environment.IsEnvironment("Testing")
         ? CookieSecurePolicy.SameAsRequest
         : CookieSecurePolicy.Always;
     options.Cookie.SameSite = SameSiteMode.Strict;
@@ -119,6 +148,7 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Lax;
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        || builder.Environment.IsEnvironment("Testing")
         ? CookieSecurePolicy.SameAsRequest
         : CookieSecurePolicy.Always;
 });
@@ -172,7 +202,7 @@ app.Use(async (context, next) =>
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
     context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
     context.Response.Headers["Content-Security-Policy"] =
-        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data:;";
+        "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:; img-src 'self' data: https://www.transparenttextures.com;";
     await next();
 });
 app.UseRouting();
@@ -183,18 +213,24 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-using (var scope = app.Services.CreateScope())
+if (!app.Environment.IsEnvironment("Testing"))
 {
-    var services = scope.ServiceProvider;
-    try
+    using (var scope = app.Services.CreateScope())
     {
-        await DbSeeder.Seed(services);
-    }
-    catch (Exception ex)
-    {
-        var logger = services.GetRequiredService<ILogger<Program>>();
-        logger.LogError(ex, "Veritabani tohumlanirken bir hata olustu.");
+        var services = scope.ServiceProvider;
+        try
+        {
+            await DbSeeder.Seed(services);
+        }
+        catch (Exception ex)
+        {
+            var logger = services.GetRequiredService<ILogger<Program>>();
+            logger.LogError(ex, "Veritabani tohumlanirken bir hata olustu.");
+        }
     }
 }
 
 app.Run();
+Log.CloseAndFlush();
+
+public partial class Program { }

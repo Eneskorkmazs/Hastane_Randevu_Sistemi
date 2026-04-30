@@ -1,4 +1,4 @@
-﻿@model HastaneRandevuSistemi.ViewModels.LoginViewModel
+@model HastaneRandevuSistemi.ViewModels.LoginViewModel
 
 @{
     ViewData["Title"] = "Giriş Yap";
@@ -26,58 +26,67 @@
         <div class="card-body p-4 p-md-5">
             <form asp-action="Login" asp-route-returnUrl="@returnUrl" method="post" id="loginForm">
                 @Html.AntiForgeryToken()
-                <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-4"></div>
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-4" role="alert" aria-live="assertive"></div>
 
                 <input asp-for="SelectedRole" type="hidden" id="SelectedRole" />
 
                 <div class="mb-4">
                     <div class="d-flex justify-content-between align-items-end gap-3 flex-wrap mb-3">
-                        <label class="form-label fw-semibold mb-0">Giriş türünü seçin</label>
+                        <label class="form-label fw-semibold mb-0" id="rolePickerLabel">Giriş türünü seçin</label>
                         <button type="button" id="changeRoleBtn" class="btn btn-link p-0 text-decoration-none fw-semibold d-none">
                             Seçimi değiştir
                         </button>
                     </div>
 
-                    <div class="row g-3" id="rolePickerRow">
-                        <div class="col-md-6">
-                            <button type="button" class="entry-card patient-card w-100 text-start" data-role="Hasta">
-                                <span class="entry-emoji patient">🩺</span>
+                    <div class="row g-3" id="rolePickerRow" role="group" aria-labelledby="rolePickerLabel">
+                        <div class="col-md-4">
+                            <button type="button" class="entry-card patient-card w-100 text-start" data-role="Hasta" aria-pressed="false">
+                                <span class="entry-emoji patient" aria-hidden="true">🩺</span>
                                 <span class="entry-content">
                                     <strong>Hasta olarak giriş yap</strong>
                                     <small class="entry-selected">Seçildi</small>
                                 </span>
                             </button>
                         </div>
-                        <div class="col-md-6">
-                            <button type="button" class="entry-card doctor-card w-100 text-start" data-role="Doktor">
-                                <span class="entry-emoji doctor">👨‍⚕️</span>
+                        <div class="col-md-4">
+                            <button type="button" class="entry-card doctor-card w-100 text-start" data-role="Doktor" aria-pressed="false">
+                                <span class="entry-emoji doctor" aria-hidden="true">👨‍⚕️</span>
                                 <span class="entry-content">
                                     <strong>Doktor olarak giriş yap</strong>
                                     <small class="entry-selected">Seçildi</small>
                                 </span>
                             </button>
                         </div>
+                        <div class="col-md-4">
+                            <button type="button" class="entry-card secretary-card w-100 text-start" data-role="Sekreter" aria-pressed="false">
+                                <span class="entry-emoji secretary" aria-hidden="true">📋</span>
+                                <span class="entry-content">
+                                    <strong>Sekreter olarak giriş yap</strong>
+                                    <small class="entry-selected">Seçildi</small>
+                                </span>
+                            </button>
+                        </div>
                     </div>
 
-                    <div class="mt-3 small text-muted">
+                    <div class="mt-3 small text-muted" id="rolePickerHint">
                         Not: Admin hesabı e-posta ve şifre ile aynı ekrandan giriş yapar. Rol kontrolü sistem tarafından otomatik yapılır.
                     </div>
                 </div>
 
-                <div id="credentialsPanel" class="credentials-panel d-none">
+                <div id="credentialsPanel" class="credentials-panel d-none" aria-live="polite">
                     <div class="row g-3">
                         <div class="col-12">
                             <label asp-for="Email" class="form-label fw-semibold"></label>
-                            <input asp-for="Email" class="form-control form-control-lg" placeholder="ornek@mail.com" />
+                            <input asp-for="Email" class="form-control form-control-lg" placeholder="ornek@mail.com" autocomplete="email" />
                             <span asp-validation-for="Email" class="text-danger small"></span>
                         </div>
 
                         <div class="col-12">
                             <label asp-for="Password" class="form-label fw-semibold"></label>
                             <div class="input-group input-group-lg">
-                                <input asp-for="Password" type="password" class="form-control" placeholder="Şifreniz" id="loginPassword" />
-                                <button type="button" id="toggleLoginPassword" class="btn btn-outline-secondary" tabindex="-1" aria-label="Şifreyi göster / gizle">
-                                    <i class="fa-solid fa-eye" id="loginPasswordIcon"></i>
+                                <input asp-for="Password" type="password" class="form-control" placeholder="Şifreniz" id="loginPassword" autocomplete="current-password" />
+                                <button type="button" id="toggleLoginPassword" class="btn btn-outline-secondary" tabindex="-1" aria-label="Şifreyi göster veya gizle" aria-pressed="false">
+                                    <i class="fa-solid fa-eye" id="loginPasswordIcon" aria-hidden="true"></i>
                                 </button>
                             </div>
                             <span asp-validation-for="Password" class="text-danger small"></span>
@@ -173,6 +182,16 @@
         box-shadow: 0 0 0 4px rgba(147, 197, 253, 0.2);
     }
 
+    .secretary-card {
+        border-color: #2b5c46;
+        background: linear-gradient(135deg, #3d8061 0%, #1f4232 100%);
+    }
+
+    .secretary-card.active {
+        border-color: #a7f3d0;
+        box-shadow: 0 0 0 4px rgba(167, 243, 208, 0.2);
+    }
+
     .entry-card.hidden-choice {
         opacity: 0;
         transform: scale(0.94);
@@ -204,6 +223,10 @@
 
     .entry-emoji.doctor {
         color: #e2e8f0;
+    }
+
+    .entry-emoji.secretary {
+        color: #d1fae5;
     }
 
     .entry-card strong {
@@ -285,6 +308,7 @@
                 cards.forEach(card => {
                     const role = card.getAttribute("data-role");
                     card.classList.toggle("hidden-choice", role !== selectedRole);
+                    card.setAttribute("aria-pressed", role === selectedRole ? "true" : "false");
                 });
 
                 if (changeRoleBtn) {
@@ -293,7 +317,10 @@
             };
 
             const resetRoleSelection = () => {
-                cards.forEach(card => card.classList.remove("hidden-choice", "active"));
+                cards.forEach(card => {
+                    card.classList.remove("hidden-choice", "active");
+                    card.setAttribute("aria-pressed", "false");
+                });
 
                 if (roleField) {
                     roleField.value = "";
@@ -316,6 +343,7 @@
                 cards.forEach(card => {
                     const cardRole = card.getAttribute("data-role");
                     card.classList.toggle("active", cardRole === role);
+                    card.setAttribute("aria-pressed", cardRole === role ? "true" : "false");
                 });
 
                 if (roleField) {
@@ -334,6 +362,7 @@
                     const isPassword = input.type === "password";
                     input.type = isPassword ? "text" : "password";
                     icon.className = isPassword ? "fa-solid fa-eye-slash" : "fa-solid fa-eye";
+                    button.setAttribute("aria-pressed", isPassword ? "true" : "false");
                 });
             }
 
@@ -354,11 +383,9 @@
                         return;
                     }
 
-                    if (!roleField.value) {
-                        const activeCard = document.querySelector(".entry-card.active");
-                        const activeRole = activeCard?.getAttribute("data-role");
-                        roleField.value = activeRole || "Hasta";
-                    }
+                    const activeCard = document.querySelector(".entry-card.active");
+                    const activeRole = activeCard?.getAttribute("data-role");
+                    roleField.value = activeRole || "";
                 });
             }
 

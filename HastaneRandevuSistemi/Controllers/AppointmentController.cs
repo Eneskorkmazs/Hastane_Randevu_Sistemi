@@ -1,4 +1,4 @@
-﻿using HastaneRandevuSistemi.Data;
+using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.Globalization;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace HastaneRandevuSistemi.Controllers
 {
@@ -125,13 +127,9 @@ namespace HastaneRandevuSistemi.Controllers
                     ? appointmentsQuery.Where(a => a.DoctorId == doctorIdByUser.Value)
                     : appointmentsQuery.Where(a => a.Id == -1);
             }
-            else if (User.IsInRole("Admin"))
+            else if (User.IsInRole("Sekreter"))
             {
-                appointmentsQuery = appointmentsQuery.Where(a =>
-                    a.AdminAccessGranted ||
-                    a.AdminAccessRequested ||
-                    a.Status == AppointmentStatus.Bekliyor ||
-                    a.Status == AppointmentStatus.Onaylandi);
+                // Sekreter can see all appointments
             }
             else if (User.IsInRole("Hasta"))
             {
@@ -144,7 +142,7 @@ namespace HastaneRandevuSistemi.Controllers
                 }
             }
 
-            if (User.IsInRole("Admin") && doctorId.HasValue)
+            if (User.IsInRole("Sekreter") && doctorId.HasValue)
             {
                 appointmentsQuery = appointmentsQuery.Where(a => a.DoctorId == doctorId);
             }
@@ -193,17 +191,6 @@ namespace HastaneRandevuSistemi.Controllers
             ViewData["SortBy"] = sortBy;
             ViewData["OnlyUpcoming"] = onlyUpcoming;
 
-            if (User.IsInRole("Doktor"))
-            {
-                var doctorIdByUser = await GetCurrentDoctorIdAsync();
-                ViewData["AccessRequestBadgeCount"] = doctorIdByUser.HasValue
-                    ? await _context.Appointments.CountAsync(a => a.DoctorId == doctorIdByUser.Value && a.AdminAccessRequested && !a.AdminAccessGranted)
-                    : 0;
-            }
-            else if (User.IsInRole("Admin"))
-            {
-                ViewData["AccessRequestBadgeCount"] = await _context.Appointments.CountAsync(a => a.AdminAccessRequested && !a.AdminAccessGranted);
-            }
 
             ViewData["StatusOptions"] = Enum.GetValues(typeof(AppointmentStatus))
                 .Cast<AppointmentStatus>()
@@ -225,7 +212,7 @@ namespace HastaneRandevuSistemi.Controllers
                 })
                 .ToListAsync();
 
-            if (User.IsInRole("Admin"))
+            if (User.IsInRole("Sekreter"))
             {
                 ViewData["DoctorOptions"] = await _context.Doctors
                     .OrderBy(d => d.Name)
@@ -250,7 +237,7 @@ namespace HastaneRandevuSistemi.Controllers
             return View(await appointmentsQuery.ToListAsync());
         }
 
-        [Authorize(Roles = "Admin,Hasta")]
+        [Authorize(Roles = "Sekreter,Hasta")]
         public async Task<IActionResult> Create()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -267,7 +254,7 @@ namespace HastaneRandevuSistemi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Hasta")]
+        [Authorize(Roles = "Sekreter,Hasta")]
         public async Task<IActionResult> Create([Bind("Id,AppointmentDate,PatientName,PatientSurname,PatientPhone,DoctorId")] Appointment appointment)
         {
             var currentUser = await _userManager.GetUserAsync(User);
@@ -294,7 +281,7 @@ namespace HastaneRandevuSistemi.Controllers
             var createHolidayMap = BuildHolidayMap(appointment.AppointmentDate.Year);
             if (createHolidayMap.TryGetValue(DateOnly.FromDateTime(appointment.AppointmentDate), out var createHolidayLabel))
             {
-                ModelState.AddModelError(nameof(appointment.AppointmentDate), $"Secilen tarih resmi tatildir ({createHolidayLabel}). Bu gun randevu verilemez.");
+                ModelState.AddModelError(nameof(appointment.AppointmentDate), $"Seçilen tarih resmi tatildir ({createHolidayLabel}). Bu gün randevu verilemez.");
             }
 
             var availabilityPlan = await GetDoctorAvailabilityPlanAsync(appointment.DoctorId);
@@ -347,7 +334,7 @@ namespace HastaneRandevuSistemi.Controllers
 
             await _smsService.SendAppointmentSmsAsync(
                 appointment.PatientPhone ?? currentUser?.Telefon ?? currentUser?.PhoneNumber,
-                $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli {departmentForMessageName} / {doctorForMessageName} randevunuz olusturuldu. Saglikli gunler.");
+                $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli {departmentForMessageName} / {doctorForMessageName} randevunuz oluşturuldu. Sağlıklı günler.");
 
             var patientUserForMessaging = currentUser;
             if (!string.IsNullOrWhiteSpace(appointment.PatientUserId) &&
@@ -361,16 +348,16 @@ namespace HastaneRandevuSistemi.Controllers
                 var bookingMailBody = $@"
 <div style='font-family: Arial, sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;'>
     <h2 style='color: #2c3e50;'>Hastane Randevu Sistemi</h2>
-    <h3 style='color: #34495e;'>Randevunuz Olusturuldu</h3>
-    <p style='font-size: 16px; color: #555;'>{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli {departmentForMessageName} / {doctorForMessageName} randevunuz olusturulmustur.</p>
+    <h3 style='color: #34495e;'>Randevunuz Oluşturuldu</h3>
+    <p style='font-size: 16px; color: #555;'>{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli {departmentForMessageName} / {doctorForMessageName} randevunuz oluşturulmuştur.</p>
     <p style='font-size: 14px; color: #777;'>Randevu No: {appointment.Id}</p>
     <hr style='border: 0; border-top: 1px solid #ddd; margin: 20px 0;'/>
-    <p style='font-size: 12px; color: #aaa;'>Saglikli gunler dileriz.</p>
+    <p style='font-size: 12px; color: #aaa;'>Sağlıklı günler dileriz.</p>
 </div>";
 
                 await _emailService.SendEmailAsync(
                     patientUserForMessaging.Email,
-                    "Randevunuz olusturuldu",
+                    "Randevunuz oluşturuldu",
                     bookingMailBody);
             }
 
@@ -395,7 +382,7 @@ namespace HastaneRandevuSistemi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Doktor")]
+        [Authorize(Roles = "Sekreter,Doktor")]
         public async Task<IActionResult> SendReminder(int id)
         {
             var appointment = await _context.Appointments
@@ -405,7 +392,7 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (appointment == null)
             {
-                TempData["ErrorMessage"] = "Hatirlatma gonderilecek randevu bulunamadi.";
+                TempData["ErrorMessage"] = "Hatırlatma gönderilecek randevu bulunamadı.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -414,52 +401,46 @@ namespace HastaneRandevuSistemi.Controllers
                 return Forbid();
             }
 
-            if (User.IsInRole("Admin") && !appointment.AdminAccessGranted)
-            {
-                TempData["ErrorMessage"] = "Bu randevu icin once doktorun admin erisim izni vermesi gerekir.";
-                return RedirectToAction(nameof(Index));
-            }
-
             if (appointment.Status is AppointmentStatus.Iptal or AppointmentStatus.Tamamlandi)
             {
-                TempData["InfoMessage"] = "Sadece aktif randevular icin hatirlatma gonderilebilir.";
+                TempData["InfoMessage"] = "Sadece aktif randevular için hatırlatma gönderilebilir.";
                 return RedirectToAction(nameof(Index));
             }
 
             if (appointment.AppointmentDate <= DateTime.Now)
             {
-                TempData["InfoMessage"] = "Gecmis randevular icin hatirlatma gonderilemez.";
+                TempData["InfoMessage"] = "Geçmiş randevular için hatırlatma gönderilemez.";
                 return RedirectToAction(nameof(Index));
             }
 
             if (string.IsNullOrWhiteSpace(appointment.PatientUserId))
             {
-                TempData["ErrorMessage"] = "Bu randevuya bagli bir hasta kullanicisi bulunamadigi icin hatirlatma gonderilemedi.";
+                TempData["ErrorMessage"] = "Bu randevuya bağlı bir hasta kullanıcısı bulunamadığı için hatırlatma gönderilemedi.";
                 return RedirectToAction(nameof(Index));
             }
 
             var doctorName = appointment.Doctor == null
                 ? "doktorunuz"
                 : $"{appointment.Doctor.Title} {appointment.Doctor.Name} {appointment.Doctor.Surname}".Trim();
-            var departmentName = appointment.Doctor?.Department?.Name ?? "ilgili bolum";
+            var departmentName = appointment.Doctor?.Department?.Name ?? "ilgili bölüm";
             var reminderText = appointment.AppointmentDate - DateTime.Now <= TimeSpan.FromHours(24)
-                ? "Randevu saatiniz yaklasiyor."
-                : "Randevu tarihinizi unutmayiniz.";
+                ? "Randevu saatiniz yaklaşıyor."
+                : "Randevu tarihinizi unutmayınız.";
 
             await CreateNotificationAsync(
                 appointment.PatientUserId,
-                "Randevu hatirlatmasi",
-                $"{reminderText} {appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihindeki {departmentName} / {doctorName} randevunuz icin bilgilendirme mesajidir.",
-                "Hatirlatma",
+                "Randevu hatırlatması",
+                $"{reminderText} {appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihindeki {departmentName} / {doctorName} randevunuz için bilgilendirme mesajıdır.",
+                "Hatırlatma",
                 "/Appointment/Index");
 
-            TempData["SuccessMessage"] = "Hatirlatma bildirimi ve e-postasi gonderildi.";
+            TempData["SuccessMessage"] = "Hatırlatma bildirimi ve e-postası gönderildi.";
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Doktor")]
+        [Authorize(Roles = "Sekreter")]
         public async Task<IActionResult> Approve(int id)
         {
             var appointment = await _context.Appointments.FindAsync(id);
@@ -471,12 +452,6 @@ namespace HastaneRandevuSistemi.Controllers
             if (User.IsInRole("Doktor") && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
             {
                 return Forbid();
-            }
-
-            if (User.IsInRole("Admin") && !appointment.AdminAccessGranted)
-            {
-                TempData["ErrorMessage"] = "Bu randevu icin once doktorun admin erisim izni vermesi gerekir.";
-                return RedirectToAction(nameof(Index));
             }
 
             if (appointment.Status == AppointmentStatus.Tamamlandi)
@@ -491,8 +466,6 @@ namespace HastaneRandevuSistemi.Controllers
             appointment.ApprovedByUserId = actor.UserId;
             appointment.ApprovedByName = actor.DisplayName;
             appointment.ApprovedDate = DateTime.Now;
-            appointment.IsCollected = true;
-            appointment.CollectedDate ??= DateTime.Now;
             await _context.SaveChangesAsync();
 
             if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
@@ -500,7 +473,7 @@ namespace HastaneRandevuSistemi.Controllers
                 await CreateNotificationAsync(
                     appointment.PatientUserId,
                     "Randevunuz onaylandı",
-                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz onaylandı ve odemeniz alindi.",
+                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz onaylandı. Ödeme randevu tamamlandıktan sonra alınacaktır.",
                     "Durum",
                     "/Appointment/Index");
             }
@@ -510,7 +483,7 @@ namespace HastaneRandevuSistemi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Doktor,Hasta")]
+        [Authorize(Roles = "Sekreter,Hasta")]
         public async Task<IActionResult> Cancel(int id)
         {
             var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == id);
@@ -519,7 +492,7 @@ namespace HastaneRandevuSistemi.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            var isAdmin = User.IsInRole("Admin");
+            var isSekreter = User.IsInRole("Sekreter");
             var isDoctor = User.IsInRole("Doktor");
             var isPatient = User.IsInRole("Hasta");
 
@@ -532,12 +505,6 @@ namespace HastaneRandevuSistemi.Controllers
             if (isDoctor && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
             {
                 return Forbid();
-            }
-
-            if (isAdmin && !appointment.AdminAccessGranted)
-            {
-                TempData["ErrorMessage"] = "Bu randevu icin once doktorun admin erisim izni vermesi gerekir.";
-                return RedirectToAction(nameof(Index));
             }
 
             if (isPatient)
@@ -554,7 +521,7 @@ namespace HastaneRandevuSistemi.Controllers
                 }
             }
 
-            if (!isAdmin && !isDoctor && !isPatient)
+            if (!isSekreter && !isDoctor && !isPatient)
             {
                 return Forbid();
             }
@@ -574,7 +541,7 @@ namespace HastaneRandevuSistemi.Controllers
 
                 if (isPatient)
                 {
-                    appointment.CancelledByName = $"{actor.DisplayName} (Admin tarafindan odemesi geri iade edildi)";
+                    appointment.CancelledByName = $"{actor.DisplayName} (Admin tarafından ödemesi geri iade edildi)";
                 }
             }
 
@@ -585,26 +552,26 @@ namespace HastaneRandevuSistemi.Controllers
                 var cancelMessage = $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz iptal edildi.";
                 if (wasCollectedBeforeCancel)
                 {
-                    cancelMessage += " Admin tarafindan odeme iadeniz yapildi.";
+                    cancelMessage += " Admin tarafından ödeme iadeniz yapıldı.";
                 }
 
                 await CreateNotificationAsync(
                     appointment.PatientUserId,
-                    "Randevu durumu guncellendi",
+                    "Randevu durumu güncellendi",
                     cancelMessage,
                     "Durum",
                     "/Appointment/Index");
             }
 
             TempData["SuccessMessage"] = wasCollectedBeforeCancel
-                ? "Randevu iptal edildi ve odeme iadesi yapildi."
+                ? "Randevu iptal edildi ve ödeme iadesi yapıldı."
                 : "Randevu iptal edildi.";
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin,Doktor")]
+        [Authorize(Roles = "Sekreter")]
         public async Task<IActionResult> Complete(int id)
         {
             var appointment = await _context.Appointments.FindAsync(id);
@@ -616,12 +583,6 @@ namespace HastaneRandevuSistemi.Controllers
             if (User.IsInRole("Doktor") && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
             {
                 return Forbid();
-            }
-
-            if (User.IsInRole("Admin") && !appointment.AdminAccessGranted)
-            {
-                TempData["ErrorMessage"] = "Bu randevu icin once doktorun admin erisim izni vermesi gerekir.";
-                return RedirectToAction(nameof(Index));
             }
 
             if (appointment.AppointmentDate > DateTime.Now)
@@ -654,25 +615,25 @@ namespace HastaneRandevuSistemi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Sekreter")]
         public async Task<IActionResult> MarkCollected(int id)
         {
             var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == id);
             if (appointment == null)
             {
-                TempData["ErrorMessage"] = "Odeme islenecek randevu bulunamadi.";
+                TempData["ErrorMessage"] = "Ödeme işlenecek randevu bulunamadı.";
                 return RedirectToAction(nameof(Index));
             }
 
             if (appointment.Status == AppointmentStatus.Iptal)
             {
-                TempData["ErrorMessage"] = "Iptal edilen randevu icin odeme alinamaz.";
+                TempData["ErrorMessage"] = "İptal edilen randevu için ödeme alınamaz.";
                 return RedirectToAction(nameof(Index));
             }
 
             if (appointment.AppointmentDate > DateTime.Now)
             {
-                TempData["ErrorMessage"] = "Randevu bitmeden odeme alindi olarak isaretlenemez.";
+                TempData["ErrorMessage"] = "Randevu bitmeden ödeme alındı olarak işaretlenemez.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -689,31 +650,31 @@ namespace HastaneRandevuSistemi.Controllers
             {
                 await CreateNotificationAsync(
                     appointment.PatientUserId,
-                    "Odemeniz alindi",
-                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz icin odeme kaydi tamamlandi.",
-                    "Odeme",
+                    "Ödemeniz alındı",
+                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz için ödeme kaydı tamamlandı.",
+                    "Ödeme",
                     "/Appointment/Index");
             }
 
-            TempData["SuccessMessage"] = "Odeme alindi olarak guncellendi.";
+            TempData["SuccessMessage"] = "Ödeme alındı olarak güncellendi.";
             return RedirectToAction(nameof(Index));
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Sekreter")]
         public async Task<IActionResult> CancelCollected(int id)
         {
             var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == id);
             if (appointment == null)
             {
-                TempData["ErrorMessage"] = "Odeme kaydi bulunamadi.";
+                TempData["ErrorMessage"] = "Ödeme kaydı bulunamadı.";
                 return RedirectToAction(nameof(Index));
             }
 
             if (appointment.AppointmentDate > DateTime.Now)
             {
-                TempData["ErrorMessage"] = "Randevu bitmeden odeme kaydi degistirilemez.";
+                TempData["ErrorMessage"] = "Randevu bitmeden ödeme kaydı değiştirilemez.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -725,178 +686,17 @@ namespace HastaneRandevuSistemi.Controllers
             {
                 await CreateNotificationAsync(
                     appointment.PatientUserId,
-                    "Odeme kaydi guncellendi",
-                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz icin odeme kaydi iptal edildi.",
-                    "Odeme",
+                    "Ödeme kaydı güncellendi",
+                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz için ödeme kaydı iptal edildi.",
+                    "Ödeme",
                     "/Appointment/Index");
             }
 
-            TempData["SuccessMessage"] = "Odeme iptal edildi olarak guncellendi.";
+            TempData["SuccessMessage"] = "Ödeme iptal edildi olarak güncellendi.";
             return RedirectToAction(nameof(Index));
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> RequestDoctorAccess(int id)
-        {
-            var appointment = await _context.Appointments
-                .Include(a => a.Doctor)
-                .FirstOrDefaultAsync(a => a.Id == id);
 
-            if (appointment == null)
-            {
-                TempData["ErrorMessage"] = "Erisim istenen randevu bulunamadi.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (appointment.AdminAccessGranted)
-            {
-                TempData["InfoMessage"] = "Bu randevu icin doktor izni zaten verilmis.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (appointment.AdminAccessRequested)
-            {
-                TempData["InfoMessage"] = "Bu randevu icin doktor onayi zaten bekleniyor.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            var actor = await GetCurrentActorAsync();
-            appointment.AdminAccessRequested = true;
-            appointment.AdminAccessRequestedDate = DateTime.Now;
-            appointment.AdminAccessRequestedByUserId = actor.UserId;
-            appointment.AdminAccessRequestedByName = actor.DisplayName;
-
-            await _context.SaveChangesAsync();
-
-            if (!string.IsNullOrWhiteSpace(appointment.Doctor?.UserId))
-            {
-                await CreateNotificationAsync(
-                    appointment.Doctor.UserId,
-                    "Admin erisim talebi",
-                    $"{actor.DisplayName}, {appointment.PatientName} {appointment.PatientSurname} randevusu icin izin istiyor.",
-                    "Izin",
-                    "/Appointment/Index");
-            }
-
-            TempData["SuccessMessage"] = "Doktora erisim talebi gonderildi.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Doktor")]
-        public async Task<IActionResult> GrantAdminAccess(int id)
-        {
-            var appointment = await _context.Appointments
-                .FirstOrDefaultAsync(a => a.Id == id);
-
-            if (appointment == null)
-            {
-                TempData["ErrorMessage"] = "Onaylanacak erisim talebi bulunamadi.";
-                return RedirectToAction(nameof(Index));
-            }
-
-            if (!await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
-            {
-                return Forbid();
-            }
-
-            if (!appointment.AdminAccessRequested)
-            {
-                TempData["ErrorMessage"] = "Erisim izni verilmedi.";
-                return RedirectToAction(nameof(DoctorAccessRequests));
-            }
-
-            var actor = await GetCurrentActorAsync();
-
-            appointment.AdminAccessRequested = false;
-            appointment.AdminAccessGranted = true;
-            appointment.AdminAccessGrantedDate = DateTime.Now;
-            appointment.AdminAccessGrantedByUserId = actor.UserId;
-            appointment.AdminAccessGrantedByName = actor.DisplayName;
-
-            await _context.SaveChangesAsync();
-
-            if (!string.IsNullOrWhiteSpace(appointment.AdminAccessRequestedByUserId))
-            {
-                await CreateNotificationAsync(
-                    appointment.AdminAccessRequestedByUserId,
-                    "Doktor erisim izni verdi",
-                    $"{appointment.PatientName} {appointment.PatientSurname} randevusu icin admin erisimi onaylandi.",
-                    "Izin",
-                    "/Appointment/Index");
-            }
-
-            TempData["SuccessMessage"] = "Admin erisim izni verildi.";
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Authorize(Roles = "Doktor")]
-        public async Task<IActionResult> DenyAdminAccess(int id)
-        {
-            var appointment = await _context.Appointments
-                .FirstOrDefaultAsync(a => a.Id == id);
-
-            if (appointment == null)
-            {
-                TempData["ErrorMessage"] = "Reddedilecek erisim talebi bulunamadi.";
-                return RedirectToAction(nameof(DoctorAccessRequests));
-            }
-
-            if (!await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
-            {
-                return Forbid();
-            }
-
-            var requestedByUserId = appointment.AdminAccessRequestedByUserId;
-            appointment.AdminAccessRequested = false;
-            appointment.AdminAccessRequestedDate = null;
-            appointment.AdminAccessRequestedByUserId = null;
-            appointment.AdminAccessRequestedByName = null;
-            appointment.AdminAccessGranted = false;
-            appointment.AdminAccessGrantedDate = null;
-            appointment.AdminAccessGrantedByUserId = null;
-            appointment.AdminAccessGrantedByName = null;
-            await _context.SaveChangesAsync();
-
-            if (!string.IsNullOrWhiteSpace(requestedByUserId))
-            {
-                await CreateNotificationAsync(
-                    requestedByUserId,
-                    "Doktor erisim talebini reddetti",
-                    $"{appointment.PatientName} {appointment.PatientSurname} randevusu icin admin erisim talebi reddedildi.",
-                    "Izin",
-                    "/Appointment/Index");
-            }
-
-            TempData["SuccessMessage"] = "Erisim izni verilmedi.";
-            return RedirectToAction(nameof(DoctorAccessRequests));
-        }
-
-        [HttpGet]
-        [Authorize(Roles = "Doktor")]
-        public async Task<IActionResult> DoctorAccessRequests()
-        {
-            var doctorId = await GetCurrentDoctorIdAsync();
-            if (!doctorId.HasValue)
-            {
-                return NotFound();
-            }
-
-            var requests = await _context.Appointments
-                .Include(a => a.Doctor)
-                .ThenInclude(d => d!.Department)
-                .Where(a => a.DoctorId == doctorId.Value && (a.AdminAccessRequested || a.AdminAccessGranted))
-                .OrderByDescending(a => a.AdminAccessRequestedDate ?? a.AdminAccessGrantedDate ?? a.CreatedDate)
-                .ThenByDescending(a => a.Id)
-                .ToListAsync();
-
-            return View(requests);
-        }
 
         [HttpGet]
         [AllowAnonymous]
@@ -971,7 +771,7 @@ namespace HastaneRandevuSistemi.Controllers
                     isHoliday = true,
                     holidayLabel = holidayLabel ?? string.Empty,
                     summary = availabilityPlan.Summary,
-                    message = "Bugun resmi tatil."
+                    message = "Bugün resmi tatil."
                 });
             }
 
@@ -991,7 +791,7 @@ namespace HastaneRandevuSistemi.Controllers
                 holidayLabel = string.Empty,
                 summary = availabilityPlan.Summary,
                 message = isAvailableDay
-                    ? "Musait saatler listelendi."
+                    ? "Müsait saatler listelendi."
                     : $"Bu doktor {availabilityPlan.Summary} hizmet vermektedir."
             });
         }
@@ -1207,11 +1007,40 @@ namespace HastaneRandevuSistemi.Controllers
             
             var deptName = appointment.Doctor?.Department?.Name ?? "Belirtilmemiş";
             var qrText = $"Randevu No: {appointment.Id}\nHasta: {appointment.PatientName} {appointment.PatientSurname}\nTarih: {appointment.AppointmentDate:dd.MM.yyyy HH:mm}\nPoliklinik: {deptName}\nDurum: {appointment.Status}";
+            qrText = Url.Action(
+                nameof(VerifyQr),
+                "Appointment",
+                new { id = appointment.Id, code = CreateQrVerificationCode(appointment) },
+                Request.Scheme) ?? qrText;
+
             using var qrGenerator = new QRCoder.QRCodeGenerator();
             var qrCodeData = qrGenerator.CreateQrCode(qrText, QRCoder.QRCodeGenerator.ECCLevel.Q);
             var qrCode = new QRCoder.PngByteQRCode(qrCodeData);
             var qrCodeImage = qrCode.GetGraphic(10);
             return File(qrCodeImage, "image/png");
+        }
+
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> VerifyQr(int id, string code)
+        {
+            var appointment = await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .FirstOrDefaultAsync(a => a.Id == id);
+
+            if (appointment == null)
+            {
+                ViewBag.IsValid = false;
+                ViewBag.Message = "Randevu bulunamadı.";
+                return View();
+            }
+
+            var isValid = string.Equals(code, CreateQrVerificationCode(appointment), StringComparison.Ordinal);
+            ViewBag.IsValid = isValid;
+            ViewBag.Message = isValid ? "Randevu doğrulandı." : "QR doğrulama kodu geçersiz.";
+            return View(appointment);
         }
         [HttpGet]
         [Authorize(Roles = "Admin,Doktor,Hasta")]
@@ -1263,9 +1092,9 @@ namespace HastaneRandevuSistemi.Controllers
             {
                 var ext = System.IO.Path.GetExtension(reportFile.FileName).ToLower();
                 var allowed = new[] { ".pdf", ".jpeg", ".jpg", ".png", ".doc", ".docx" };
-                if (!allowed.Contains(ext))
+                if (!allowed.Contains(ext) || reportFile.Length > 8 * 1024 * 1024 || !IsAllowedUploadSignature(reportFile, ext))
                 {
-                    TempData["ErrorMessage"] = "Gecersiz dosya turu.";
+                    TempData["ErrorMessage"] = "Geçersiz dosya türü veya dosya boyutu.";
                     return RedirectToAction("Details", new { id = appointmentId });
                 }
 
@@ -1318,8 +1147,34 @@ namespace HastaneRandevuSistemi.Controllers
             TempData["SuccessMessage"] = "Dosya silindi.";
             return RedirectToAction("Details", new { id = report.AppointmentId });
         }
+
+        private string CreateQrVerificationCode(Appointment appointment)
+        {
+            var secret = HttpContext.RequestServices.GetRequiredService<IConfiguration>()["Jwt:Key"]
+                ?? "HastaneRandevuSistemiQrFallbackSecret";
+            var payload = $"{appointment.Id}|{appointment.AppointmentDate:O}|{appointment.PatientName}|{appointment.PatientSurname}|{appointment.DoctorId}";
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(secret));
+            return Convert.ToHexString(hmac.ComputeHash(Encoding.UTF8.GetBytes(payload)))[..24];
+        }
+
+        private static bool IsAllowedUploadSignature(IFormFile file, string extension)
+        {
+            if (extension is ".doc" or ".docx")
+            {
+                return true;
+            }
+
+            Span<byte> header = stackalloc byte[8];
+            using var stream = file.OpenReadStream();
+            var read = stream.Read(header);
+
+            return extension switch
+            {
+                ".pdf" => read >= 4 && header[0] == 0x25 && header[1] == 0x50 && header[2] == 0x44 && header[3] == 0x46,
+                ".png" => read >= 8 && header[0] == 0x89 && header[1] == 0x50 && header[2] == 0x4E && header[3] == 0x47,
+                ".jpg" or ".jpeg" => read >= 3 && header[0] == 0xFF && header[1] == 0xD8 && header[2] == 0xFF,
+                _ => false
+            };
+        }
     }
 }
-
-
-

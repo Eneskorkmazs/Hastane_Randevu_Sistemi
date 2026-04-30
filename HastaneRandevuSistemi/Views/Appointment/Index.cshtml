@@ -1,4 +1,4 @@
-﻿@model IEnumerable<HastaneRandevuSistemi.Models.Appointment>
+@model IEnumerable<HastaneRandevuSistemi.Models.Appointment>
 
 @{
     bool isHasta = User.IsInRole("Hasta");
@@ -24,7 +24,6 @@
     var pendingCount = Model.Count(x => x.Status == AppointmentStatus.Bekliyor);
     var completedCount = Model.Count(x => x.Status == AppointmentStatus.Tamamlandi);
     var paidCount = Model.Count(x => x.IsCollected);
-    var accessRequestBadgeCount = ViewData["AccessRequestBadgeCount"] is int count ? count : 0;
 }
 
 <div class="container mt-4">
@@ -54,12 +53,6 @@
         <div>
             <h2 class="fw-bold text-primary"><i class="fa-solid fa-calendar-check me-2"></i>@ViewData["Title"]</h2>
             <p class="text-muted mb-0">@(isHasta ? "Geçmiş ve yaklaşan tüm randevularınız." : "Randevuları filtreleyip yönetin.")</p>
-            @if (!isHasta && accessRequestBadgeCount > 0)
-            {
-                <div class="small text-danger mt-1">
-                    <i class="fa-solid fa-bell me-1"></i>@accessRequestBadgeCount erişim talebi bildirimi var.
-                </div>
-            }
         </div>
         <div class="d-flex gap-2">
             @if (isHasta)
@@ -220,9 +213,9 @@
             {
                 var canPatientCancel = isHasta && item.AppointmentDate > DateTime.Now && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
                 var isFutureApprovedAppointment = item.Status == AppointmentStatus.Onaylandi && item.AppointmentDate > DateTime.Now;
-                var adminCanManage = !isAdmin || item.AdminAccessGranted;
+                var adminCanManage = true;
                 var isPastAppointment = item.AppointmentDate <= DateTime.Now;
-                var canAdminCompletePastAppointment = isAdmin && adminCanManage && isPastAppointment && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
+                var canAdminCompletePastAppointment = isAdmin && isPastAppointment && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
                 <div class="card shadow-sm mb-3 border-0 rounded-4">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-2 border-bottom pb-2">
@@ -245,20 +238,7 @@
 
                         <h5 class="card-title fw-bold text-primary">@($"{item.Doctor?.Title} {item.Doctor?.Name} {item.Doctor?.Surname}".Trim())</h5>
                         <p class="small text-muted mb-1">@item.Doctor?.Department?.Name</p>
-                        @if (isAdmin && !item.AdminAccessGranted)
-                        {
-                            <div class="small text-warning mb-2">
-                                @(item.AdminAccessRequested ? "Doktor izni bekleniyor." : "Bu randevu icin doktor izni gerekiyor.")
-                            </div>
-                        }
-                        @if (isDoctor && item.AdminAccessRequested)
-                        {
-                            <div class="small text-info mb-2">Admin erisim talebi var. Karar icin Erisim Istekleri ekranini kullanin.</div>
-                        }
-                        @if (isAdmin && item.AdminAccessGranted)
-                        {
-                            <div class="small text-success mb-2">Erisim verildi.</div>
-                        }
+
 
                         <div class="d-grid gap-2 mt-3">
                             <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-outline-info rounded-pill w-100">
@@ -279,77 +259,60 @@
                             }
                             else
                             {
-                                if (isAdmin && !item.AdminAccessGranted)
+                                @if (!isDoctor)
                                 {
-                                    if (item.AdminAccessRequested)
+                                    if (item.Status == AppointmentStatus.Bekliyor)
                                     {
-                                        <span class="badge bg-light text-warning border w-100 py-2">Doktor Onayi Bekleniyor</span>
+                                        <div class="btn-group w-100">
+                                            <form asp-action="Approve" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-success" disabled="@(!adminCanManage)">Onayla</button>
+                                            </form>
+                                            <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu reddetmek istiyor musunuz?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-danger" disabled="@(!adminCanManage)">Reddet</button>
+                                            </form>
+                                        </div>
+                                    }
+                                    else if (item.Status == AppointmentStatus.Onaylandi)
+                                    {
+                                        <div class="btn-group w-100">
+                                            @if (isFutureApprovedAppointment)
+                                            {
+                                                <button type="button" class="btn btn-secondary" disabled title="Randevu zamanı gelince tamamlanabilir">
+                                                    Bekleniyor
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-primary" disabled="@(!adminCanManage)">Tamamla</button>
+                                                </form>
+                                            }
+                                            <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-outline-danger" disabled="@(!adminCanManage)">İptal</button>
+                                            </form>
+                                        </div>
                                     }
                                     else
                                     {
-                                        <form asp-action="RequestDoctorAccess" asp-route-id="@item.Id" method="post">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-outline-primary rounded-pill w-100">Doktordan Erisim Iste</button>
-                                        </form>
+                                        <div class="d-grid gap-2">
+                                            @if (canAdminCompletePastAppointment)
+                                            {
+                                                <form asp-action="Complete" asp-route-id="@item.Id" method="post">
+                                                    @Html.AntiForgeryToken()
+                                                    <button type="submit" class="btn btn-outline-primary rounded-pill w-100">Randevu Tamamlandı</button>
+                                                </form>
+                                            }
+                                            @if (!canAdminCompletePastAppointment)
+                                            {
+                                                <span class="badge bg-light text-secondary border w-100 py-2">Kayıt kapalı</span>
+                                            }
+                                        </div>
                                     }
                                 }
-                                if (item.Status == AppointmentStatus.Bekliyor)
-                                {
-                                    <div class="btn-group w-100">
-                                        <form asp-action="Approve" asp-route-id="@item.Id" method="post" class="d-inline">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-success" disabled="@(!adminCanManage)">Onayla</button>
-                                        </form>
-                                        <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu reddetmek istiyor musunuz?');">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-danger" disabled="@(!adminCanManage)">Reddet</button>
-                                        </form>
-                                    </div>
-                                }
-                                else if (item.Status == AppointmentStatus.Onaylandi)
-                                {
-                                    <div class="btn-group w-100">
-                                        @if (isFutureApprovedAppointment)
-                                        {
-                                            <button type="button"
-                                                    class="btn btn-secondary"
-                                                    disabled
-                                                    title="Randevu zamanı gelince tamamlanabilir">
-                                                Bekleniyor
-                                            </button>
-                                        }
-                                        else
-                                        {
-                                            <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-primary" disabled="@(!adminCanManage)">
-                                                    Tamamla
-                                                </button>
-                                            </form>
-                                        }
-                                        <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-outline-danger" disabled="@(!adminCanManage)">İptal</button>
-                                        </form>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <div class="d-grid gap-2">
-                                        @if (canAdminCompletePastAppointment)
-                                        {
-                                            <form asp-action="Complete" asp-route-id="@item.Id" method="post">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-outline-primary rounded-pill w-100">Randevu Tamamlandı</button>
-                                            </form>
-                                        }
-                                        @if (!canAdminCompletePastAppointment)
-                                        {
-                                            <span class="badge bg-light text-secondary border w-100 py-2">Kayıt kapalı</span>
-                                        }
-                                    </div>
-                                }
-
                             }
                         </div>
                     </div>
@@ -370,7 +333,7 @@
                                 }
                                 <th>Doktor</th>
                                 <th>Durum</th>
-                                <th class="text-end pe-4">Islemler</th>
+                                <th class="text-end pe-4">İşlemler</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -378,9 +341,9 @@
                             {
                                 var canPatientCancel = isHasta && item.AppointmentDate > DateTime.Now && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
                                 var isFutureApprovedAppointment = item.Status == AppointmentStatus.Onaylandi && item.AppointmentDate > DateTime.Now;
-                                var adminCanManage = !isAdmin || item.AdminAccessGranted;
+                                var adminCanManage = true;
                                 var isPastAppointment = item.AppointmentDate <= DateTime.Now;
-                                var canAdminCompletePastAppointment = isAdmin && adminCanManage && isPastAppointment && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
+                                var canAdminCompletePastAppointment = isAdmin && isPastAppointment && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
                                 <tr>
                                     <td class="ps-4">
                                         <span class="fw-bold d-block">@item.AppointmentDate.ToString("dd.MM.yyyy")</span>
@@ -393,20 +356,7 @@
                                     <td>
                                         <span class="fw-bold d-block">@($"{item.Doctor?.Title} {item.Doctor?.Name} {item.Doctor?.Surname}".Trim())</span>
                                         <span class="badge bg-light text-secondary border">@item.Doctor?.Department?.Name</span>
-                                        @if (isAdmin && !item.AdminAccessGranted)
-                                        {
-                                            <div class="small text-warning mt-1">
-                                                @(item.AdminAccessRequested ? "Doktor onayi bekleniyor" : "Doktor izni gerekli")
-                                            </div>
-                                        }
-                                        else if (isDoctor && item.AdminAccessRequested && !item.AdminAccessGranted)
-                                        {
-                                            <div class="small text-info mt-1">Admin talebi var. Karar icin Erisim Istekleri ekranina gidin.</div>
-                                        }
-                                        @if (isAdmin && item.AdminAccessGranted)
-                                        {
-                                            <div class="small text-success mt-1">Erisim izni verildi</div>
-                                        }
+
                                     </td>
                                     <td>
                                         <span class="badge rounded-pill @(item.Status switch {
@@ -423,10 +373,7 @@
                                         {
                                             <div class="small text-success mt-1">Ödeme alındı</div>
                                         }
-                                        @if (isAdmin && item.AdminAccessGranted)
-                                        {
-                                            <div class="small text-success mt-1">Erisim verildi</div>
-                                        }
+
                                     </td>
                                     <td class="text-end pe-4">
                                         <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info rounded-pill me-2" title="Tıbbi Dosyalar">
@@ -447,73 +394,67 @@
                                         }
                                         else
                                         {
-                                            if (isAdmin && !item.AdminAccessGranted)
+                                            @if (!isDoctor)
                                             {
-                                                if (item.AdminAccessRequested)
+                                                if (item.Status == AppointmentStatus.Bekliyor)
                                                 {
-                                                    <span class="badge bg-light text-warning border me-2">Doktor Onayi Bekleniyor</span>
+                                                    <form asp-action="Approve" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-success" title="Onayla"><i class="fa-solid fa-check"></i></button>
+                                                    </form>
+                                                    <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu reddetmek istiyor musunuz?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-danger" title="Reddet"><i class="fa-solid fa-xmark"></i></button>
+                                                    </form>
+                                                }
+                                                else if (item.Status == AppointmentStatus.Onaylandi)
+                                                {
+                                                    @if (isFutureApprovedAppointment)
+                                                    {
+                                                        <button type="button" class="btn btn-sm btn-secondary" title="Randevu zamanı bekleniyor" disabled>Bekleniyor</button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="btn btn-sm btn-primary" title="Tamamla">
+                                                                <i class="fa-solid fa-clipboard-check"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger" title="İptal"><i class="fa-solid fa-ban"></i></button>
+                                                    </form>
                                                 }
                                                 else
                                                 {
-                                                    <form asp-action="RequestDoctorAccess" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill me-2">Erisim Iste</button>
-                                                    </form>
-                                                }
-                                            }
-                                            if (item.Status == AppointmentStatus.Bekliyor)
-                                            {
-                                                <form asp-action="Approve" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-success" title="Onayla" disabled="@(!adminCanManage)"><i class="fa-solid fa-check"></i></button>
-                                                </form>
-                                                <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu reddetmek istiyor musunuz?');">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-danger" title="Reddet" disabled="@(!adminCanManage)"><i class="fa-solid fa-xmark"></i></button>
-                                                </form>
-                                            }
-                                            else if (item.Status == AppointmentStatus.Onaylandi)
-                                            {
-                                                @if (isFutureApprovedAppointment)
-                                                {
-                                                    <button type="button"
-                                                            class="btn btn-sm btn-secondary"
-                                                            title="Randevu zamanı bekleniyor"
-                                                            disabled>
-                                                        Bekleniyor
-                                                    </button>
-                                                }
-                                                else
-                                                {
-                                                    <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit"
-                                                                class="btn btn-sm btn-primary"
-                                                                title="Tamamla"
-                                                                disabled="@(!adminCanManage)">
-                                                            <i class="fa-solid fa-clipboard-check"></i>
-                                                        </button>
-                                                    </form>
-                                                }
-                                                <form asp-action="Cancel" asp-route-id="@item.Id" method="post" class="d-inline" onsubmit="return confirm('Bu randevuyu iptal etmek istiyor musunuz?');">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger" title="İptal" disabled="@(!adminCanManage)"><i class="fa-solid fa-ban"></i></button>
-                                                </form>
-                                            }
-                                            else
-                                            {
-                                                if (canAdminCompletePastAppointment)
-                                                {
-                                                    <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
-                                                        @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill" title="Randevu Tamamlandı">
-                                                            <i class="fa-solid fa-clipboard-check"></i>
-                                                        </button>
-                                                    </form>
-                                                }
-                                                if (!canAdminCompletePastAppointment)
-                                                {
-                                                    <span class="badge bg-light text-secondary border">Kayıt kapalı</span>
+                                                    if (canAdminCompletePastAppointment)
+                                                    {
+                                                        <form asp-action="Complete" asp-route-id="@item.Id" method="post" class="d-inline">
+                                                            @Html.AntiForgeryToken()
+                                                            <button type="submit" class="btn btn-sm btn-outline-primary rounded-pill" title="Randevu Tamamlandı">
+                                                                <i class="fa-solid fa-clipboard-check"></i>
+                                                            </button>
+                                                        </form>
+                                                    }
+                                                    @if (User.IsInRole("Sekreter") && item.Status == AppointmentStatus.Tamamlandi && item.PrescriptionCreatedAt == null)
+                                                    {
+                                                        <a asp-controller="Secretary" asp-action="Prescription" asp-route-appointmentId="@item.Id"
+                                                           class="btn btn-sm btn-success rounded-pill ms-1" title="Reçete Yaz">
+                                                            <i class="fa-solid fa-file-prescription"></i>
+                                                        </a>
+                                                    }
+                                                    else if (User.IsInRole("Sekreter") && item.Status == AppointmentStatus.Tamamlandi && item.PrescriptionCreatedAt != null)
+                                                    {
+                                                        <span class="badge bg-success rounded-pill ms-1" title="Reçete yazıldı">
+                                                            <i class="fa-solid fa-check me-1"></i>Reçete
+                                                        </span>
+                                                    }
+                                                    if (!canAdminCompletePastAppointment && item.Status != AppointmentStatus.Tamamlandi)
+                                                    {
+                                                        <span class="badge bg-light text-secondary border">Kayıt kapalı</span>
+                                                    }
                                                 }
                                             }
                                         }

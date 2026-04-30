@@ -1,18 +1,18 @@
 @model HastaneRandevuSistemi.ViewModels.AdminDoctorInsightsViewModel
 
 @{
-    ViewData["Title"] = "Doktor Istatistikleri";
+    ViewData["Title"] = "Doktor Analizleri";
     var trCulture = System.Globalization.CultureInfo.GetCultureInfo("tr-TR");
 }
 
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div>
-            <span class="text-uppercase small fw-bold text-primary">Admin Analitik</span>
-            <h1 class="h3 fw-bold mb-1">Doktor Istatistikleri</h1>
-            <p class="text-muted mb-0">Secilen doktorun haftalik/aylik performansini ve tum doktor karsilastirmalarini izleyin.</p>
+            <span class="text-uppercase small fw-bold text-primary">Yönetim Analitiği</span>
+            <h1 class="h3 fw-bold mb-1">Doktor Analizleri</h1>
+            <p class="text-muted mb-0">Seçilen doktorun performans verilerini ve diğer doktorlarla olan karşılaştırmalarını izleyin.</p>
         </div>
-        <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Don</a>
+        <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Dön</a>
     </div>
 
     <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -28,19 +28,19 @@
                     </select>
                 </div>
                 <div class="col-md-3">
-                    <label class="form-label">Donem</label>
+                    <label class="form-label">Dönem</label>
                     <select class="form-select" name="period" id="periodSelector">
-                        <option value="weekly" selected="@(Model.Period == "weekly")">Haftalik</option>
-                        <option value="monthly" selected="@(Model.Period == "monthly")">Aylik</option>
-                        <option value="custom" selected="@(Model.Period == "custom")">Ozel Aralik</option>
+                        <option value="weekly" selected="@(Model.Period == "weekly")">Haftalık</option>
+                        <option value="monthly" selected="@(Model.Period == "monthly")">Aylık</option>
+                        <option value="custom" selected="@(Model.Period == "custom")">Özel Tarih Aralığı</option>
                     </select>
                 </div>
                 <div class="col-md-2 custom-date-field @(Model.Period == "custom" ? "" : "d-none")">
-                    <label class="form-label">Baslangic</label>
+                    <label class="form-label">Başlangıç</label>
                     <input type="date" class="form-control" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-md-2 custom-date-field @(Model.Period == "custom" ? "" : "d-none")">
-                    <label class="form-label">Bitis</label>
+                    <label class="form-label">Bitiş</label>
                     <input type="date" class="form-control" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" />
                 </div>
                 <div class="col-md-1 d-grid">
@@ -72,7 +72,7 @@
         <div class="col-md-6 col-xl-3">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
-                    <div class="text-muted small">Tamamlanma Orani</div>
+                    <div class="text-muted small">Tamamlanma Oranı</div>
                     <div class="display-6 fw-bold text-success">% @Model.CompletionRate.ToString("F1", trCulture)</div>
                     <small class="text-muted">@Model.CompletedAppointments tamamlanan</small>
                 </div>
@@ -81,7 +81,7 @@
         <div class="col-md-6 col-xl-3">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
-                    <div class="text-muted small">Tahsilat Orani</div>
+                    <div class="text-muted small">Tahsilat Oranı</div>
                     <div class="display-6 fw-bold text-primary">% @Model.CollectionRate.ToString("F1", trCulture)</div>
                     <small class="text-muted">@Model.CollectedRevenue.ToString("C0", trCulture)</small>
                 </div>
@@ -103,7 +103,7 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Durum Dagilimi</h5>
+                    <h5 class="fw-bold mb-3">Durum Dağılımı</h5>
                     <div style="height: 320px;">
                         <canvas id="statusChart"></canvas>
                     </div>
@@ -116,10 +116,10 @@
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Bolum Dagilimi</h5>
+                    <h5 class="fw-bold mb-3">Bölüm Dağılımı</h5>
                     @if (!Model.DepartmentBreakdown.Any())
                     {
-                        <div class="text-muted">Veri bulunamadi.</div>
+                        <div class="text-muted">Veri bulunamadı.</div>
                     }
                     else
                     {
@@ -127,7 +127,7 @@
                             <table class="table align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Bolum</th>
+                                        <th>Bölüm</th>
                                         <th>Randevu</th>
                                         <th>Hasta</th>
                                         <th class="text-end">Tahsilat</th>
@@ -153,10 +153,10 @@
         <div class="col-lg-6">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">En Sik Hastalar</h5>
+                    <h5 class="fw-bold mb-3">En Sık Randevu Alan Hastalar</h5>
                     @if (!Model.TopPatients.Any())
                     {
-                        <div class="text-muted">Veri bulunamadi.</div>
+                        <div class="text-muted">Veri bulunamadı.</div>
                     }
                     else
                     {
@@ -165,7 +165,7 @@
                                 <thead>
                                     <tr>
                                         <th>Hasta</th>
-                                        <th class="text-end">Randevu Sayisi</th>
+                                        <th class="text-end">Randevu Sayısı</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -189,10 +189,10 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Doktor Karsilastirma (Ayni Donem)</h5>
+                    <h5 class="fw-bold mb-3">Doktor Karşılaştırma (Aynı Dönem)</h5>
                     @if (!Model.DoctorRanking.Any())
                     {
-                        <div class="text-muted">Veri bulunamadi.</div>
+                        <div class="text-muted">Veri bulunamadı.</div>
                     }
                     else
                     {
@@ -201,7 +201,7 @@
                                 <thead>
                                     <tr>
                                         <th>Doktor</th>
-                                        <th>Bolum</th>
+                                        <th>Bölüm</th>
                                         <th>Randevu</th>
                                         <th>Tamamlanan</th>
                                         <th>Hasta</th>
@@ -234,7 +234,7 @@
             <h5 class="fw-bold mb-3">Son Randevular</h5>
             @if (!Model.RecentAppointments.Any())
             {
-                <div class="text-muted">Veri bulunamadi.</div>
+                <div class="text-muted">Veri bulunamadı.</div>
             }
             else
             {
@@ -244,9 +244,10 @@
                             <tr>
                                 <th>Tarih</th>
                                 <th>Hasta</th>
-                                <th>Bolum</th>
+                                <th>Doktor</th>
+                                <th>Bölüm</th>
                                 <th>Durum</th>
-                                <th>Odeme</th>
+                                <th>Ödeme</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -255,12 +256,13 @@
                                 <tr>
                                     <td>@item.AppointmentDate.ToString("dd.MM.yyyy HH:mm")</td>
                                     <td class="fw-semibold">@item.PatientName</td>
+                                    <td>@item.DoctorName</td>
                                     <td>@item.DepartmentName</td>
                                     <td>@item.Status</td>
                                     <td>
                                         @if (item.IsCollected)
                                         {
-                                            <span class="badge bg-success">Alindi</span>
+                                            <span class="badge bg-success">Alındı</span>
                                         }
                                         else
                                         {

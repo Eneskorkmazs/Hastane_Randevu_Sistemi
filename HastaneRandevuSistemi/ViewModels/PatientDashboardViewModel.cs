@@ -10,6 +10,9 @@ namespace HastaneRandevuSistemi.ViewModels
         public string? TC { get; set; }
         public DateTime? DogumTarihi { get; set; }
         public string? Cinsiyet { get; set; }
+        public string? BloodType { get; set; }
+        public string? Allergies { get; set; }
+        public string? EmergencyContact { get; set; }
         public int PendingAppointmentsCount { get; set; }
         public int CompletedAppointmentsCount { get; set; }
         public int CancelledAppointmentsCount { get; set; }

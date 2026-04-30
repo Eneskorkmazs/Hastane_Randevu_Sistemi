@@ -23,6 +23,7 @@ namespace HastaneRandevuSistemi.Models
 
         public IReadOnlyList<Appointment> UpcomingAppointments { get; set; } = Array.Empty<Appointment>();
         public IReadOnlyList<Notification> LatestNotifications { get; set; } = Array.Empty<Notification>();
+        public IReadOnlyList<HastaneRandevuSistemi.ViewModels.HomeReviewItemViewModel> LatestHospitalReviews { get; set; } = Array.Empty<HastaneRandevuSistemi.ViewModels.HomeReviewItemViewModel>();
         public IReadOnlyList<DepartmentStatItem> DepartmentStats { get; set; } = Array.Empty<DepartmentStatItem>();
         public IReadOnlyList<TrendPointItem> WeeklyTrend { get; set; } = Array.Empty<TrendPointItem>();
         
@@ -44,4 +45,3 @@ namespace HastaneRandevuSistemi.Models
         public int TotalCount { get; set; }
     }
 }
-

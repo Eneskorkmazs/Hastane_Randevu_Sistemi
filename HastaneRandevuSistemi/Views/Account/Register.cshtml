@@ -45,17 +45,17 @@
 
                 <div class="card-body p-4 p-md-5">
                     <form asp-action="Register" method="post" class="row g-3">
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-0"></div>
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-0" role="alert" aria-live="assertive"></div>
 
                         <div class="col-md-6">
                             <label asp-for="Name" class="form-label fw-semibold"></label>
-                            <input asp-for="Name" class="form-control form-control-lg" placeholder="Adınız" />
+                            <input asp-for="Name" class="form-control form-control-lg" placeholder="Adınız" autocomplete="given-name" />
                             <span asp-validation-for="Name" class="text-danger small"></span>
                         </div>
 
                         <div class="col-md-6">
                             <label asp-for="Surname" class="form-label fw-semibold"></label>
-                            <input asp-for="Surname" class="form-control form-control-lg" placeholder="Soyadınız" />
+                            <input asp-for="Surname" class="form-control form-control-lg" placeholder="Soyadınız" autocomplete="family-name" />
                             <span asp-validation-for="Surname" class="text-danger small"></span>
                         </div>
 
@@ -67,7 +67,7 @@
 
                         <div class="col-md-6">
                             <label asp-for="Telefon" class="form-label fw-semibold"></label>
-                            <input asp-for="Telefon" class="form-control form-control-lg" placeholder="05xx xxx xx xx" />
+                            <input asp-for="Telefon" class="form-control form-control-lg" placeholder="05xx xxx xx xx" autocomplete="tel" />
                             <span asp-validation-for="Telefon" class="text-danger small"></span>
                         </div>
 
@@ -90,25 +90,25 @@
 
                         <div class="col-12">
                             <label asp-for="Adres" class="form-label fw-semibold"></label>
-                            <textarea asp-for="Adres" class="form-control" rows="3" placeholder="Adres bilginizi giriniz"></textarea>
+                            <textarea asp-for="Adres" class="form-control" rows="3" placeholder="Adres bilginizi giriniz" autocomplete="street-address"></textarea>
                             <span asp-validation-for="Adres" class="text-danger small"></span>
                         </div>
 
                         <div class="col-12">
                             <label asp-for="Email" class="form-label fw-semibold"></label>
-                            <input asp-for="Email" class="form-control form-control-lg" placeholder="ornek@mail.com" />
+                            <input asp-for="Email" class="form-control form-control-lg" placeholder="ornek@mail.com" autocomplete="email" />
                             <span asp-validation-for="Email" class="text-danger small"></span>
                         </div>
 
                         <div class="col-md-6">
                             <label asp-for="Password" class="form-label fw-semibold"></label>
-                            <input asp-for="Password" type="password" class="form-control form-control-lg" placeholder="Şifreniz" />
+                            <input asp-for="Password" type="password" class="form-control form-control-lg" placeholder="Şifreniz" autocomplete="new-password" />
                             <span asp-validation-for="Password" class="text-danger small"></span>
                         </div>
 
                         <div class="col-md-6">
                             <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
-                            <input asp-for="ConfirmPassword" type="password" class="form-control form-control-lg" placeholder="Şifre tekrar" />
+                            <input asp-for="ConfirmPassword" type="password" class="form-control form-control-lg" placeholder="Şifre tekrar" autocomplete="new-password" />
                             <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
                         </div>
 

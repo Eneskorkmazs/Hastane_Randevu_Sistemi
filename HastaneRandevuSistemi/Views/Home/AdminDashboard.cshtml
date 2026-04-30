@@ -1,10 +1,10 @@
-﻿@model HastaneRandevuSistemi.Models.DashboardViewModel
+@model HastaneRandevuSistemi.Models.DashboardViewModel
 
 @{
     ViewData["Title"] = "Yönetim Merkezi";
 }
 
-<div class="container-fluid px-md-5 py-4">
+<div class="container-fluid px-md-5 py-4 admin-home">
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show shadow-sm rounded-4" role="alert">
@@ -13,17 +13,20 @@
         </div>
     }
 
-    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-5 border-bottom pb-4">
-        <div class="mb-3 mb-md-0">
-            <h6 class="text-primary fw-bold text-uppercase ls-2 small mb-1">Sistem Genel Bakış</h6>
-            <h1 class="display-5 fw-bold text-dark mb-0">Yönetim Merkezi</h1>
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4 border-bottom pb-4">
+        <div>
+            <h6 class="text-primary fw-bold text-uppercase small mb-1">Sistem Genel Bakış</h6>
+            <h1 class="display-6 fw-bold text-dark mb-1">Yönetim Merkezi</h1>
+            <p class="text-muted mb-0">Özet bilgileri burada tutup detayları ayrı yönetim sayfalarından takip edin.</p>
         </div>
-        <div class="text-md-end d-flex align-items-center gap-3">
-            <a asp-controller="Home" asp-action="AdminAccounting" class="btn btn-success rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2">
-                <i class="fa-solid fa-wallet"></i>
-                <span class="fw-semibold">Muhasebe Merkezi</span>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-action="AdminAnalytics" class="btn btn-primary rounded-pill px-4">
+                <i class="fa-solid fa-chart-line me-2"></i>Analitik
             </a>
-            <span class="badge bg-white text-dark border px-4 py-2 rounded-pill shadow-sm d-flex align-items-center h-100">
+            <a asp-action="AdminAccounting" class="btn btn-success rounded-pill px-4">
+                <i class="fa-solid fa-wallet me-2"></i>Muhasebe
+            </a>
+            <span class="badge bg-white text-dark border px-4 py-2 rounded-pill shadow-sm d-flex align-items-center">
                 <i class="fa-solid fa-clock me-2 text-primary"></i>@DateTime.Now.ToString("dd MMMM yyyy")
             </span>
         </div>
@@ -53,6 +56,7 @@
                 <div>
                     <p class="text-muted x-small fw-bold mb-1">BUGÜN</p>
                     <h2 class="fw-bold mb-0">@Model.TodaysAppointments</h2>
+                    <small class="text-muted">@Model.RemainingTodayAppointments randevu bekliyor</small>
                 </div>
                 <div class="stat-icon bg-info-soft text-info"><i class="fa-solid fa-calendar-day fs-4"></i></div>
             </div>
@@ -60,62 +64,20 @@
         <div class="col-12 col-md-6 col-xl-3">
             <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
                 <div>
-                    <p class="text-muted x-small fw-bold mb-1">BU HAFTA</p>
-                    <h2 class="fw-bold mb-0">@Model.ThisWeekAppointments</h2>
+                    <p class="text-muted x-small fw-bold mb-1">ALINACAK ÖDEME</p>
+                    <h2 class="fw-bold mb-0">@Model.PendingRevenue.ToString("C0")</h2>
+                    <small class="text-muted">@Model.PendingPaymentAppointments adet işlem</small>
                 </div>
-                <div class="stat-icon bg-warning-soft text-warning"><i class="fa-solid fa-calendar-week fs-4"></i></div>
+                <div class="stat-icon bg-warning-soft text-warning"><i class="fa-solid fa-wallet fs-4"></i></div>
             </div>
         </div>
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
-                <div>
-                    <p class="text-muted x-small fw-bold mb-1">AKTIF RANDEVU</p>
-                    <h2 class="fw-bold mb-0">@Model.ActiveAppointments</h2>
-                    <small class="text-muted">İptal edilmeyen toplam kayıt</small>
-                </div>
-                <div class="stat-icon bg-primary-soft text-primary"><i class="fa-solid fa-calendar-check fs-4"></i></div>
-            </div>
-        </div>
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
-                <div>
-                    <p class="text-muted x-small fw-bold mb-1">BUGÜN KALAN</p>
-                    <h2 class="fw-bold mb-0">@Model.RemainingTodayAppointments</h2>
-                    <small class="text-muted">Bugün henüz saati gelmemişler</small>
-                </div>
-                <div class="stat-icon bg-info-soft text-info"><i class="fa-solid fa-hourglass-half fs-4"></i></div>
-            </div>
-        </div>
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
-                <div>
-                    <p class="text-muted x-small fw-bold mb-1">ALINACAK ÖDEME</p>
-                    <h2 class="fw-bold mb-0">@Model.PendingRevenue.ToString("C0")</h2>
-                    <small class="text-muted">@Model.PendingPaymentAppointments adet bekleyen ödeme</small>
-                </div>
-                <div class="stat-icon bg-warning-soft text-warning"><i class="fa-solid fa-wallet fs-4"></i></div>
-            </div>
-        </div>
-        <div class="col-12 col-md-6 col-xl-3">
-            <div class="admin-stat-card bg-white p-4 shadow-sm rounded-4 d-flex align-items-center justify-content-between h-100">
-                <div>
-                    <p class="text-muted x-small fw-bold mb-1">TEKIL HASTA</p>
-                    <h2 class="fw-bold mb-0">@Model.UniquePatientCount</h2>
-                    <small class="text-muted">Sistemde randevu oluşturan hasta</small>
-                </div>
-                <div class="stat-icon bg-success-soft text-success"><i class="fa-solid fa-users fs-4"></i></div>
-            </div>
-        </div>
-    </div>
-
-    <div class="row g-4">
         <div class="col-12 col-lg-4">
-            <div class="card border-0 shadow-sm rounded-5 h-100">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold">Durum Özeti</h5>
+                    <h5 class="fw-bold mb-3">Randevu Özeti</h5>
                     <div class="d-flex justify-content-between py-2 border-bottom">
                         <span>Toplam</span>
                         <strong>@Model.TotalAppointments</strong>
@@ -128,12 +90,12 @@
                         <span>Onaylanan</span>
                         <strong class="text-success">@Model.ApprovedAppointments</strong>
                     </div>
-                    <div class="d-flex justify-content-between py-2">
+                    <div class="d-flex justify-content-between py-2 border-bottom">
                         <span>Tamamlanan</span>
                         <strong class="text-primary">@Model.CompletedAppointments</strong>
                     </div>
-                    <div class="d-flex justify-content-between py-2 border-top mt-2">
-                        <span>İptal Edilen</span>
+                    <div class="d-flex justify-content-between py-2">
+                        <span>İptal</span>
                         <strong class="text-danger">@Model.CancelledAppointments</strong>
                     </div>
                 </div>
@@ -144,7 +106,10 @@
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0">Son Bildirimler</h5>
+                        <div>
+                            <h5 class="fw-bold mb-1">Son Bildirimler</h5>
+                            <p class="text-muted small mb-0">Sadece hızlı takip için son sistem hareketleri.</p>
+                        </div>
                     </div>
 
                     @if (!Model.LatestNotifications.Any())
@@ -154,7 +119,7 @@
                     else
                     {
                         <div class="list-group list-group-flush">
-                            @foreach (var item in Model.LatestNotifications)
+                            @foreach (var item in Model.LatestNotifications.Take(5))
                             {
                                 <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-start gap-3">
                                     <div>
@@ -178,188 +143,166 @@
         </div>
     </div>
 
-    <div class="row g-4 mt-1">
+    <div class="mb-3">
+        <h2 class="h4 fw-bold mb-1">Yönetim Sayfaları</h2>
+        <p class="text-muted mb-0">Grafikler, finans, raporlar ve geri bildirimler ayrı sayfalarda düzenlendi.</p>
+    </div>
+
+    <div class="row g-4 mb-5">
         <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4 mb-3">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold mb-0 text-success"><i class="fa-solid fa-money-bill-wave me-2"></i>Bekleyen Ödemeler (Hızlı Tahsilat)</h5>
-                        <a asp-action="AdminAccounting" class="btn btn-sm btn-outline-success rounded-pill px-3">Tüm Muhasebe</a>
-                    </div>
-                    @if (!Model.PendingPayments.Any())
-                    {
-                        <div class="text-muted">Sırada bekleyen ödeme işlemi bulunmuyor.</div>
-                    }
-                    else
-                    {
-                        <div class="table-responsive">
-                            <table class="table align-middle table-hover mb-0">
-                                <thead>
-                                    <tr>
-                                        <th class="text-secondary small">HASTA</th>
-                                        <th class="text-secondary small">DOKTOR & BÖLÜM</th>
-                                        <th class="text-secondary small">TARİH</th>
-                                        <th class="text-secondary small text-end">TUTAR</th>
-                                        <th class="text-secondary small text-end">İŞLEM</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @foreach (var payment in Model.PendingPayments)
-                                    {
-                                        <tr>
-                                            <td class="fw-bold">@payment.PatientName</td>
-                                            <td>
-                                                <div>@payment.DoctorName</div>
-                                                <div class="small text-muted">@payment.DepartmentName</div>
-                                            </td>
-                                            <td>@payment.AppointmentDate.ToString("dd MMM yyyy HH:mm")</td>
-                                            <td class="text-end fw-bold text-dark">@payment.Amount.ToString("C2")</td>
-                                            <td class="text-end">
-                                                <form asp-controller="Home" asp-action="MarkCollected" method="post" class="d-inline-block">
-                                                    <input type="hidden" name="id" value="@payment.AppointmentId" />
-                                                    <input type="hidden" name="returnUrl" value="@Url.Action("AdminDashboard")" />
-                                                    <button type="submit" class="btn btn-sm btn-success rounded-pill shadow-sm px-3 fw-bold">
-                                                        <i class="fa-solid fa-check me-1"></i> Ödeme Al
-                                                    </button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                    }
-                                </tbody>
-                            </table>
-                        </div>
-                    }
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-chart-line text-primary me-2"></i>Hizmet ve Performans Analizi</h5>
+            <div class="row g-3">
+                <div class="col-12 col-md-6 col-xl-4">
+                    <a asp-action="AdminServiceAnalysis" class="admin-module-card text-decoration-none">
+                        <span class="module-icon bg-primary-soft text-primary"><i class="fa-solid fa-microscope"></i></span>
+                        <span>
+                            <strong>Hizmet Analizi</strong>
+                            <small>İşlem hacmi, saatlik yoğunluk ve hizmet verimliliği</small>
+                        </span>
+                    </a>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <a asp-action="AdminDoctorInsights" class="admin-module-card text-decoration-none">
+                        <span class="module-icon bg-info-soft text-info"><i class="fa-solid fa-user-doctor"></i></span>
+                        <span>
+                            <strong>Doktor Performansı</strong>
+                            <small>Doktor bazlı randevu, durum ve yoğunluk analizi</small>
+                        </span>
+                    </a>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <a asp-action="AdminAnalytics" class="admin-module-card text-decoration-none">
+                        <span class="module-icon bg-info-soft text-info"><i class="fa-solid fa-chart-pie"></i></span>
+                        <span>
+                            <strong>Genel Grafikler</strong>
+                            <small>Randevu dağılımı, haftalık trend ve poliklinik yoğunluğu</small>
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mt-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-calculator text-success me-2"></i>Muhasebe ve Finansal Yönetim</h5>
+            <div class="row g-3">
+                <div class="col-12 col-md-6 col-xl-4">
+                    <a asp-action="AdminAccounting" class="admin-module-card text-decoration-none">
+                        <span class="module-icon bg-success-soft text-success"><i class="fa-solid fa-wallet"></i></span>
+                        <span>
+                            <strong>Finansal Özet</strong>
+                            <small>Tahsilat, bekleyen ödemeler ve finans detayları</small>
+                        </span>
+                    </a>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <a asp-action="AdminAccountingDepartments" class="admin-module-card text-decoration-none">
+                        <span class="module-icon bg-success-soft text-success"><i class="fa-solid fa-building"></i></span>
+                        <span>
+                            <strong>Bölüm Analizleri</strong>
+                            <small>Bölüm bazlı gelir, hasta payı ve finansal performans</small>
+                        </span>
+                    </a>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <a asp-action="Tahsilat" class="admin-module-card text-decoration-none">
+                        <span class="module-icon bg-success-soft text-success"><i class="fa-solid fa-hand-holding-dollar"></i></span>
+                        <span>
+                            <strong>Tahsilat Onayı</strong>
+                            <small>Bekleyen randevu ödemelerini onaylama ekranı</small>
+                        </span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 mt-4">
+            <h5 class="fw-bold mb-3"><i class="fa-solid fa-gears text-secondary me-2"></i>Sistem ve İletişim</h5>
+            <div class="row g-3">
+                <div class="col-12 col-md-6 col-xl-4">
+                    <a asp-action="AdminHospitalReviews" class="admin-module-card text-decoration-none">
+                        <span class="module-icon bg-warning-soft text-warning"><i class="fa-solid fa-star"></i></span>
+                        <span>
+                            <strong>Hasta Yorumları</strong>
+                            <small>Puanlar, yorumlar ve geri bildirim yönetimi</small>
+                        </span>
+                    </a>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <a asp-action="CreateAnnouncement" class="admin-module-card text-decoration-none">
+                        <span class="module-icon bg-primary-soft text-primary"><i class="fa-solid fa-bullhorn"></i></span>
+                        <span>
+                            <strong>Duyuru Gönder</strong>
+                            <small>Hasta, doktor ve sekreter gruplarına bilgilendirme</small>
+                        </span>
+                    </a>
+                </div>
+                <div class="col-12 col-md-6 col-xl-4">
+                    <a asp-action="AdminReport" class="admin-module-card text-decoration-none">
+                        <span class="module-icon bg-info-soft text-info"><i class="fa-solid fa-file-lines"></i></span>
+                        <span>
+                            <strong>Sistem Raporları</strong>
+                            <small>Tarih, branş ve durum bazlı operasyon listeleri</small>
+                        </span>
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row g-4 mt-1">
-        <div class="col-12 col-xl-7">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h5 class="fw-bold mb-1">Haftalık Randevu Trendi</h5>
-                            <p class="text-muted small mb-0">Son 7 gün yerine aktif hafta gün bazlı dağılım.</p>
-                        </div>
-                        <a asp-controller="Home" asp-action="AdminReport" class="btn btn-sm btn-outline-primary rounded-pill">Detaylı Rapor</a>
-                    </div>
-
-                    @if (!Model.WeeklyTrend.Any())
-                    {
-                        <div class="text-muted">Trend verisi bulunamadı.</div>
-                    }
-                    else
-                    {
-                        var maxTrend = Math.Max(Model.WeeklyTrend.Max(x => x.TotalCount), 1);
-                        <div class="trend-grid">
-                            @foreach (var point in Model.WeeklyTrend)
-                            {
-                                var width = Math.Max(10, (int)Math.Round(point.TotalCount * 100.0 / maxTrend));
-                                <div class="trend-row">
-                                    <div class="trend-label">@point.Label</div>
-                                    <div class="trend-bar-wrap">
-                                        <div class="trend-bar" style="width:@width%">
-                                            <span>@point.TotalCount</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
+    <div class="bg-white p-4 rounded-4 shadow-sm border d-flex flex-column flex-lg-row align-items-lg-center justify-content-between gap-3">
+        <div>
+            <h5 class="fw-bold mb-1">Hızlı İşlemler</h5>
+            <p class="text-muted mb-0 small">Yeni kayıt ve temel yönetim işlemleri.</p>
         </div>
-
-        <div class="col-12 col-xl-5">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <div>
-                            <h5 class="fw-bold mb-1">En Yoğun Poliklinikler</h5>
-                            <p class="text-muted small mb-0">Randevu ve doktor sayısı birlikte gösterilir.</p>
-                        </div>
-                    </div>
-
-                    @if (!Model.DepartmentStats.Any())
-                    {
-                        <div class="text-muted">Bölüm istatistiği bulunamadı.</div>
-                    }
-                    else
-                    {
-                        <div class="list-group list-group-flush">
-                            @foreach (var item in Model.DepartmentStats)
-                            {
-                                <div class="list-group-item px-0 py-3">
-                                    <div class="d-flex justify-content-between align-items-center mb-1">
-                                        <strong>@item.DepartmentName</strong>
-                                        <span class="badge bg-light text-dark border">@item.AppointmentCount randevu</span>
-                                    </div>
-                                    <small class="text-muted">@item.DoctorCount doktor aktif</small>
-                                </div>
-                            }
-                        </div>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12">
-            <div class="bg-white p-4 rounded-4 shadow-sm border d-flex flex-column flex-md-row align-items-center justify-content-between gap-3">
-                <div class="d-flex align-items-center">
-                    <div class="bg-warning bg-opacity-10 p-2 rounded-3 me-3">
-                        <i class="fa-solid fa-bolt text-warning fs-4"></i>
-                    </div>
-                    <h5 class="fw-bold mb-0">Hızlı Erişim</h5>
-                </div>
-                <div class="d-flex flex-wrap justify-content-center gap-2">
-                    <a asp-controller="Doctor" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">Doktor Ekle</a>
-                    <a asp-controller="Department" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">Bölüm Ekle</a>
-                    <a asp-controller="Home" asp-action="CreateAnnouncement" class="btn btn-outline-dark rounded-pill fw-bold px-4">Duyuru Gönder</a>
-                    <a asp-controller="Home" asp-action="AdminReport" class="btn btn-outline-dark rounded-pill fw-bold px-4">Rapor Al</a>
-                    <a asp-controller="Home" asp-action="AdminAccounting" class="btn btn-outline-dark rounded-pill fw-bold px-4">Muhasebe</a>
-                    <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm">Yeni Randevu</a>
-                </div>
-            </div>
+        <div class="d-flex flex-wrap gap-2">
+            <a asp-controller="Doctor" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">Doktor Ekle</a>
+            <a asp-controller="Department" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">Bölüm Ekle</a>
+            <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm">Yeni Randevu</a>
         </div>
     </div>
 </div>
 
 <style>
-    .trend-grid {
-        display: grid;
-        gap: 0.9rem;
-    }
-
-    .trend-row {
-        display: grid;
-        grid-template-columns: 56px 1fr;
-        align-items: center;
-        gap: 0.9rem;
-    }
-
-    .trend-label {
-        font-weight: 600;
-        color: #526173;
-    }
-
-    .trend-bar-wrap {
-        background: #edf3f8;
-        border-radius: 999px;
-        overflow: hidden;
-        min-height: 36px;
-    }
-
-    .trend-bar {
-        min-height: 36px;
+    .admin-home .admin-module-card {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        padding-right: 0.85rem;
-        color: #fff;
-        font-weight: 700;
-        border-radius: 999px;
-        background: linear-gradient(90deg, #0b5cad 0%, #0d8bd6 100%);
+        gap: 1rem;
+        min-height: 118px;
+        padding: 1.25rem;
+        border: 1px solid #e8eef6;
+        border-radius: 18px;
+        background: #fff;
+        box-shadow: 0 0.35rem 1rem rgba(13, 40, 69, 0.06);
+        color: #1f2937;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    }
+
+    .admin-home .admin-module-card:hover {
+        transform: translateY(-2px);
+        border-color: #c9d9f0;
+        box-shadow: 0 0.7rem 1.4rem rgba(13, 40, 69, 0.1);
+    }
+
+    .admin-home .module-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        font-size: 1.25rem;
+    }
+
+    .admin-home .admin-module-card strong {
+        display: block;
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .admin-home .admin-module-card small {
+        display: block;
+        color: #667085;
+        line-height: 1.35;
     }
 </style>

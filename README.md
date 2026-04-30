@@ -1,4 +1,4 @@
-﻿# Hastane Randevu Sistemi
+# Hastane Randevu Sistemi
 
 ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu uygulaması.
 
@@ -17,17 +17,53 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - Randevu oluşturma, onay, tamamlama ve iptal hareketleri için bildirim kayıtları üretiliyor.
 
 ### Hafta 3
-- Randevu akışı güvenliği: Admin ve doktor yetkileri için rol bazlı filtreler sertleştirilecek.
-- Doktor dashboard'u:
-  - bugün ve gelecek hafta özetleri,
-  - durum bazlı (bekleyen/onaylı/tamamlanan/iptal) kartları,
-  - filtrelenebilir randevu listesi.
-- Admin dashboard'u:
-  - genel metrik kartlarını detaylandırma (bölüm + doktor + randevu trendi),
-  - son aktivite/bildirim akışı.
-- Kullanıcı deneyimi:
-  - randevu oluşturma formunda tarih/saat validasyon mesajları iyileştirilecek,
-  - bildirimlerde okunmamış durumunun daha net göstergesi eklenecek.
+- Doktor dashboard'u: bugün ve gelecek hafta özetleri, durum bazlı kartlar, filtrelenebilir randevu listesi.
+- Admin dashboard'u: genel metrik kartları, son aktivite/bildirim akışı.
+- Randevu oluşturma formunda tarih/saat validasyon mesajları iyileştirildi.
+
+### Hafta 4
+- Admin dashboard'u detaylandırıldı: haftalık trend, poliklinik yoğunluk kartları, iptal metrikleri.
+- Yeni raporlama ekranı eklendi: tarih aralığı, poliklinik ve durum filtreleri, yazdırılabilir özet.
+- Duyuru ve bilgilendirme modülü eklendi: tüm kullanıcılar veya rol bazlı hedefleme.
+
+### Hafta 5
+- Randevu listesinde gelişmiş arama ve filtreleme eklendi.
+- Randevu alma deneyimi iyileştirildi: en yakın uygun saat önerileri, hızlı slot seçimi.
+- Randevu durum akışı iyileştirildi: otomatik tamamlama, bekleniyor gösterimi.
+
+### Hafta 6
+- Admin Tahsilat sayfası eklendi.
+- Doktor takviminde günlük detay ekranı eklendi.
+- REST API katmanı oluşturuldu: `Api/AppointmentApiController`.
+- `MedicalReport` modeli ve randevu detay sayfası eklendi.
+
+### Hafta 7
+- Tıbbi geçmiş modülü eklendi (`Patient/MedicalHistory`).
+- Dosya yükleme işlemleri tıbbi geçmiş akışına entegre edildi.
+- FluentValidation altyapısı aktif edildi.
+- JWT token endpoint'i eklendi, xUnit test projesi oluşturuldu.
+- Arka plan hatırlatma servisi eklendi.
+
+### Hafta 8
+- Reçete modülü sekreter tarafına taşındı (sadece tamamlanan randevular).
+- Muhasebe ve tahsilat ekranları güçlendirildi.
+- Hizmet analizi bölümü etkileşimli hale getirildi.
+
+### Hafta 9
+- **AI Semptom Kontrolcüsü** eklendi: kural tabanlı semptom → poliklinik yönlendirme.
+- **QR Kod ile Randevu Doğrulama**: randevu detay sayfasında QR bilet gösterimi.
+- **Dijital Reçete PDF çıktısı**: yazdır butonu + QR imzalı reçete önizleme.
+- Serilog loglama altyapısı aktif edildi (`Logs/hrs-.log`).
+- xUnit integration testleri genişletildi (15+ senaryo).
+- Kod refactoring: doktor erişim isteği kaldırıldı, navbar sadeleştirildi.
+
+### Hafta 10
+- **Doktor Değerlendirme Sistemi**: yıldız puanlama ve yorum yapabilme (`DoctorReview`).
+- **Chart.js Canlı Dashboard**: admin panelinde donut + bar grafikleri.
+- **Dark Mode** desteği: tüm sayfalarda tema değiştirme.
+- Erişilebilirlik (accessibility) iyileştirmeleri: ARIA etiketleri, skip link.
+- Proje dokümantasyonu güncellendi.
+- Final testleri tamamlandı.
 - Teknik alt yapı:
   - hata senaryoları için geri bildirim mesajları standardize edilecek,
   - en önemli entity'ler için basit birimler eklenecek.
@@ -117,98 +153,45 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
   - grafik uzerinden tablo filtreleme.
 - Ozel gunlerde randevu olusturma akisinda "Musaitlik bilgisi alinamadi" yerine "Bugun resmi tatil." mesaji gosterilmeye baslandi.
 
-## 10 Haftalık Geliştirme Planı
+### Hafta 9
+- `Serilog` entegrasyonu eklendi:
+  - console, debug ve gunluk dosya loglama,
+  - loglar `HastaneRandevuSistemi/Logs` altina yazilir.
+- Test kapsamı genişletildi:
+  - mevcut validator testlerine ek olarak temel integration smoke testleri eklendi,
+  - ana sayfa, giris sayfasi ve JWT korumali API erisimi dogrulaniyor.
+- Kod tabani test edilebilirlik icin guncellendi:
+  - `Program` sinifi integration testlerde kullanilabilecek sekilde acildi.
 
-- Haftalık ortalama çalışma: `20-22 saat`
-
-### Hafta 1 (günlük ~3 saat)
-- Model sınıflarının genişletilmesi
-- Data Annotation ve Fluent Validation iyileştirmeleri
-- Ana sayfanın modern UI/UX tasarımına geçirilmesi
-
-### Hafta 2 (günlük ~3 saat)
-- Hasta panelinin detaylandırılması
-- Profil güncelleme ve parola değiştirme modülü
-- Bildirim sistemi altyapısı
-
-### Hafta 3 (günlük 3-3,5 saat)
-- Doktor panelinin geliştirilmesi
-- Çalışma takvimi ve müsaitlik yönetimi
-- Dijital reçete modülü temel yapısı
-
-### Hafta 4 (günlük 3-3,5 saat)
-- Admin paneline grafik ve istatistik ekranları
-- Raporlama sistemi
-- Duyuru ve bilgilendirme modülü
-
-### Hafta 5 (günlük 3-3,5 saat)
-- Gelişmiş arama ve filtreleme özellikleri
-- UX iyileştirmeleri
-- Yaratıcı özelliklerin ilk faz geliştirmesi
-
-### Hafta 6 (günlük 3-3,5 saat)
-- Web API katmanı oluşturulması
-- JWT ile kimlik doğrulama
-- E-posta bildirim sistemi
-- QR kod üretim altyapısı
-
-### Hafta 7 (günlük 3-3,5 saat)
-- Dosya yükleme işlemleri
-- Tıbbi geçmiş (medical history) modülü
-- İleri seviye özelliklerin entegrasyonu
-
-### Hafta 8 (günlük 3-3,5 saat)
-- Güvenlik önlemleri (CSRF, XSS korumaları)
-- Caching mekanizması
-- Performans optimizasyonları
-- Dark Mode tema desteği
-
-### Hafta 9 (günlük 3-4 saat)
-- Unit test yazımı (xUnit)
-- Integration test senaryoları
-- Serilog ile loglama altyapısı
-- Kod refactoring ve temizlik
-
-### Hafta 10 (günlük 3-4 saat)
-- Proje dokümantasyonu
-- Erişilebilirlik (accessibility) iyileştirmeleri
-- Sunum hazırlığı
-- Final testleri ve teslim
-
-## Projeye Eklenecek Özellikler
-
-- AI Semptom Kontrolcüsü: Hasta semptom seçimi yaparak uygun bölüme yönlendirilir
-- Doktor Değerlendirme Sistemi: Yıldız puanlama ve yorum yapabilme
-- QR Kod ile Randevu Doğrulama
-- Dijital Reçete Modülü (PDF çıktısı alma)
-- Canlı Dashboard (Chart.js ile animasyonlu grafikler)
-- Dark Mode desteği
-- Sıra Takip Ekranı ve tahmini bekleme süresi hesaplama
-
-## Teknolojiler
-- .NET 8
-- ASP.NET Core MVC
-- Entity Framework Core
-- ASP.NET Core Identity
-- SQL Server / LocalDB
-- Bootstrap 5
-- Chart.js
-- Swagger
-- JWT
-- Serilog
-- xUnit
-- QRCoder
+### Hafta 10
+- Erisilebilirlik iyilestirmeleri eklendi:
+  - skip-link ile klavye kullanicilari icin hizli icerik gecisi,
+  - auth ekranlarinda `aria-live`, `role`, `aria-pressed` ve uygun `autocomplete` tanimlari,
+  - dis baglantilar icin daha guvenli ve ekran okuyucu dostu etiketler.
+- Dokumantasyon guncellendi:
+  - hafta 9-10 kapsami README icine eklendi,
+  - test ve loglama davranisi dokumante edildi.
 
 ## Haftalık Raporlar
-- [Hafta 1 Raporu PDF](Reports/Hafta1_Raporu.pdf)
-- [Hafta 2 Raporu PDF](Reports/Hafta2_Raporu.pdf)
-- [Hafta 3 Raporu PDF](Reports/Hafta3_Raporu.pdf)
-- [Hafta 4 Raporu PDF](Reports/Hafta4_Raporu.pdf)
-- [Hafta 5 Raporu PDF](Reports/Hafta5_Raporu.pdf)
-- [İlk 5 Hafta Genel Raporu HTML](Reports/Ilk5Hafta_Genel_Rapor.html) · [PDF](Reports/Ilk5Hafta_Genel_Rapor.pdf)
-- [Hafta 6 Raporu HTML](Reports/Hafta6_Raporu.html) · [PDF](Reports/Hafta6_Raporu.pdf)
-- [Hafta 7 Raporu PDF](Reports/Hafta7_Raporu.pdf)
-- [Hafta 8 Raporu PDF](Reports/Hafta8_Raporu.pdf)
+
+| Hafta | Konu | Rapor |
+|-------|------|-------|
+| 1 | Model sınıfları, Data Annotation, Ana sayfa UI/UX | [📄 PDF](Reports/Hafta1_Raporu.pdf) |
+| 2 | Hasta paneli, Profil güncelleme, Bildirim altyapısı | [📄 PDF](Reports/Hafta2_Raporu.pdf) |
+| 3 | Doktor paneli, Çalışma takvimi, Reçete temel yapısı | [📄 PDF](Reports/Hafta3_Raporu.pdf) |
+| 4 | Admin grafik/istatistik ekranları, Raporlama sistemi | [📄 PDF](Reports/Hafta4_Raporu.pdf) |
+| 5 | Gelişmiş arama/filtreleme, UX iyileştirmeleri | [📄 PDF](Reports/Hafta5_Raporu.pdf) |
+| 6 | API katmanı, Tahsilat sayfası, Randevu fiyat alanı | [📄 PDF](Reports/Hafta6_Raporu.pdf) |
+| 7 | Dosya yükleme, Tıbbi geçmiş modülü, Dijital reçete | [📄 HTML](Reports/Hafta7_Raporu.html) |
+| 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 HTML](Reports/Hafta8_Raporu.html) |
+| 9 | Sekreter Paneli, Muhasebe iyileştirmeleri, Bildirimler | [📄 HTML](Reports/Hafta9_Raporu.html) |
+| 10 | ENS Yapay Zeka Asistanı, Hasta Paneli modernizasyonu, Final | [📄 HTML](Reports/Hafta10_Raporu.html) |
+
+- [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
+
+## Test ve Loglama
+- Testleri calistirmak icin: `dotnet test .\HastaneRandevuSistemi.Tests\HastaneRandevuSistemi.Tests.csproj`
+- Uygulama loglari: `HastaneRandevuSistemi\Logs\hrs-*.log`
 
 ## Varsayılan Roller
 - `Admin`

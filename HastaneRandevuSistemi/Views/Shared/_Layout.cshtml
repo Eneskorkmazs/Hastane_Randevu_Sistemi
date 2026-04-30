@@ -7,7 +7,7 @@
 
 @{
     var unreadNotificationCount = 0;
-    var accessRequestBadgeCount = 0;
+    var newReviewBadgeCount = 0;
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
     var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
     var isAccountAuthScreen =
@@ -24,6 +24,7 @@
     var isDoctor = !isAccountAuthScreen && User.IsInRole("Doktor");
     var isPatient = !isAccountAuthScreen && User.IsInRole("Hasta");
     var isAdmin = !isAccountAuthScreen && User.IsInRole("Admin");
+    var isSecretary = !isAccountAuthScreen && User.IsInRole("Sekreter");
     var isSignedIn = !isAccountAuthScreen && SignInManager.IsSignedIn(User);
 
     string GetNavLinkClass(string controller, params string[] actions)
@@ -46,25 +47,11 @@
 
     if (isSignedIn && isDoctor)
     {
-        var currentDoctorUser = await UserManager.GetUserAsync(User);
-        if (currentDoctorUser != null)
-        {
-            var doctorId = await DbContext.Doctors
-                .Where(d => d.UserId == currentDoctorUser.Id || (d.Name == currentDoctorUser.Name && d.Surname == currentDoctorUser.Surname))
-                .Select(d => (int?)d.Id)
-                .FirstOrDefaultAsync();
-
-            if (doctorId.HasValue)
-            {
-                accessRequestBadgeCount = await DbContext.Appointments
-                    .CountAsync(a => a.DoctorId == doctorId.Value && a.AdminAccessRequested && !a.AdminAccessGranted);
-            }
-        }
+        // Doktor için ek badge hesaplaması gerekirse buraya eklenebilir
     }
     else if (isSignedIn && isAdmin)
     {
-        accessRequestBadgeCount = await DbContext.Appointments
-            .CountAsync(a => a.AdminAccessRequested && !a.AdminAccessGranted);
+        newReviewBadgeCount = await DbContext.HospitalReviews.CountAsync(r => r.AdminReply == null);
     }
 }
 
@@ -88,6 +75,7 @@
     </script>
 </head>
 <body class="d-flex flex-column min-vh-100">
+    <a class="skip-link" href="#main-content">Ana içeriğe geç</a>
 
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark navbar-custom shadow fixed-top" style="background: linear-gradient(90deg, #004e92 0%, #000428 100%);">
@@ -112,8 +100,8 @@
                 }
 
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+                        aria-expanded="false" aria-label="Gezinme menüsünü aç veya kapat">
+                    <span class="navbar-toggler-icon" aria-hidden="true"></span>
                 </button>
 
                 <div class="navbar-collapse collapse justify-content-between">
@@ -128,39 +116,6 @@
                             </li>
                         }
 
-                        @if (isDoctor)
-                        {
-                            <li class="nav-item">
-                                <a class="@GetNavLinkClass("Home", "DoctorDashboard")" asp-controller="Home" asp-action="DoctorDashboard">
-                                    <i class="fa-solid fa-chart-line me-1"></i> Panelim
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="@GetNavLinkClass("DoctorTools", "Schedule")" asp-controller="DoctorTools" asp-action="Schedule">
-                                    <i class="fa-solid fa-calendar-days me-1"></i> Takvimim
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="@GetNavLinkClass("Appointment", "Index")" asp-controller="Appointment" asp-action="Index">
-                                    <i class="fa-solid fa-list-check me-1"></i> Randevular
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="@GetNavLinkClass("DoctorTools", "Index", "Prescription", "PrescriptionFromAppointment", "PrescriptionPreview")" asp-controller="DoctorTools" asp-action="Index">
-                                    <i class="fa-solid fa-suitcase-medical me-1"></i> Araçlarım
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="@GetNavLinkClass("Appointment", "DoctorAccessRequests")" asp-controller="Appointment" asp-action="DoctorAccessRequests">
-                                    <i class="fa-solid fa-user-shield me-1"></i> Erisim Istekleri
-                                    @if (accessRequestBadgeCount > 0)
-                                    {
-                                        <span class="badge rounded-pill bg-danger text-white ms-1 nav-badge-premium">@accessRequestBadgeCount</span>
-                                    }
-                                </a>
-                            </li>
-                        }
-
                         @if (isPatient)
                         {
                             <li class="nav-item">
@@ -169,11 +124,6 @@
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="@GetNavLinkClass("Patient", "MedicalHistory", "Prescriptions")" asp-controller="Patient" asp-action="MedicalHistory">
-                                    <i class="fa-solid fa-notes-medical me-1"></i> Saglik Gecmisim
-                                </a>
-                            </li>
-                            <li class="nav-item position-relative">
                                 <a class="@GetNavLinkClass("Patient", "Notifications")" asp-controller="Patient" asp-action="Notifications">
                                     <i class="fa-solid fa-bell me-1"></i> Bildirimler
                                     <span id="unreadNotificationBadge" class="badge rounded-pill bg-danger text-white ms-1 nav-badge-premium" style="@(unreadNotificationCount > 0 ? "display:inline-flex;" : "display:none;")">
@@ -192,71 +142,82 @@
                             </li>
                         }
 
-                        @if (isAuthenticated)
+                        @if (isAuthenticated && !isAdmin && !isDoctor && !isPatient)
                         {
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Appointment", "Index")" asp-controller="Appointment" asp-action="Index">
-                                    @if (isPatient)
+                                    @if (isSecretary)
                                     {
-                                        <span><i class="fa-solid fa-calendar-days me-1"></i> Randevularım</span>
+                                        <span><i class="fa-solid fa-list-check me-1"></i> Randevu Listesi</span>
                                     }
-                                    else
-                                    {
-                                        <span>
-                                            <i class="fa-solid fa-list-check me-1"></i> Randevu Listesi
-                                            @if (accessRequestBadgeCount > 0)
-                                            {
-                                                <span class="badge rounded-pill bg-danger text-white ms-1 nav-badge-premium">@accessRequestBadgeCount</span>
-                                            }
-                                        </span>
-                                    }
+                                </a>
+                            </li>
+                        }
+
+                        @if (isSecretary)
+                        {
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("Secretary")" asp-controller="Secretary" asp-action="Dashboard">
+                                    <i class="fa-solid fa-clipboard-check me-1"></i> Sekreter Paneli
                                 </a>
                             </li>
                         }
 
                         @if (isAdmin)
                         {
-                            <li class="nav-item dropdown">
-                                <a class="@(string.Equals(currentController, "Doctor", StringComparison.OrdinalIgnoreCase) || string.Equals(currentController, "Department", StringComparison.OrdinalIgnoreCase) || (string.Equals(currentController, "Home", StringComparison.OrdinalIgnoreCase) && (string.Equals(currentAction, "AdminReport", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "AdminAccounting", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "CreateAnnouncement", StringComparison.OrdinalIgnoreCase) || string.Equals(currentAction, "AdminDashboard", StringComparison.OrdinalIgnoreCase))) ? "nav-link nav-link-premium dropdown-toggle is-active" : "nav-link nav-link-premium dropdown-toggle")" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <i class="fa-solid fa-briefcase-medical me-1"></i> Yönetim
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("Home", "AdminDashboard")" asp-controller="Home" asp-action="AdminDashboard">
+                                    <i class="fa-solid fa-gauge-high me-1"></i> Panel
                                 </a>
-                                <ul class="dropdown-menu border-0 shadow-lg p-2" aria-labelledby="navbarDropdown">
-                                    <li>
-                                        <a class="dropdown-item rounded" asp-controller="Doctor" asp-action="Index">
-                                            <i class="fa-solid fa-user-doctor text-primary me-2"></i> Doktorlar
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item rounded" asp-controller="Department" asp-action="Index">
-                                            <i class="fa-solid fa-hospital text-success me-2"></i> Bölümler
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item rounded" asp-controller="Home" asp-action="AdminReport">
-                                            <i class="fa-solid fa-chart-column text-warning me-2"></i> Raporlar
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item rounded" asp-controller="Home" asp-action="AdminAccounting">
-                                            <i class="fa-solid fa-wallet text-success me-2"></i> Muhasebe
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item rounded" asp-controller="Home" asp-action="Tahsilat">
-                                            <i class="fa-solid fa-hand-holding-dollar text-primary me-2"></i> Tahsilat
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item rounded" asp-controller="Home" asp-action="CreateAnnouncement">
-                                            <i class="fa-solid fa-bullhorn text-info me-2"></i> Duyuru Gönder
-                                        </a>
-                                    </li>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link nav-link-premium dropdown-toggle @(string.Equals(currentController, "Doctor", StringComparison.OrdinalIgnoreCase) || string.Equals(currentController, "Department", StringComparison.OrdinalIgnoreCase) ? "is-active" : "")" href="#" id="navYonetim" role="button" data-bs-toggle="dropdown">
+                                    Yönetim
+                                </a>
+                                <ul class="dropdown-menu border-0 shadow mt-2" aria-labelledby="navYonetim">
+                                    <li><a class="dropdown-item" asp-controller="Doctor" asp-action="Index">Doktor Yönetimi</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Department" asp-action="Index">Bölüm Yönetimi</a></li>
+                                </ul>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link nav-link-premium dropdown-toggle @(currentAction.Contains("Analysis") || currentAction.Contains("Insights") || currentAction.Contains("Analytics") ? "is-active" : "")" href="#" id="navAnaliz" role="button" data-bs-toggle="dropdown">
+                                    Analizler
+                                </a>
+                                <ul class="dropdown-menu border-0 shadow mt-2" aria-labelledby="navAnaliz">
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminServiceAnalysis">Hizmet Analizi</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminDoctorInsights">Doktor Analizleri</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminAccountingDepartments">Bölüm Analizleri</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminAnalytics">Genel Grafikler</a></li>
+                                </ul>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link nav-link-premium dropdown-toggle @(currentAction.Contains("Accounting") || currentAction == "Tahsilat" ? "is-active" : "")" href="#" id="navMuhasebe" role="button" data-bs-toggle="dropdown">
+                                    Muhasebe
+                                </a>
+                                <ul class="dropdown-menu border-0 shadow mt-2" aria-labelledby="navMuhasebe">
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminAccounting">Finansal Özet</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminAccountingDoctors">Doktor Muhasebesi</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminAccountingPending">Bekleyen Ödemeler</a></li>
                                     <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item rounded bg-light fw-bold text-danger" asp-controller="Home" asp-action="AdminDashboard">
-                                            <i class="fa-solid fa-gauge-high me-2"></i> Yönetim Paneli
-                                        </a>
-                                    </li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="Tahsilat">Tahsilat Onayı</a></li>
+                                </ul>
+                            </li>
+
+                            <li class="nav-item dropdown">
+                                <a class="nav-link nav-link-premium dropdown-toggle @(currentAction == "AdminHospitalReviews" || currentAction == "CreateAnnouncement" || currentAction == "AdminReport" ? "is-active" : "")" href="#" id="navSistem" role="button" data-bs-toggle="dropdown">
+                                    Sistem
+                                    @if (newReviewBadgeCount > 0)
+                                    {
+                                        <span class="badge rounded-pill bg-danger text-white ms-1" style="font-size: 0.65rem;">@newReviewBadgeCount</span>
+                                    }
+                                </a>
+                                <ul class="dropdown-menu border-0 shadow mt-2" aria-labelledby="navSistem">
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminHospitalReviews">Hasta Yorumları</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="CreateAnnouncement">Duyuru Gönder</a></li>
+                                    <li><a class="dropdown-item" asp-controller="Home" asp-action="AdminReport">Sistem Raporları</a></li>
                                 </ul>
                             </li>
                         }
@@ -279,7 +240,7 @@
                                 <a class="btn btn-outline-light dropdown-toggle rounded-pill px-3" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fa-solid fa-circle-user me-2"></i> @displayName
                                     <br><small style="font-size:0.7em; opacity:0.8;">
-                                        @(isAdmin ? "Admin" : isDoctor ? "Doktor" : "Hasta")
+                                        @(isAdmin ? "Admin" : isDoctor ? "Doktor" : isSecretary ? "Sekreter" : "Hasta")
                                     </small>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end border-0 shadow mt-2">
@@ -291,13 +252,18 @@
                                             </a>
                                         </li>
                                         <li>
-                                            <a class="dropdown-item" asp-controller="Patient" asp-action="Profile">
-                                                <i class="fa-solid fa-user-pen me-2"></i> Profilim
+                                            <a class="dropdown-item" asp-controller="Appointment" asp-action="Index">
+                                                <i class="fa-solid fa-calendar-days me-2"></i> Randevularım
                                             </a>
                                         </li>
                                         <li>
                                             <a class="dropdown-item" asp-controller="Patient" asp-action="MedicalHistory">
-                                                <i class="fa-solid fa-notes-medical me-2"></i> Saglik Gecmisim
+                                                <i class="fa-solid fa-notes-medical me-2"></i> Sağlık Geçmişim
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Patient" asp-action="Profile">
+                                                <i class="fa-solid fa-user-pen me-2"></i> Profilim
                                             </a>
                                         </li>
                                         <li>
@@ -308,7 +274,7 @@
                                             </span>
                                         </a>
                                         </li>
-                                        <li><hr class="dropdown-divider"></li>
+                                                                                                                <li><hr class="dropdown-divider"></li>
                                     }
                                     @if (isDoctor)
                                     {
@@ -327,21 +293,7 @@
                                                 <i class="fa-solid fa-calendar-days me-2"></i> Çalışma Takvimi
                                             </a>
                                         </li>
-                                        <li>
-                                            <a class="dropdown-item" asp-controller="Appointment" asp-action="Index">
-                                                <i class="fa-solid fa-list-check me-2"></i> Randevular
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a class="dropdown-item" asp-controller="Appointment" asp-action="DoctorAccessRequests">
-                                                <i class="fa-solid fa-user-shield me-2"></i> Erisim Istekleri
-                                                @if (accessRequestBadgeCount > 0)
-                                                {
-                                                    <span class="badge rounded-pill bg-danger text-white ms-2">@accessRequestBadgeCount</span>
-                                                }
-                                            </a>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
+                                                                                                                <li><hr class="dropdown-divider"></li>
                                     }
                                     <li>
                                         <a class="dropdown-item text-danger" asp-controller="Account" asp-action="Logout">
@@ -371,7 +323,7 @@
     </header>
 
     <div class="container mt-5 pt-5">
-        <main role="main" class="@(ViewData["Title"]?.ToString() == "Ana Sayfa" ? "container-fluid p-0" : "container mt-5 pt-5")">
+        <main id="main-content" tabindex="-1" role="main" class="@(ViewData["Title"]?.ToString() == "Ana Sayfa" ? "container-fluid p-0" : "container mt-5 pt-5")">
             @RenderBody()
         </main>
     </div>
@@ -386,9 +338,9 @@
                         Randevu sistemimiz ile beklemeden muayene olabilirsiniz.
                     </p>
                     <div class="mt-3">
-                        <a href="https://github.com/Eneskorkmazs" target="_blank" class="social-btn"><i class="fa-brands fa-github"></i></a>
-                        <a href="https://www.instagram.com/enes_korkmazs_/#" target="_blank" class="social-btn"><i class="fa-brands fa-instagram"></i></a>
-                        <a href="https://www.linkedin.com/in/enes-korkmaz-436a92340/" target="_blank" class="social-btn"><i class="fa-brands fa-linkedin-in"></i></a>
+                        <a href="https://github.com/Eneskorkmazs" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="GitHub profilini aç"><i class="fa-brands fa-github" aria-hidden="true"></i></a>
+                        <a href="https://www.instagram.com/enes_korkmazs_/#" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="Instagram profilini aç"><i class="fa-brands fa-instagram" aria-hidden="true"></i></a>
+                        <a href="https://www.linkedin.com/in/enes-korkmaz-436a92340/" target="_blank" rel="noopener noreferrer" class="social-btn" aria-label="LinkedIn profilini aç"><i class="fa-brands fa-linkedin-in" aria-hidden="true"></i></a>
                     </div>
                 </div>
 
@@ -476,4 +428,3 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

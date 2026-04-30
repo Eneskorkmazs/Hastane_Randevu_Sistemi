@@ -26,11 +26,16 @@
         <div>
             <span class="eyebrow">Finans Operasyonu</span>
             <h1 class="mb-2">Tahsilat Merkezi</h1>
-            <p class="mb-0">Bugun alinacak odemeleri, gecikmis tahsilatlari ve son kasa hareketlerini tek ekrandan yonetin.</p>
+            <p class="mb-0">Bugün alınacak ödemeleri, gecikmiş tahsilatları ve son kasa hareketlerini tek ekrandan yönetin.</p>
         </div>
         <div class="hero-actions">
+            <form asp-action="MarkAllCollected" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="returnUrl" value="@Url.Action("Tahsilat", "Home")" />
+                <button type="submit" class="btn btn-warning fw-bold rounded-pill px-4">Bütün Ödemeleri Al</button>
+            </form>
             <a asp-action="AdminAccounting" class="btn btn-light text-primary fw-bold rounded-pill px-4">Muhasebe</a>
-            <a asp-action="AdminDashboard" class="btn btn-outline-light rounded-pill px-4">Panele Don</a>
+            <a asp-action="AdminDashboard" class="btn btn-outline-light rounded-pill px-4">Panele Dön</a>
         </div>
     </div>
 
@@ -39,28 +44,48 @@
             <div class="metric-card">
                 <span>Bekleyen Toplam</span>
                 <strong>@Model.PendingTotal.ToString("C0", trCulture)</strong>
-                <small>@Model.PendingCount kayit</small>
+                <small>@Model.PendingCount kayıt</small>
             </div>
         </div>
         <div class="col-md-6 col-xl-3">
             <div class="metric-card warning">
-                <span>Gecikmis Tahsilat</span>
+                <span>Gecikmiş Tahsilat</span>
                 <strong>@Model.OverdueTotal.ToString("C0", trCulture)</strong>
-                <small>@Model.OverdueCount kayit</small>
+                <small>@Model.OverdueCount kayıt</small>
             </div>
         </div>
         <div class="col-md-6 col-xl-3">
             <div class="metric-card info">
-                <span>Bugun Alinabilir</span>
+                <span>Bugün Alınabilir</span>
                 <strong>@Model.TodayTotal.ToString("C0", trCulture)</strong>
-                <small>@Model.TodayCount kayit</small>
+                <small>@Model.TodayCount kayıt</small>
             </div>
         </div>
         <div class="col-md-6 col-xl-3">
             <div class="metric-card success">
-                <span>Bugun Kasa</span>
+                <span>Bugün Kasa</span>
                 <strong>@Model.CollectedTodayTotal.ToString("C0", trCulture)</strong>
                 <small>Tahsil edilen toplam</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toplam Kasa Kartı -->
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm rounded-4 p-3 d-flex flex-row align-items-center gap-4"
+                 style="background: linear-gradient(135deg, #004e92 0%, #000428 100%); color:#fff;">
+                <div class="rounded-3 d-flex align-items-center justify-content-center bg-white bg-opacity-10"
+                     style="width:60px;height:60px;flex-shrink:0;">
+                    <i class="fa-solid fa-vault fa-xl text-white"></i>
+                </div>
+                <div>
+                    <div class="small text-white-50 fw-semibold text-uppercase" style="letter-spacing:.08em;">Toplam Kasa (Tüm Zamanlar)</div>
+                    <div class="fw-black" style="font-size:2.2rem;line-height:1.1;">
+                        @((ViewBag.AllCollectedTotal as decimal? ?? 0m).ToString("C0", trCulture))
+                    </div>
+                    <div class="small text-white-50">Sisteme kayıtlı tüm tahsil edilen ödemeler</div>
+                </div>
             </div>
         </div>
     </div>
@@ -71,17 +96,17 @@
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                         <div>
-                            <h5 class="fw-bold mb-1">Oncelikli Tahsilatlar</h5>
-                            <p class="text-muted small mb-0">Gecikmis kayitlar once gelir, sonra bugun alinabilecek odemeler listelenir.</p>
+                            <h5 class="fw-bold mb-1">Öncelikli Tahsilatlar</h5>
+                            <p class="text-muted small mb-0">Gecikmiş kayıtlar önce gelir, sonra bugün alınabilecek ödemeler listelenir.</p>
                         </div>
-                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.PendingItems.Count kayit</span>
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.PendingItems.Count kayıt</span>
                     </div>
 
                     @if (!Model.PendingItems.Any())
                     {
                         <div class="empty-state">
                             <i class="fa-solid fa-circle-check"></i>
-                            <p class="mb-0">Tahsilat bekleyen kayit kalmadi.</p>
+                            <p class="mb-0">Tahsilat bekleyen kayıt kalmadı.</p>
                         </div>
                     }
                     else
@@ -90,12 +115,12 @@
                             <table class="table align-middle mb-0">
                                 <thead>
                                     <tr>
-                                        <th>Oncelik</th>
+                                        <th>Öncelik</th>
                                         <th>Hasta</th>
-                                        <th>Doktor / Bolum</th>
+                                        <th>Doktor / Bölüm</th>
                                         <th>Tarih</th>
                                         <th class="text-end">Tutar</th>
-                                        <th class="text-end">Islem</th>
+                                        <th class="text-end">İşlem</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -105,7 +130,7 @@
                                         <tr>
                                             <td>
                                                 <span class="badge rounded-pill @(isOverdue ? "bg-danger" : "bg-warning text-dark")">
-                                                    @(isOverdue ? "Gecikmis" : "Bugun")
+                                                    @(isOverdue ? "Gecikmiş" : "Bugün")
                                                 </span>
                                             </td>
                                             <td class="fw-semibold">@payment.PatientName</td>
@@ -138,22 +163,22 @@
         <div class="col-lg-4">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Hizli Ozet</h5>
+                    <h5 class="fw-bold mb-3">Hızlı Özet</h5>
                     <div class="summary-stack">
                         <div class="summary-tile">
-                            <span>En yuksek bekleyen bolum</span>
+                            <span>En yüksek bekleyen bölüm</span>
                             <strong>@Model.TopDepartmentName</strong>
                             <small>@Model.TopDepartmentAmount.ToString("C0", trCulture)</small>
                         </div>
                         <div class="summary-tile">
-                            <span>En yuksek bekleyen doktor</span>
+                            <span>En yüksek bekleyen doktor</span>
                             <strong>@Model.TopDoctorName</strong>
                             <small>@Model.TopDoctorAmount.ToString("C0", trCulture)</small>
                         </div>
                         <div class="summary-tile subtle">
                             <span>Operasyon notu</span>
-                            <strong>Once gecikmis tahsilatlari kapat</strong>
-                            <small>Kasa akisinda en hizli iyilesme bu listeden gelir.</small>
+                            <strong>Önce gecikmiş tahsilatları kapat</strong>
+                            <small>Kasa akışında en hızlı iyileşme bu listeden gelir.</small>
                         </div>
                     </div>
                 </div>
@@ -166,7 +191,7 @@
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                 <div>
                     <h5 class="fw-bold mb-1">Son Tahsil Edilenler</h5>
-                    <p class="text-muted small mb-0">Kasaya yeni giren hareketleri hizlica kontrol edin.</p>
+                    <p class="text-muted small mb-0">Kasaya yeni giren hareketleri hızlıca kontrol edin.</p>
                 </div>
                 <span class="badge bg-light text-dark border rounded-pill px-3 py-2">@Model.RecentCollectedItems.Count hareket</span>
             </div>
@@ -175,7 +200,7 @@
             {
                 <div class="empty-state compact">
                     <i class="fa-solid fa-receipt"></i>
-                    <p class="mb-0">Henuz tahsil edilmis kayit bulunmuyor.</p>
+                    <p class="mb-0">Henüz tahsil edilmiş kayıt bulunmuyor.</p>
                 </div>
             }
             else
@@ -186,7 +211,7 @@
                             <tr>
                                 <th>Hasta</th>
                                 <th>Doktor</th>
-                                <th>Bolum</th>
+                                <th>Bölüm</th>
                                 <th>Tarih</th>
                                 <th class="text-end">Tutar</th>
                             </tr>
