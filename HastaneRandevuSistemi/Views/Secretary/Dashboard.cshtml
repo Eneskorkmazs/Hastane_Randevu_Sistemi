@@ -47,14 +47,6 @@
                 <div class="col-md-3">
                     <div class="card border-0 shadow-sm rounded-4 h-100">
                         <div class="card-body p-4 text-center">
-                            <div class="small text-muted text-uppercase fw-bold mb-2">Reçete Yazılacak</div>
-                            <div class="h2 fw-bold mb-0">@appointmentsForPrescription.Count</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
-                        <div class="card-body p-4 text-center">
                             <div class="small text-muted text-uppercase fw-bold mb-2">Bekleyen Reçete</div>
                             <div class="h2 fw-bold mb-0 text-warning">@unsentPrescriptions.Count</div>
                         </div>
@@ -157,6 +149,7 @@
                                     <tr>
                                         <th>Hasta</th>
                                         <th>Doktor / Bölüm</th>
+                                        <th>Yazıldı</th>
                                         <th class="text-end">İşlem</th>
                                     </tr>
                                 </thead>
@@ -166,9 +159,10 @@
                                         <tr>
                                             <td class="fw-bold">@item.PatientName @item.PatientSurname</td>
                                             <td>
-                                                <div class="small">Dr. @item.Doctor?.Surname</div>
+                                                <div class="small">@(item.Doctor != null ? $"{item.Doctor.Title} {item.Doctor.Name} {item.Doctor.Surname}" : "-")</div>
                                                 <div class="x-small text-muted">@item.Doctor?.Department?.Name</div>
                                             </td>
+                                            <td class="small text-muted">@(item.PrescriptionCreatedAt?.ToString("dd.MM.yyyy HH:mm") ?? "-")</td>
                                             <td class="text-end">
                                                 <form asp-action="SendPrescription" asp-route-id="@item.Id" method="post">
                                                     @Html.AntiForgeryToken()

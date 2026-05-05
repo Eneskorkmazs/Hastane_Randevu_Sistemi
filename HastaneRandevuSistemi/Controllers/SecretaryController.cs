@@ -60,14 +60,7 @@ namespace HastaneRandevuSistemi.Controllers
                 .OrderByDescending(a => a.PrescriptionCreatedAt)
                 .ToListAsync();
 
-            var appointmentsForPrescription = await _context.Appointments
-                .AsNoTracking()
-                .Include(a => a.Doctor)
-                .ThenInclude(d => d!.Department)
-                .Where(a => a.PrescriptionCreatedAt == null && a.Status == AppointmentStatus.Tamamlandi)
-                .OrderByDescending(a => a.AppointmentDate)
-                .Take(50)
-                .ToListAsync();
+            var appointmentsForPrescription = new List<Appointment>(); // Reçete artık doktor tarafından yazılıyor
 
             var sentPrescriptions = await _context.Appointments
                 .AsNoTracking()

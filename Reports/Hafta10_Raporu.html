@@ -3,27 +3,30 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Hastane Randevu Sistemi - Hafta 10 Raporu</title>
+    <title>Hastane Randevu Sistemi - Hafta 10 Raporu (Final)</title>
     <style>
         @page { size: A4; margin: 16mm; }
         :root { --ink: #1f2937; --muted: #5b6472; --line: #d9e1ea; --accent: #0b5cad; --soft: #eef6ff; --paper: #ffffff; --bg: #f4f7fb; }
         * { box-sizing: border-box; }
         body { margin: 0; padding: 24px; background: var(--bg); color: var(--ink); font-family: "Segoe UI", Tahoma, Arial, sans-serif; line-height: 1.6; }
-        .report { max-width: 920px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08); }
+        .report { max-width: 920px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 18px 44px rgba(15,23,42,0.08); }
         .hero { padding: 32px; background: linear-gradient(135deg, #eff7ff 0%, #ffffff 60%, #edf5ff 100%); border-bottom: 1px solid var(--line); }
         .hero h1 { margin: 0 0 10px; font-size: 28px; line-height: 1.2; }
         .hero p { margin: 0; color: var(--muted); font-size: 15px; }
         .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
-        .meta-card { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255, 255, 255, 0.92); font-size: 14px; }
+        .meta-card { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.92); font-size: 14px; }
         .meta-card strong { display: block; margin-bottom: 4px; color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
         .section { padding: 26px 32px 0; }
         h2 { margin: 0 0 12px; font-size: 22px; }
         h3 { margin: 0 0 10px; font-size: 18px; color: var(--accent); }
         p { margin: 0 0 12px; }
+        ul { margin: 0 0 12px; padding-left: 20px; }
+        li { margin-bottom: 4px; font-size: 14px; }
         .summary { padding: 16px 18px; border-left: 5px solid var(--accent); border-radius: 12px; background: var(--soft); }
         .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; margin-right: 4px; }
         .tag-new { background: #d1fae5; color: #065f46; }
         .tag-mod { background: #dbeafe; color: #1e40af; }
+        .tag-del { background: #fee2e2; color: #991b1b; }
         .file-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
         .file-table th { background: var(--soft); color: var(--accent); padding: 8px 12px; text-align: left; border-bottom: 2px solid var(--line); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
         .file-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -33,13 +36,17 @@
         .card p { margin: 0; font-size: 14px; color: var(--muted); }
         .closing { margin-top: 16px; padding: 18px; border: 1px dashed #b9c7d8; border-radius: 14px; background: #f8fafc; }
         .footer { padding: 24px 32px 30px; font-size: 12px; color: var(--muted); }
+        .badge-final { display: inline-block; background: #0b5cad; color: #fff; padding: 4px 14px; border-radius: 999px; font-size: 13px; font-weight: 700; margin-left: 10px; vertical-align: middle; }
+        .checklist { list-style: none; padding: 0; margin: 0 0 12px; }
+        .checklist li { padding: 4px 0; font-size: 14px; }
+        .checklist li::before { content: "✅ "; }
     </style>
 </head>
 <body>
     <main class="report">
         <section class="hero">
-            <h1>Hastane Randevu Sistemi — Hafta 10 Raporu (Final)</h1>
-            <p>Bu rapor, projenin 10. ve son haftasında tamamlanan Hasta Paneli modernizasyonu, ENS Yapay Zeka Asistanı entegrasyonu, Türkçe karakter standardizasyonu ve final düzenlemelerini içermektedir.</p>
+            <h1>Hastane Randevu Sistemi — Hafta 10 Raporu <span class="badge-final">FINAL</span></h1>
+            <p>Bu rapor, projenin 10. ve son haftasında tamamlanan Doktor Değerlendirme Sistemi, Chart.js canlı dashboard grafikleri, Dark Mode, erişilebilirlik iyileştirmeleri, kod temizliği ve proje dokümantasyonunu kapsamaktadır.</p>
             <div class="meta">
                 <div class="meta-card"><strong>Proje</strong>Hastane Randevu Sistemi</div>
                 <div class="meta-card"><strong>Hafta</strong>10 — Final (30 Nisan 2026)</div>
@@ -50,7 +57,7 @@
         <section class="section">
             <h2>Genel Değerlendirme</h2>
             <div class="summary">
-                Onuncu ve son haftada projenin en kapsamlı güncellemesi gerçekleştirilmiştir. Hasta Paneli tamamen yeniden tasarlanarak modern bir dashboard arayüzüne kavuşmuş, <strong>ENS Akıllı Asistanı</strong> entegre edilerek hastalar yapay zeka destekli semptom analizi yapabilir hale gelmiştir. Ayrıca tüm arayüzlerdeki Türkçe karakter bozuklukları düzeltilmiş, reçete yazma kuralları sıkılaştırılmış ve proje dokümantasyonu tamamlanmıştır.
+                Onuncu ve son haftada projenin tüm eksik özellikleri tamamlanmıştır. Doktor Değerlendirme Sistemi ile hastalar tamamlanan randevuları sonrasında doktorlarına yıldız puanı ve yorum bırakabilmektedir. Admin dashboard'a Chart.js ile animasyonlu donut ve bar grafikleri eklenmiştir. Dark Mode tüm sayfalarda çalışmakta, erişilebilirlik standartları iyileştirilmiş ve gereksiz kodlar temizlenmiştir.
             </div>
         </section>
 
@@ -58,20 +65,28 @@
             <h2>Bu Hafta Yapılan Çalışmalar</h2>
             <div class="card-grid">
                 <div class="card">
-                    <h4>🤖 ENS Yapay Zeka Asistanı</h4>
-                    <p>Hastalar şikayetlerini doğal dilde yazarak yapay zeka destekli bölüm önerileri alabiliyor. ENS, soru sorarak teşhisi netleştiren, sağlık dışı konuları kibarca reddeden interaktif bir asistan olarak tasarlandı.</p>
+                    <h4>⭐ Doktor Değerlendirme Sistemi</h4>
+                    <p>Hastalar tamamlanan randevuları sonrasında doktorlarına 1-5 yıldız puanı ve yorum bırakabiliyor. Her hesap her doktora yalnızca bir yorum yapabiliyor. Admin yorumları silebiliyor.</p>
                 </div>
                 <div class="card">
-                    <h4>🏥 Hasta Paneli Modernizasyonu</h4>
-                    <p>Dashboard tamamen yeniden tasarlandı: Akıllı randevu kartı, hızlı istatistik özeti, kritik sağlık bilgileri paneli, sağlık karnesi ve bölüm ücretleri tablosu eklendi. Glassmorphism ve micro-animation efektleri uygulandı.</p>
+                    <h4>📊 Chart.js Canlı Dashboard</h4>
+                    <p>Admin paneline animasyonlu grafikler eklendi: Randevu durum dağılımı (donut chart) ve haftalık trend (bar chart). Chart.js 4.4.1 CDN üzerinden yükleniyor.</p>
                 </div>
                 <div class="card">
-                    <h4>🇹🇷 Türkçe Karakter Standardizasyonu</h4>
-                    <p>15'ten fazla View dosyasında ve tüm controller mesajlarında "Bolum", "Islem", "Odeme" gibi karakter bozuklukları "Bölüm", "İşlem", "Ödeme" olarak düzeltildi. Grafik tooltip'leri ve buton metinleri güncellendi.</p>
+                    <h4>🌙 Dark Mode</h4>
+                    <p>Tüm sayfalarda çalışan tema değiştirme sistemi. Tercih localStorage'a kaydediliyor. CSS değişkenleri ile tutarlı renk geçişleri sağlanıyor.</p>
                 </div>
                 <div class="card">
-                    <h4>📋 Reçete Güvenlik Kuralları</h4>
-                    <p>Tarihi gelmemiş randevulara reçete yazılması engellendi. Bu kural hem doktor hem sekreter panelinde aktif. Doktorlar yalnızca kendi hastalarının geçmiş randevularına reçete yazabiliyor.</p>
+                    <h4>♿ Erişilebilirlik (Accessibility)</h4>
+                    <p>ARIA etiketleri eklendi, skip link düzeltildi, navbar toggler aria-hidden eklendi. WCAG 2.1 temel gereksinimlerine uyum sağlandı.</p>
+                </div>
+                <div class="card">
+                    <h4>🧹 Kod Temizliği</h4>
+                    <p>Orphaned view'lar silindi (DoctorAccessRequests, DoctorTools/Prescription). Kullanılmayan değişkenler kaldırıldı. DoctorToolsController'dan gereksiz using temizlendi.</p>
+                </div>
+                <div class="card">
+                    <h4>📚 Dokümantasyon</h4>
+                    <p>README.md 10 haftalık kapsam ile güncellendi. Haftalık raporlar tablosu tamamlandı. Hafta 9-10 HTML raporları yeniden yazıldı.</p>
                 </div>
             </div>
         </section>
@@ -81,27 +96,70 @@
             <table class="file-table">
                 <thead><tr><th>Durum</th><th>Dosya</th><th>Açıklama</th></tr></thead>
                 <tbody>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Services/ISymptomCheckerService.cs</td><td>Semptom analiz servisi arayüzü oluşturuldu.</td></tr>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Services/SymptomCheckerService.cs</td><td>Kural tabanlı semptom analiz motoru.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/Patient/Dashboard.cshtml</td><td>Komple yeniden tasarım: ENS asistanı, istatistikler, sağlık bilgileri.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Controllers/PatientController.cs</td><td>CheckSymptoms API, sohbet mantığı ve akıllı soru-cevap sistemi.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Controllers/HomeController.cs</td><td>Reçete tarih kontrolü ve Türkçe düzenlemeler.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Controllers/SecretaryController.cs</td><td>Reçete tarih kontrolü eklendi.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/**/*.cshtml</td><td>15+ View'da Türkçe karakter düzenlemeleri.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>README.md</td><td>Proje dokümantasyonu güncellendi, haftalık raporlar eklendi.</td></tr>
+                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Models/DoctorReview.cs</td><td>Doktor değerlendirme modeli oluşturuldu.</td></tr>
+                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Controllers/DoctorReviewController.cs</td><td>Değerlendirme gönderme, profil görüntüleme, silme action'ları.</td></tr>
+                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Views/DoctorReview/Profile.cshtml</td><td>Doktor profil + yıldız puanlama + yorum listesi sayfası.</td></tr>
+                    <tr><td><span class="tag tag-new">YENİ</span></td><td>ViewModels/QueueItemViewModel.cs</td><td>Sıra takip ViewModel (altyapı).</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Data/ApplicationDbContext.cs</td><td>DoctorReviews DbSet ve ilişki konfigürasyonu eklendi.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Data/DbSeeder.cs</td><td>EnsureDoctorReviewsTableAsync metodu eklendi (SQLite + PostgreSQL).</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/Home/AdminDashboard.cshtml</td><td>Chart.js donut + bar grafik kartları eklendi, @section Scripts bloğu.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/Doctor/Index.cshtml</td><td>Her doktora "Değerlendir" butonu eklendi.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/Appointment/Details.cshtml</td><td>Tamamlanan randevularda "Doktoru Değerlendir" butonu eklendi.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/Shared/_Layout.cshtml</td><td>ARIA etiketleri, navbar temizliği, Sıra Takip linkleri kaldırıldı.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Program.cs</td><td>CSP başlığına transparenttextures.com izni eklendi.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>HastaneRandevuSistemi.Tests/IntegrationTests.cs</td><td>Doktor değerlendirme test senaryoları eklendi.</td></tr>
+                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>README.md</td><td>10 haftalık kapsam ve raporlar tablosu güncellendi.</td></tr>
+                    <tr><td><span class="tag tag-del">SİLİNDİ</span></td><td>Views/DoctorTools/Prescription.cshtml</td><td>Orphaned view — reçete sekreter'e taşınmıştı.</td></tr>
+                    <tr><td><span class="tag tag-del">SİLİNDİ</span></td><td>Views/Appointment/DoctorAccessRequests.cshtml</td><td>Erişim isteği özelliği kaldırıldı.</td></tr>
                 </tbody>
             </table>
         </section>
 
         <section class="section">
+            <h2>Proje Tamamlanma Durumu</h2>
+            <h3>10 Haftalık Plan — Tüm Maddeler</h3>
+            <ul class="checklist">
+                <li>Model sınıfları genişletildi, FluentValidation aktif</li>
+                <li>Hasta paneli: Dashboard, Profil, Bildirimler, Tıbbi Geçmiş</li>
+                <li>Doktor paneli: Takvim, Araçlar, Dashboard</li>
+                <li>Admin paneli: Grafik/istatistik, Raporlama, Duyuru</li>
+                <li>Gelişmiş arama/filtreleme, UX iyileştirmeleri</li>
+                <li>Web API katmanı, JWT kimlik doğrulama</li>
+                <li>Dosya yükleme, Tıbbi geçmiş modülü</li>
+                <li>Güvenlik (CSRF/XSS), Caching, Dark Mode</li>
+                <li>xUnit testleri, Serilog loglama, Kod refactoring</li>
+                <li>Dokümantasyon, Accessibility, Final testleri</li>
+            </ul>
+            <h3>Projeye Eklenen Özel Özellikler</h3>
+            <ul class="checklist">
+                <li>AI Semptom Kontrolcüsü (kural tabanlı, 30+ semptom)</li>
+                <li>Doktor Değerlendirme Sistemi (yıldız + yorum)</li>
+                <li>QR Kod ile Randevu Doğrulama</li>
+                <li>Dijital Reçete PDF çıktısı (QR imzalı)</li>
+                <li>Canlı Dashboard (Chart.js animasyonlu grafikler)</li>
+                <li>Dark Mode desteği</li>
+            </ul>
+        </section>
+
+        <section class="section">
+            <h2>Kullanılan Teknolojiler</h2>
+            <p>
+                <strong>.NET 8</strong> · <strong>ASP.NET Core MVC</strong> · <strong>Entity Framework Core</strong> ·
+                <strong>ASP.NET Core Identity</strong> · <strong>SQLite / PostgreSQL</strong> · <strong>Bootstrap 5</strong> ·
+                <strong>Chart.js 4.4</strong> · <strong>Swagger</strong> · <strong>JWT</strong> · <strong>Serilog</strong> ·
+                <strong>xUnit</strong> · <strong>QRCoder</strong> · <strong>FluentValidation</strong>
+            </p>
+        </section>
+
+        <section class="section">
             <h2>Sonuç</h2>
             <div class="closing">
-                Onuncu haftanın ve projenin tamamlanmasıyla birlikte Hastane Randevu Sistemi; Admin, Doktor, Sekreter ve Hasta olmak üzere dört farklı rol için kapsamlı, güvenli ve modern bir sağlık yönetim platformu haline gelmiştir. ENS Yapay Zeka Asistanı, dijital reçete sistemi, Dark Mode desteği ve canlı dashboard grafikleri ile projede hedeflenen tüm yaratıcı özellikler başarıyla hayata geçirilmiştir.
+                On haftalık geliştirme sürecinin sonunda Hastane Randevu Sistemi; Admin, Doktor, Sekreter ve Hasta olmak üzere dört farklı rol için kapsamlı, güvenli ve modern bir sağlık yönetim platformu haline gelmiştir. Planlanan tüm özellikler başarıyla tamamlanmış, kod kalitesi yüksek tutulmuş ve proje dokümantasyonu eksiksiz hazırlanmıştır.
             </div>
         </section>
 
         <div class="footer">
-            Bu rapor, 30 Nisan 2026 tarihinde proje kaynak kodu ve geliştirme geçmişi referans alınarak hazırlanmıştır.
+            Bu rapor, 30 Nisan 2026 tarihinde proje kaynak kodu ve geliştirme geçmişi referans alınarak hazırlanmıştır. &nbsp;|&nbsp; Geliştirici: Enes Korkmaz &nbsp;|&nbsp; GitHub: Eneskorkmazs/Hastane_Randevu_Sistemi
         </div>
     </main>
 </body>

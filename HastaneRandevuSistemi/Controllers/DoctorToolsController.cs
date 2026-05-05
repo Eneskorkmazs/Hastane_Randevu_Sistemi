@@ -180,6 +180,89 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         [HttpGet]
+        public async Task<IActionResult> Prescription(int appointmentId)
+        {
+            var doctor = await GetCurrentDoctorAsync();
+            if (doctor == null) return NotFound();
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .FirstOrDefaultAsync(a => a.Id == appointmentId && a.DoctorId == doctor.Id);
+
+            if (appointment == null) return NotFound();
+
+            if (appointment.Status != AppointmentStatus.Tamamlandi || appointment.AppointmentDate > DateTime.Now)
+            {
+                TempData["ErrorMessage"] = "Reçete yalnızca tarihi geçmiş ve tamamlanmış randevular için yazılabilir.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            return View(new HastaneRandevuSistemi.ViewModels.PrescriptionDraftViewModel
+            {
+                AppointmentId = appointment.Id,
+                PatientName = appointment.PatientName,
+                PatientSurname = appointment.PatientSurname,
+                DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim(),
+                DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty,
+                PrescriptionDate = appointment.PrescriptionCreatedAt ?? DateTime.Now,
+                Diagnosis = appointment.PrescriptionDiagnosis ?? string.Empty,
+                Medications = appointment.PrescriptionMedications ?? string.Empty,
+                Notes = appointment.PrescriptionNotes
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Prescription(HastaneRandevuSistemi.ViewModels.PrescriptionDraftViewModel model)
+        {
+            var doctor = await GetCurrentDoctorAsync();
+            if (doctor == null) return NotFound();
+
+            var appointment = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .FirstOrDefaultAsync(a => a.Id == model.AppointmentId && a.DoctorId == doctor.Id);
+
+            if (appointment == null) return NotFound();
+
+            if (appointment.Status != AppointmentStatus.Tamamlandi || appointment.AppointmentDate > DateTime.Now)
+            {
+                TempData["ErrorMessage"] = "Reçete yalnızca tarihi geçmiş ve tamamlanmış randevular için yazılabilir.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            if (!ModelState.IsValid)
+            {
+                model.DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim();
+                model.DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty;
+                model.PatientName = appointment.PatientName;
+                model.PatientSurname = appointment.PatientSurname;
+                return View(model);
+            }
+
+            model.DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim();
+            model.DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty;
+            model.PatientName = appointment.PatientName;
+            model.PatientSurname = appointment.PatientSurname;
+            model.PrescriptionDate = DateTime.Now;
+
+            appointment.PrescriptionDiagnosis = model.Diagnosis.Trim();
+            appointment.PrescriptionMedications = model.Medications.Trim();
+            appointment.PrescriptionNotes = string.IsNullOrWhiteSpace(model.Notes) ? null : model.Notes.Trim();
+            appointment.PrescriptionCreatedAt = model.PrescriptionDate;
+            appointment.PrescriptionSentAt = null;
+            appointment.PrescriptionSentByName = null;
+            await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
+                _cache.Remove($"patient:prescriptions:{appointment.PatientUserId}");
+
+            TempData["SuccessMessage"] = "Reçete kaydedildi. Sekreter tarafından hastaya iletilecek.";
+            return View("PrescriptionPreview", model);
+        }
+
+        [HttpGet]
         [AllowAnonymous]
         public async Task<IActionResult> GetPrescriptionQr(int appointmentId)
         {

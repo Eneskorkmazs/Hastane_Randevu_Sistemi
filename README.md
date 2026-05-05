@@ -64,113 +64,7 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - Erişilebilirlik (accessibility) iyileştirmeleri: ARIA etiketleri, skip link.
 - Proje dokümantasyonu güncellendi.
 - Final testleri tamamlandı.
-- Teknik alt yapı:
-  - hata senaryoları için geri bildirim mesajları standardize edilecek,
-  - en önemli entity'ler için basit birimler eklenecek.
 
-### Hafta 4
-- Hafta 4 kapsamındaki tamamlanan güncellemeler:
-- Admin dashboard'u detaylandırıldı:
-  - haftalık trend gösterimi,
-  - poliklinik yoğunluk kartları,
-  - iptal edilen randevu metrikleri.
-- Yeni raporlama ekranı eklendi:
-  - tarih aralığı,
-  - poliklinik ve durum filtreleri,
-  - yazdırılabilir yönetim özeti.
-- Duyuru ve bilgilendirme modülü eklendi:
-  - tüm kullanıcılar veya rol bazlı hedefleme,
-  - bildirim kutusuna anlık duyuru gönderimi.
-- Randevu durumlarının farklı ekranlarda daha tutarlı yönetilebilmesi için zaman bazlı kontrol ve ortak durum senkronizasyon altyapısı güçlendirildi.
-
-### Hafta 5
-- Hafta 5 kapsamındaki tamamlanan güncellemeler:
-- Randevu listesinde gelişmiş arama ve filtreleme:
-  - poliklinik,
-  - sıralama,
-  - sadece gelecek randevular seçeneği.
-- Liste ekranına hızlı özet kartları eklendi.
-- Randevu alma deneyimi iyileştirildi:
-  - doktora göre en yakın uygun saat önerileri,
-  - hızlı slot seçimi.
-- Hasta paneli güncellendi:
-  - bekleyen, tamamlanan ve iptal edilen sayaçlar filtreli liste ekranları ile ilişkilendirildi,
-  - gerçekleşmemiş randevular bekleyen başlığı altında daha net gösterildi.
-- Randevu durum akışı iyileştirildi:
-  - gelecek tarihli onaylı randevular için `Tamamla` yerine `Bekleniyor` gösterimi eklendi,
-  - zamanı geçen randevuların otomatik olarak `Tamamlandı` durumuna dönmesi sağlandı,
-  - otomatik tamamlanan randevular için geçmiş olsun mesajı içeren bildirim desteği eklendi.
-
-### Hafta 6
-- Admin Tahsilat sayfası eklendi:
-  - tarih aralığı, poliklinik ve doktor filtreli ödeme/tahsilat listesi,
-  - toplam ve ortalama ücret özet kartları.
-- Doktor takviminde günlük detay ekranı eklendi (`DayDetails`):
-  - seçilen güne ait tüm randevuları listeler,
-  - tatil ve özel günlere özel mesaj desteği.
-- `Appointment` modeline `Price` (decimal) alanı eklendi; ilgili migration çalıştırıldı.
-- REST API katmanı oluşturuldu: `Api/AppointmentApiController`.
-- `MedicalReport` modeli eklendi.
-- Randevu bireysel detay sayfası eklendi (`Views/Appointment/Details.cshtml`).
-- Admin Dashboard'a tahsilat bağlantısı ve toplam ücret metriği eklendi.
-
-### Hafta 7
-- Tibbi gecmis modulu eklendi (`Patient/MedicalHistory`):
-  - hasta bazli tibbi gecmis kaydi olusturma/silme,
-  - tani, ilac, alerji ve not alanlari.
-- Dosya yukleme islemleri tibbi gecmis akisina entegre edildi:
-  - opsiyonel ek dosya yukleme,
-  - dosya turu ve boyut kontrolu.
-- Hasta paneli ve navigasyon gelistirildi:
-  - panelde tibbi gecmis kayit sayaci,
-  - hizli erisim butonu ve menude "Tibbi Gecmis" baglantisi.
-- Randevu detay ekranindan tibbi gecmis sayfasina hizli gecis eklendi.
-- Veri tabani tarafi icin `AddMedicalHistoryModule` migration'i olusturuldu ve
-  Sqlite/Postgres ortamlarinda tablo garanti olusturma adimi seeder'a eklendi.
-- Eksik tamamlama guncellemeleri:
-  - FluentValidation altyapisi aktif edildi (`Register`, `ChangePassword`, API token ve tibbi gecmis validatorlari),
-  - Hasta paneline gercek parola degistirme modulu eklendi (`Patient/ChangePassword`),
-  - JWT token endpoint'i eklendi (`POST /api/AuthApi/token`) ve `AppointmentApi` Bearer token ile korundu,
-  - `xUnit` test projesi eklendi (`HastaneRandevuSistemi.Tests`) ve temel validator testleri yazildi.
-  - Arka plan hatirlatma servisi eklendi: randevuya 1 gun kala hastaya otomatik e-posta + bildirim gonderilir.
-
-### Hafta 8
-- Hasta tarafinda receteler, tibbi gecmis ile ayni deneyim altinda birlestirildi:
-  - hasta hangi randevuda hangi ilacin yazildigini gorebilir,
-  - saglik gecmisi ekranindan recete detayina ulasabilir.
-- Doktor tarafinda olusturulan recete alanlari ve randevu bazli recete takibi kalici hale getirildi.
-- Hasta randevu iptal ettiginde tahsil edilmis odeme icin otomatik iade akisi geri getirildi:
-  - odeme kaydi geri alinir,
-  - iptal edilen randevuda admin iade bilgisi gorunur.
-- Muhasebe ve tahsilat ekranlari guclendirildi:
-  - bolum gelir analizi,
-  - doktor performans tablolari,
-  - tahsil edilen / bekleyen / iptal edilen dagilim grafikleri,
-  - daha guclu Tahsilat dashboard'u.
-- Hizmet Analizi bolumu etkilesimli hale getirildi:
-  - secilen bolume gore istatistikler,
-  - secilen doktora gore istatistikler,
-  - grafik uzerinden tablo filtreleme.
-- Ozel gunlerde randevu olusturma akisinda "Musaitlik bilgisi alinamadi" yerine "Bugun resmi tatil." mesaji gosterilmeye baslandi.
-
-### Hafta 9
-- `Serilog` entegrasyonu eklendi:
-  - console, debug ve gunluk dosya loglama,
-  - loglar `HastaneRandevuSistemi/Logs` altina yazilir.
-- Test kapsamı genişletildi:
-  - mevcut validator testlerine ek olarak temel integration smoke testleri eklendi,
-  - ana sayfa, giris sayfasi ve JWT korumali API erisimi dogrulaniyor.
-- Kod tabani test edilebilirlik icin guncellendi:
-  - `Program` sinifi integration testlerde kullanilabilecek sekilde acildi.
-
-### Hafta 10
-- Erisilebilirlik iyilestirmeleri eklendi:
-  - skip-link ile klavye kullanicilari icin hizli icerik gecisi,
-  - auth ekranlarinda `aria-live`, `role`, `aria-pressed` ve uygun `autocomplete` tanimlari,
-  - dis baglantilar icin daha guvenli ve ekran okuyucu dostu etiketler.
-- Dokumantasyon guncellendi:
-  - hafta 9-10 kapsami README icine eklendi,
-  - test ve loglama davranisi dokumante edildi.
 
 ## Haftalık Raporlar
 
@@ -181,11 +75,11 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 | 3 | Doktor paneli, Çalışma takvimi, Reçete temel yapısı | [📄 PDF](Reports/Hafta3_Raporu.pdf) |
 | 4 | Admin grafik/istatistik ekranları, Raporlama sistemi | [📄 PDF](Reports/Hafta4_Raporu.pdf) |
 | 5 | Gelişmiş arama/filtreleme, UX iyileştirmeleri | [📄 PDF](Reports/Hafta5_Raporu.pdf) |
-| 6 | API katmanı, Tahsilat sayfası, Randevu fiyat alanı | [📄 PDF](Reports/Hafta6_Raporu.pdf) |
-| 7 | Dosya yükleme, Tıbbi geçmiş modülü, Dijital reçete | [📄 HTML](Reports/Hafta7_Raporu.html) |
-| 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 HTML](Reports/Hafta8_Raporu.html) |
-| 9 | Sekreter Paneli, Muhasebe iyileştirmeleri, Bildirimler | [📄 HTML](Reports/Hafta9_Raporu.html) |
-| 10 | ENS Yapay Zeka Asistanı, Hasta Paneli modernizasyonu, Final | [📄 HTML](Reports/Hafta10_Raporu.html) |
+| 6 | API katmanı, Tahsilat sayfası, Randevu fiyat alanı | [📄 PDF](Reports/Hafta6_Raporu.pdf) · [📄 HTML](Reports/Hafta6_Raporu.html) |
+| 7 | Dosya yükleme, Tıbbi geçmiş modülü, Dijital reçete | [📄 PDF](Reports/Hafta7_Raporu.pdf) |
+| 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 PDF](Reports/Hafta8_Raporu.pdf) · [📄 HTML](Reports/Hafta8_Raporu.html) |
+| 9 | AI Semptom Kontrolcüsü, QR Kod, Reçete PDF, Serilog, Testler | [📄 HTML](Reports/Hafta9_Raporu.html) |
+| 10 | Doktor Değerlendirme, Chart.js Dashboard, Accessibility, Final | [📄 HTML](Reports/Hafta10_Raporu.html) |
 
 - [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
 

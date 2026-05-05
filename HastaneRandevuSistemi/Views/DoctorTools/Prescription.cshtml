@@ -1,0 +1,71 @@
+@model HastaneRandevuSistemi.ViewModels.PrescriptionDraftViewModel
+@{
+    ViewData["Title"] = "Reçete Yaz";
+}
+
+<div class="container py-4">
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <span class="text-uppercase text-muted small fw-bold">Dijital Reçete</span>
+                    <h2 class="fw-bold mb-1">@Model.PatientName @Model.PatientSurname</h2>
+                    <p class="mb-0 text-muted">@Model.DepartmentName — @Model.DoctorName</p>
+                </div>
+                <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">
+                    <i class="fa-solid fa-arrow-left me-2"></i>Geri
+                </a>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger rounded-4 mb-4">@TempData["ErrorMessage"]</div>
+    }
+
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <form asp-action="Prescription" method="post" class="row g-4">
+                @Html.AntiForgeryToken()
+                <input type="hidden" asp-for="AppointmentId" />
+                <input type="hidden" asp-for="DoctorName" />
+                <input type="hidden" asp-for="DepartmentName" />
+                <input type="hidden" asp-for="PatientName" />
+                <input type="hidden" asp-for="PatientSurname" />
+
+                <div class="col-12">
+                    <label asp-for="Diagnosis" class="form-label fw-semibold">Tanı / Teşhis</label>
+                    <input asp-for="Diagnosis" class="form-control rounded-3"
+                           placeholder="Örn. Üst solunum yolu enfeksiyonu" />
+                    <span asp-validation-for="Diagnosis" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Medications" class="form-label fw-semibold">Reçete Edilen İlaçlar</label>
+                    <textarea asp-for="Medications" class="form-control rounded-3" rows="4"
+                              placeholder="Örn. Amoksisilin 500mg — günde 3x1, 7 gün&#10;Parasetamol 500mg — gerektiğinde"></textarea>
+                    <span asp-validation-for="Medications" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12">
+                    <label asp-for="Notes" class="form-label fw-semibold">Doktor Notları (İsteğe Bağlı)</label>
+                    <textarea asp-for="Notes" class="form-control rounded-3" rows="3"
+                              placeholder="Kullanım talimatları, kontrol tarihi, uyarılar..."></textarea>
+                    <span asp-validation-for="Notes" class="text-danger small"></span>
+                </div>
+
+                <div class="col-12 d-flex gap-3 justify-content-end">
+                    <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">İptal</a>
+                    <button type="submit" class="btn btn-primary rounded-pill px-5 fw-semibold">
+                        <i class="fa-solid fa-file-prescription me-2"></i>Reçeteyi Kaydet ve Önizle
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+}
