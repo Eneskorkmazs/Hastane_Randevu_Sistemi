@@ -56,7 +56,7 @@
                 <div class="card-body p-4">
                     <div class="text-muted small fw-bold text-uppercase mb-1">Tamamlanma Oranı</div>
                     <div class="h2 fw-bold mb-0 text-success">% @Model.CompletionRate.ToString("F1", trCulture)</div>
-                    <div class="small text-muted mt-2">@Model.CompletedAppointments hizmet bitti</div>
+                    <div class="small text-muted mt-2">@Model.CompletedAppointments hizmet tamamlandı</div>
                 </div>
             </div>
         </div>
@@ -74,7 +74,7 @@
                 <div class="card-body p-4">
                     <div class="text-muted small fw-bold text-uppercase mb-1">İptal Oranı</div>
                     <div class="h2 fw-bold mb-0 text-danger">% @Model.CancellationRate.ToString("F1", trCulture)</div>
-                    <div class="small text-muted mt-2">@Model.CancelledAppointments kayıp hizmet</div>
+                    <div class="small text-muted mt-2">@Model.CancelledAppointments iptal edilen randevu</div>
                 </div>
             </div>
         </div>

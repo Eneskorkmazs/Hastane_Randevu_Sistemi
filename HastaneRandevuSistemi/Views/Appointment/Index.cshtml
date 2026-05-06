@@ -90,14 +90,17 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body">
-                    <div class="text-muted small">Ödeme Alınan</div>
-                    <div class="h3 fw-bold text-success mb-0">@paidCount</div>
+        @if (isAdmin)
+        {
+            <div class="col-md-3">
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-body">
+                        <div class="text-muted small">Ödeme Alınan</div>
+                        <div class="h3 fw-bold text-success mb-0">@paidCount</div>
+                    </div>
                 </div>
             </div>
-        </div>
+        }
     </div>
 
     <div class="card border-0 shadow-sm rounded-4 mb-4">
@@ -231,7 +234,7 @@
                         {
                             <div class="small text-muted mb-2">İptal eden: @item.CancelledByName</div>
                         }
-                        @if (item.IsCollected)
+                        @if (isAdmin && item.IsCollected)
                         {
                             <div class="small text-success mb-2">Ödeme alındı</div>
                         }
@@ -369,7 +372,7 @@
                                         {
                                             <div class="small text-muted mt-1">İptal eden: @item.CancelledByName</div>
                                         }
-                                        @if (item.IsCollected)
+                                        @if (isAdmin && item.IsCollected)
                                         {
                                             <div class="small text-success mt-1">Ödeme alındı</div>
                                         }

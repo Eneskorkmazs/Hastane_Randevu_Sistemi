@@ -38,14 +38,14 @@ namespace HastaneRandevuSistemi.Controllers
             var pendingAppointments = appointments.Where(a => a.Status != AppointmentStatus.Tamamlandi && a.Status != AppointmentStatus.Iptal).ToList();
             
             var notifications = await _context.Notifications
-                .Where(n => n.UserId == user.Id)
+                .Where(n => n.UserId == user.Id || n.Type == "Duyuru")
                 .OrderByDescending(n => n.CreatedDate)
                 .Take(5)
                 .ToListAsync();
 
             var prescriptionCount = appointments.Count(a => a.PrescriptionCreatedAt != null);
             var medicalHistoryCount = await _context.MedicalHistories.CountAsync(m => m.UserId == user.Id);
-            var unreadNotificationsCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
+            var unreadNotificationsCount = await _context.Notifications.CountAsync(n => (n.UserId == user.Id || n.Type == "Duyuru") && !n.IsRead);
 
             var departmentFees = await _context.Departments
                 .Select(d => new DepartmentFeeItem { DepartmentName = d.Name, Fee = 150.00m }) 
@@ -254,15 +254,111 @@ namespace HastaneRandevuSistemi.Controllers
                 .OrderByDescending(n => n.CreatedDate)
                 .ToListAsync();
 
-            // Mark all as read
-            var unread = notifications.Where(n => !n.IsRead).ToList();
+            return View(notifications);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> UnreadNotificationCount()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Json(new { count = 0 });
+
+            var count = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
+            return Json(new { count });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAsReadAjax(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == user.Id);
+            if (notification != null && !notification.IsRead)
+            {
+                notification.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+
+            var unreadCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
+            return Json(new { success = true, unreadCount });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllAsReadAjax()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var unread = await _context.Notifications.Where(n => n.UserId == user.Id && !n.IsRead).ToListAsync();
             if (unread.Any())
             {
                 unread.ForEach(n => n.IsRead = true);
                 await _context.SaveChangesAsync();
             }
 
-            return View(notifications);
+            return Json(new { success = true, unreadCount = 0 });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteNotificationAjax(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == user.Id);
+            if (notification != null)
+            {
+                _context.Notifications.Remove(notification);
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAll()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var notifications = await _context.Notifications.Where(n => n.UserId == user.Id).ToListAsync();
+            if (notifications.Any())
+            {
+                _context.Notifications.RemoveRange(notifications);
+                await _context.SaveChangesAsync();
+            }
+
+            TempData["SuccessMessage"] = "Tüm bildirimler silindi.";
+            return RedirectToAction(nameof(Notifications));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSelected(int[] ids)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            if (ids != null && ids.Length > 0)
+            {
+                var toDelete = await _context.Notifications
+                    .Where(n => n.UserId == user.Id && ids.Contains(n.Id))
+                    .ToListAsync();
+
+                if (toDelete.Any())
+                {
+                    _context.Notifications.RemoveRange(toDelete);
+                    await _context.SaveChangesAsync();
+                }
+            }
+
+            TempData["SuccessMessage"] = "Seçilen bildirimler silindi.";
+            return RedirectToAction(nameof(Notifications));
         }
 
         [HttpGet]

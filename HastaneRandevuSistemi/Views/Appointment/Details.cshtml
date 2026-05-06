@@ -67,7 +67,10 @@
                                     AppointmentStatus.Iptal => "bg-danger",
                                     _ => "bg-primary"
                                 }) px-3 py-2">@Model.Status</span>
-                        @if (Model.IsCollected)
+                        @{
+                            bool isAdmin = User.IsInRole("Admin");
+                        }
+                        @if (isAdmin && Model.IsCollected)
                         {
                             <span class="badge rounded-pill bg-success ms-2 px-3 py-2"><i class="fa-solid fa-check me-1"></i> Ödeme Alındı</span>
                         }

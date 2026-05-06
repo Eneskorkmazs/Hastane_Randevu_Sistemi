@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.ViewModels;
 
 namespace HastaneRandevuSistemi.Services
@@ -8,7 +9,7 @@ namespace HastaneRandevuSistemi.Services
     {
         public static byte[] CreatePrescriptionPdf(PrescriptionDraftViewModel model)
         {
-            var lines = new[]
+            var lines = new List<string>
             {
                 "HRS Hastanesi - Dijital Recete",
                 $"Randevu No: #{model.AppointmentId}",
@@ -29,6 +30,37 @@ namespace HastaneRandevuSistemi.Services
                 "Bu belge Hastane Randevu Sistemi tarafindan uretilmistir."
             };
 
+            return GeneratePdfFromLines(lines);
+        }
+
+        public static byte[] CreateDailyListPdf(string title, List<Appointment> appointments)
+        {
+            var lines = new List<string>
+            {
+                "HRS Hastanesi - Gunluk Randevu Listesi",
+                title,
+                $"Uretim Tarihi: {DateTime.Now:dd.MM.yyyy HH:mm}",
+                "",
+                "Saat    | Hasta Adı Soyadı        | Doktor            | Bölüm",
+                "------------------------------------------------------------------"
+            };
+
+            foreach (var a in appointments)
+            {
+                var row = $"{a.AppointmentDate:HH:mm} | {a.PatientName} {a.PatientSurname}".PadRight(40) + 
+                          $"| Dr. {a.Doctor?.Surname}".PadRight(20) + 
+                          $"| {a.Doctor?.Department?.Name}";
+                lines.Add(row);
+            }
+
+            lines.Add("");
+            lines.Add($"Toplam Kayit: {appointments.Count}");
+
+            return GeneratePdfFromLines(lines);
+        }
+
+        private static byte[] GeneratePdfFromLines(List<string> lines)
+        {
             var content = BuildContentStream(lines.Select(NormalizePdfText));
             var objects = new List<string>
             {

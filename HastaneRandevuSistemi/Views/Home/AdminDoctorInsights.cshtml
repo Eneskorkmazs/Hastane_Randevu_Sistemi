@@ -8,9 +8,9 @@
 <div class="container py-4">
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
         <div>
-            <span class="text-uppercase small fw-bold text-primary">Yönetim Analitiği</span>
-            <h1 class="h3 fw-bold mb-1">Doktor Analizleri</h1>
-            <p class="text-muted mb-0">Seçilen doktorun performans verilerini ve diğer doktorlarla olan karşılaştırmalarını izleyin.</p>
+            <span class="text-uppercase small fw-bold text-primary">Performans Analitiği</span>
+            <h1 class="h3 fw-bold mb-1">Doktor Performans Analizleri</h1>
+            <p class="text-muted mb-0">Seçilen doktorun operasyonel verilerini ve karşılaştırmalı performans metriklerini inceleyin.</p>
         </div>
         <a asp-action="AdminDashboard" class="btn btn-outline-secondary rounded-pill px-4">Panele Dön</a>
     </div>
@@ -63,9 +63,9 @@
         <div class="col-md-6 col-xl-3">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
-                    <div class="text-muted small">Benzersiz Hasta</div>
+                    <div class="text-muted small">Toplam Tekil Hasta</div>
                     <div class="display-6 fw-bold">@Model.UniquePatientCount</div>
-                    <small class="text-muted">@Model.SelectedDoctorName</small>
+                    <small class="text-muted">Hizmet verilen toplam kişi sayısı</small>
                 </div>
             </div>
         </div>
@@ -189,7 +189,7 @@
         <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Doktor Karşılaştırma (Aynı Dönem)</h5>
+                    <h5 class="fw-bold mb-3">Doktor Başarı Sıralaması (Seçilen Dönem)</h5>
                     @if (!Model.DoctorRanking.Any())
                     {
                         <div class="text-muted">Veri bulunamadı.</div>

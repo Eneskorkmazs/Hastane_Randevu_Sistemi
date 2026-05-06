@@ -1,4 +1,4 @@
-@model IEnumerable<HastaneRandevuSistemi.Models.Notification>
+ï»¿@model IEnumerable<HastaneRandevuSistemi.Models.Notification>
 
 @{
     ViewData["Title"] = "Bildirimler";
@@ -11,17 +11,17 @@
         <div>
             <span class="eyebrow text-primary">Bildirim Merkezi</span>
             <h1 class="h3 fw-bold mb-1">Hasta Bildirimleri</h1>
-            <p class="text-muted mb-0">Randevu hareketleri ve profil güncellemeleri burada listelenir.</p>
+            <p class="text-muted mb-0">Randevu hareketleri ve profil gÃ¼ncellemeleri burada listelenir.</p>
         </div>
 
         <div class="d-flex align-items-center gap-2 flex-wrap">
             <span class="badge rounded-pill bg-light text-secondary border px-3 py-2">Toplam: @totalCount</span>
-            <span id="notificationsUnreadBadge" class="badge rounded-pill bg-primary-subtle text-primary border border-primary px-3 py-2">Okunmamýþ: @unreadCount</span>
+            <span id="notificationsUnreadBadge" class="badge rounded-pill bg-primary-subtle text-primary border border-primary px-3 py-2">OkunmamÄ±ÅŸ: @unreadCount</span>
 
             <form id="markAllAsReadForm" asp-action="MarkAllAsReadAjax" method="post" class="notification-mark-all-form">
                 @Html.AntiForgeryToken()
                 <button type="submit" class="btn btn-outline-primary rounded-pill px-4" @(unreadCount == 0 ? "disabled" : "")>
-                    <i class="fa-solid fa-check-double me-2"></i>Tümünü Okundu Ýþaretle
+                    <i class="fa-solid fa-check-double me-2"></i>TÃ¼mÃ¼nÃ¼ Okundu Ä°ÅŸaretle
                 </button>
             </form>
         </div>
@@ -45,7 +45,7 @@
             <div class="card-body p-5">
                 <div class="empty-state">
                     <i class="fa-regular fa-bell-slash"></i>
-                    <p class="mb-0">Henüz bildiriminiz bulunmuyor.</p>
+                    <p class="mb-0">HenÃ¼z bildiriminiz bulunmuyor.</p>
                 </div>
             </div>
         </div>
@@ -57,14 +57,14 @@
             <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" id="selectAllNotifications">
-                    <label class="form-check-label" for="selectAllNotifications">Tümünü seç</label>
+                    <label class="form-check-label" for="selectAllNotifications">TÃ¼mÃ¼nÃ¼ seÃ§</label>
                 </div>
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-outline-danger rounded-pill px-3" id="btnDeleteSelected" disabled>
-                        <i class="fa-solid fa-trash-can me-2"></i>Seçilenleri Sil
+                        <i class="fa-solid fa-trash-can me-2"></i>SeÃ§ilenleri Sil
                     </button>
-                    <button type="submit" formaction="@Url.Action("DeleteAll","Patient")" class="btn btn-danger rounded-pill px-3" onclick="return confirm('Tüm bildirimler silinsin mi?');">
-                        <i class="fa-solid fa-trash me-2"></i>Tümünü Sil
+                    <button type="submit" formaction="@Url.Action("DeleteAll","Patient")" class="btn btn-danger rounded-pill px-3" onclick="return confirm('TÃ¼m bildirimler silinsin mi?');">
+                        <i class="fa-solid fa-trash me-2"></i>TÃ¼mÃ¼nÃ¼ Sil
                     </button>
                 </div>
             </div>
@@ -75,7 +75,7 @@
                     <div class="notification-card large @(item.IsRead ? "is-read" : "is-unread")">
                         <div class="d-flex justify-content-between gap-3 flex-wrap">
                             <div class="d-flex gap-2 align-items-start">
-                                <input class="form-check-input mt-1 notification-checkbox" type="checkbox" name="ids" value="@item.Id" aria-label="Seç">
+                                <input class="form-check-input mt-1 notification-checkbox" type="checkbox" name="ids" value="@item.Id" aria-label="SeÃ§">
                                 <div>
                                     <div class="d-flex align-items-center gap-2 mb-1">
                                         <span class="badge rounded-pill bg-light text-dark border">@item.Type</span>
@@ -93,16 +93,22 @@
                             <div class="d-flex align-items-start gap-2">
                                 @if (!string.IsNullOrWhiteSpace(item.Link))
                                 {
-                                <a href="@item.Link" class="btn btn-sm btn-light rounded-pill">Ýlgili Sayfa</a>
-                            }
+                                    <a href="@item.Link" class="btn btn-sm btn-light rounded-pill">Ä°lgili Sayfa</a>
+                                }
                                 @if (!item.IsRead)
                                 {
                                     <button type="button"
-                                            class="btn btn-sm btn-primary rounded-pill mark-read-btn"
+                                            class="btn btn-sm btn-outline-primary rounded-pill mark-read-btn"
                                             data-id="@item.Id">
-                                        Okundu
+                                        <i class="fa-solid fa-check"></i>
                                     </button>
                                 }
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger rounded-pill delete-notif-btn"
+                                        data-id="@item.Id"
+                                        title="Sil">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -117,23 +123,31 @@
     <input type="hidden" name="id" id="markReadId" />
 </form>
 
+<form id="deleteNotifForm" method="post" asp-action="DeleteNotificationAjax" asp-controller="Patient" class="d-none">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="id" id="deleteNotifId" />
+</form>
+
 @section Scripts {
-        <script>
+    <script>
         (function () {
             const cards = document.querySelectorAll(".notification-card");
             const summaryBadge = document.getElementById("notificationsUnreadBadge");
             const headerBadge = document.getElementById("unreadNotificationBadge");
             const markAllForm = document.getElementById("markAllAsReadForm");
             const markButtons = document.querySelectorAll(".mark-read-btn");
+            const deleteButtons = document.querySelectorAll(".delete-notif-btn");
             const markReadForm = document.getElementById("markReadForm");
             const markReadIdInput = document.getElementById("markReadId");
+            const deleteNotifForm = document.getElementById("deleteNotifForm");
+            const deleteNotifIdInput = document.getElementById("deleteNotifId");
 
             function setUnreadCount(count) {
                 if (!summaryBadge) {
                     return;
                 }
 
-                summaryBadge.textContent = `Okunmamýþ: ${count}`;
+                summaryBadge.textContent = 'OkunmamÄ±ÅŸ: ' + count;
                 const markAllButton = markAllForm?.querySelector("button");
                 if (markAllButton) {
                     markAllButton.disabled = count === 0;
@@ -193,34 +207,49 @@
                     }
 
                     markReadIdInput.value = button.dataset.id || '';
-                    const formData = new URLSearchParams(new FormData(markReadForm));
+                    const result = await postAjax(markReadForm);
 
-                    const card = button.closest('.notification-card');
-
-                    const response = await fetch(markReadForm.action, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-                            'RequestVerificationToken': markReadForm.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                        },
-                        body: formData.toString(),
-                        credentials: 'same-origin'
-                    });
-
-                    if (!response.ok) {
-                        window.location.reload();
-                        return;
-                    }
-
-                    const result = await response.json().catch(() => null);
                     if (!result || result.success !== true) {
                         window.location.reload();
                         return;
                     }
 
                     setUnreadCount(Number(result.unreadCount ?? 0));
+                    const card = button.closest('.notification-card');
                     if (card) {
                         hideMarkAsReadButton(card);
+                    }
+                });
+            });
+
+            deleteButtons.forEach(button => {
+                button.addEventListener('click', async (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+
+                    if (!confirm('Bu bildirimi silmek istediÄŸinize emin misiniz?')) return;
+
+                    if (!deleteNotifForm || !deleteNotifIdInput) return;
+
+                    deleteNotifIdInput.value = button.dataset.id || '';
+                    const result = await postAjax(deleteNotifForm);
+
+                    if (!result || result.success !== true) {
+                        window.location.reload();
+                        return;
+                    }
+
+                    const card = button.closest('.notification-card');
+                    if (card) {
+                        card.style.opacity = '0';
+                        card.style.transform = 'translateX(20px)';
+                        card.style.transition = 'all 0.3s ease';
+                        setTimeout(() => {
+                            card.remove();
+                            if (document.querySelectorAll('.notification-card').length === 0) {
+                                window.location.reload();
+                            }
+                        }, 300);
                     }
                 });
             });
@@ -243,7 +272,7 @@
                 });
             }
 
-            // Seçim ve silme
+            // SeÃ§im ve silme
             const selectAll = document.getElementById("selectAllNotifications");
             const checkboxes = document.querySelectorAll(".notification-checkbox");
             const deleteSelectedBtn = document.getElementById("btnDeleteSelected");
@@ -322,4 +351,3 @@
         font-size: 2.5rem;
     }
 </style>
-

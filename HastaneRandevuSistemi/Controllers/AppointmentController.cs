@@ -122,10 +122,16 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (User.IsInRole("Doktor"))
             {
-                var doctorIdByUser = await GetCurrentDoctorIdAsync();
-                appointmentsQuery = doctorIdByUser.HasValue
-                    ? appointmentsQuery.Where(a => a.DoctorId == doctorIdByUser.Value)
-                    : appointmentsQuery.Where(a => a.Id == -1);
+                var user = await _userManager.GetUserAsync(User);
+                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == user!.Id);
+                if (doctor != null)
+                {
+                    appointmentsQuery = appointmentsQuery.Where(a => a.Doctor != null && a.Doctor.DepartmentId == doctor.DepartmentId);
+                }
+                else
+                {
+                    appointmentsQuery = appointmentsQuery.Where(a => a.Id == -1);
+                }
             }
             else if (User.IsInRole("Sekreter"))
             {

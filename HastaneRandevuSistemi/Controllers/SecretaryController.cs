@@ -1,4 +1,4 @@
-﻿using HastaneRandevuSistemi.Data;
+using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -31,15 +31,17 @@ namespace HastaneRandevuSistemi.Controllers
             var today = now.Date;
             var tomorrow = today.AddDays(1);
 
-            var pendingAppointments = await _context.Appointments
+            var model = new HastaneRandevuSistemi.ViewModels.SecretaryDashboardViewModel();
+
+            model.PendingAppointments = await _context.Appointments
                 .AsNoTracking()
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
-                .Where(a => a.Status == AppointmentStatus.Bekliyor && a.AppointmentDate >= today)
+                .Where(a => a.Status == AppointmentStatus.Bekliyor)
                 .OrderBy(a => a.AppointmentDate)
                 .ToListAsync();
 
-            var upcomingNext2Hours = await _context.Appointments
+            model.UpcomingNext2Hours = await _context.Appointments
                 .AsNoTracking()
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
@@ -52,7 +54,7 @@ namespace HastaneRandevuSistemi.Controllers
                 .Where(a => a.AppointmentDate >= today && a.AppointmentDate < tomorrow && a.Status != AppointmentStatus.Iptal)
                 .ToListAsync();
 
-            var unsentPrescriptions = await _context.Appointments
+            model.UnsentPrescriptions = await _context.Appointments
                 .AsNoTracking()
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
@@ -60,31 +62,134 @@ namespace HastaneRandevuSistemi.Controllers
                 .OrderByDescending(a => a.PrescriptionCreatedAt)
                 .ToListAsync();
 
-            var appointmentsForPrescription = new List<Appointment>(); // Reçete artık doktor tarafından yazılıyor
-
-            var sentPrescriptions = await _context.Appointments
+            model.SentPrescriptions = await _context.Appointments
                 .AsNoTracking()
                 .Include(a => a.Doctor)
                 .ThenInclude(d => d!.Department)
                 .Where(a => a.PrescriptionSentAt != null)
                 .OrderByDescending(a => a.PrescriptionSentAt)
-                .Take(30)
+                .Take(20)
                 .ToListAsync();
 
-            ViewBag.PendingAppointments = pendingAppointments;
-            ViewBag.UnsentPrescriptions = unsentPrescriptions;
-            ViewBag.AppointmentsForPrescription = appointmentsForPrescription;
-            ViewBag.SentPrescriptions = sentPrescriptions;
-            
-            // Reminders & Stats
-            ViewBag.UpcomingNext2Hours = upcomingNext2Hours;
-            ViewBag.TodaysTotal = todaysAppointments.Count;
-            ViewBag.TodaysCompleted = todaysAppointments.Count(a => a.Status == AppointmentStatus.Tamamlandi);
-            ViewBag.UrgentApprovals = pendingAppointments.Count(a => a.AppointmentDate < tomorrow);
-            ViewBag.DelayedPrescriptions = await _context.Appointments
+            model.RecentlyCancelled = await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Doctor)
+                .Where(a => a.Status == AppointmentStatus.Iptal && a.AppointmentDate >= today.AddDays(-1))
+                .OrderByDescending(a => a.AppointmentDate)
+                .Take(5)
+                .ToListAsync();
+
+            // Stats
+            model.TodaysTotal = todaysAppointments.Count;
+            model.TodaysCompleted = todaysAppointments.Count(a => a.Status == AppointmentStatus.Tamamlandi);
+            model.UrgentApprovals = model.PendingAppointments.Count(a => a.AppointmentDate < tomorrow);
+            model.TomorrowsTotal = await _context.Appointments
+                .CountAsync(a => a.AppointmentDate >= tomorrow && a.AppointmentDate < tomorrow.AddDays(1) && a.Status != AppointmentStatus.Iptal);
+            model.OldPendingCount = await _context.Appointments
+                .CountAsync(a => a.Status == AppointmentStatus.Bekliyor && a.CreatedDate < now.AddDays(-2));
+            model.DelayedPrescriptions = await _context.Appointments
                 .CountAsync(a => a.Status == AppointmentStatus.Tamamlandi && a.PrescriptionCreatedAt == null && a.AppointmentDate < today);
 
-            return View();
+            // Department Load (Busiest)
+            model.DepartmentLoads = await _context.Appointments
+                .Where(a => a.AppointmentDate >= today && a.AppointmentDate < tomorrow && a.Status != AppointmentStatus.Iptal)
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .GroupBy(a => a.Doctor!.Department!.Name)
+                .Select(g => new HastaneRandevuSistemi.ViewModels.DepartmentLoadItem
+                {
+                    DepartmentName = g.Key,
+                    AppointmentCount = g.Count(),
+                    Capacity = 30 // Varsayılan poliklinik kapasitesi
+                })
+                .OrderByDescending(x => x.AppointmentCount)
+                .Take(5)
+                .ToListAsync();
+
+            // System Announcements (Recent global notifications)
+            model.SystemAnnouncements = await _context.Notifications
+                .Where(n => n.Type == "Duyuru")
+                .OrderByDescending(n => n.CreatedDate)
+                .Take(5)
+                .ToListAsync();
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> SearchPatients(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+                return Json(new { success = false, message = "Sorgu boş olamaz." });
+
+            var queryable = _context.Appointments.AsNoTracking();
+            var normalizedQuery = query.Trim().ToLower();
+
+            if (normalizedQuery == "today")
+            {
+                var today = DateTime.Today;
+                queryable = queryable.Where(a => a.AppointmentDate >= today && a.AppointmentDate < today.AddDays(1) && a.Status != AppointmentStatus.Iptal);
+            }
+            else
+            {
+                if (normalizedQuery.Length < 3)
+                    return Json(new { success = false, message = "En az 3 karakter giriniz." });
+
+                queryable = queryable.Where(a => a.PatientName.ToLower().Contains(normalizedQuery) || 
+                                              a.PatientSurname.ToLower().Contains(normalizedQuery) || 
+                                              a.PatientPhone.Contains(normalizedQuery));
+            }
+
+            var results = await queryable
+                .OrderByDescending(a => a.AppointmentDate)
+                .Select(a => new {
+                    id = a.Id,
+                    name = a.PatientName + " " + a.PatientSurname,
+                    phone = a.PatientPhone,
+                    date = a.AppointmentDate.ToString("dd.MM.yyyy HH:mm"),
+                    status = a.Status.ToString(),
+                    doctor = a.Doctor != null ? a.Doctor.Name + " " + a.Doctor.Surname : "Belirtilmemiş",
+                    department = (a.Doctor != null && a.Doctor.Department != null) ? a.Doctor.Department.Name : "Belirtilmemiş"
+                })
+                .Take(20)
+                .ToListAsync();
+
+            return Json(new { success = true, data = results });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CreateAnnouncement(string Title, string Message)
+        {
+            if (string.IsNullOrWhiteSpace(Title) || string.IsNullOrWhiteSpace(Message))
+                return Json(new { success = false, message = "Başlık ve mesaj zorunludur." });
+
+            var actor = await GetCurrentActorAsync();
+            // Eğer UserId bulunamazsa (oturum düşmüşse vb.), veritabanı hatası almamak için sistem ID'si veya sabit bir değer kullanıyoruz.
+            string targetUserId = actor.UserId ?? _userManager.GetUserId(User) ?? "system_secretary";
+
+            var notification = new Notification
+            {
+                UserId = targetUserId,
+                Title = Title.Trim(),
+                Message = Message.Trim(),
+                Type = "Duyuru",
+                CreatedDate = DateTime.Now,
+                Link = "/Patient/Dashboard"
+            };
+
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Duyuru başarıyla yayınlandı.";
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PendingAppointmentCount()
+        {
+            var count = await _context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Bekliyor);
+            return Json(new { count });
         }
 
         [HttpPost]
@@ -184,11 +289,11 @@ namespace HastaneRandevuSistemi.Controllers
                 return RedirectToAction(nameof(Dashboard));
             }
 
-            if (string.IsNullOrWhiteSpace(appointment.PatientUserId))
-            {
-                TempData["ErrorMessage"] = "Bu randevuya bagli bir hasta kullanicisi bulunmadigi icin recete gonderilemedi.";
-                return RedirectToAction(nameof(Dashboard));
-            }
+            // if (string.IsNullOrWhiteSpace(appointment.PatientUserId))
+            // {
+            //     TempData["ErrorMessage"] = "Bu randevuya bagli bir hasta kullanicisi bulunmadigi icin recete gonderilemedi.";
+            //     return RedirectToAction(nameof(Dashboard));
+            // }
 
             var actor = await GetCurrentActorAsync();
             appointment.PrescriptionSentAt = DateTime.Now;
@@ -203,14 +308,71 @@ namespace HastaneRandevuSistemi.Controllers
                 $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli muayeneniz icin {doctorName} tarafindan yazilan recete tarafiniza iletildi. " +
                 $"Tani: {appointment.PrescriptionDiagnosis}. Ilaclar: {appointment.PrescriptionMedications}.";
 
-            await CreateNotificationAsync(
-                appointment.PatientUserId,
-                "Receteniz hazir",
-                messageBody,
-                "Recete",
-                "/Patient/MedicalHistory#receteler");
+            if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
+            {
+                await CreateNotificationAsync(
+                    appointment.PatientUserId,
+                    "Receteniz hazir",
+                    messageBody,
+                    "Recete",
+                    "/Patient/MedicalHistory#receteler");
+            }
 
             TempData["SuccessMessage"] = "Recete hastaya gonderildi.";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { success = true });
+            return RedirectToAction(nameof(Dashboard));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendAllPrescriptions()
+        {
+            var unsent = await _context.Appointments
+                .Include(a => a.Doctor)
+                .Where(a => a.PrescriptionCreatedAt != null && a.PrescriptionSentAt == null)
+                .ToListAsync();
+
+            if (!unsent.Any())
+            {
+                TempData["InfoMessage"] = "Gönderilecek yeni reçete bulunamadı.";
+                return RedirectToAction(nameof(Dashboard));
+            }
+
+            var actor = await GetCurrentActorAsync();
+            var now = DateTime.Now;
+            int count = 0;
+
+            foreach (var app in unsent)
+            {
+                app.PrescriptionSentAt = now;
+                app.PrescriptionSentByName = actor.DisplayName + " (Sekreter)";
+                
+                var doctorName = app.Doctor == null
+                    ? "doktorunuz"
+                    : $"{app.Doctor.Title} {app.Doctor.Name} {app.Doctor.Surname}".Trim();
+
+                var messageBody =
+                    $"{app.AppointmentDate:dd.MM.yyyy HH:mm} tarihli muayeneniz icin {doctorName} tarafindan yazilan recete tarafiniza iletildi. " +
+                    $"Tani: {app.PrescriptionDiagnosis}. Ilaclar: {app.PrescriptionMedications}.";
+
+                if (!string.IsNullOrWhiteSpace(app.PatientUserId))
+                {
+                    await CreateNotificationAsync(
+                        app.PatientUserId,
+                        "Receteniz hazir",
+                        messageBody,
+                        "Recete",
+                        "/Patient/MedicalHistory#receteler");
+                }
+                
+                count++;
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"{count} adet reçete başarıyla gönderildi.";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { success = true, count });
             return RedirectToAction(nameof(Dashboard));
         }
 
@@ -406,6 +568,94 @@ namespace HastaneRandevuSistemi.Controllers
             {
                 // mail gonderimi basarisiz olursa akisi kirmayiz
             }
+        }
+        [HttpGet]
+        public async Task<IActionResult> GetPatientDetails(int appointmentId)
+        {
+            var initialAppointment = await _context.Appointments.FindAsync(appointmentId);
+            if (initialAppointment == null) return Json(new { success = false });
+
+            var appointments = await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .Where(a => (a.PatientName == initialAppointment.PatientName && a.PatientSurname == initialAppointment.PatientSurname) || 
+                            (a.PatientPhone == initialAppointment.PatientPhone))
+                .OrderByDescending(a => a.AppointmentDate)
+                .Select(a => new {
+                    id = a.Id,
+                    date = a.AppointmentDate.ToString("dd.MM.yyyy HH:mm"),
+                    doctor = a.Doctor != null ? a.Doctor.Title + " " + a.Doctor.Surname : "Bilinmiyor",
+                    department = (a.Doctor != null && a.Doctor.Department != null) ? a.Doctor.Department.Name : "Bilinmiyor",
+                    status = a.Status.ToString(),
+                    canCancel = a.Status != AppointmentStatus.Iptal && a.Status != AppointmentStatus.Tamamlandi
+                })
+                .ToListAsync();
+
+            return Json(new { 
+                success = true, 
+                patientName = initialAppointment.PatientName + " " + initialAppointment.PatientSurname,
+                phone = initialAppointment.PatientPhone,
+                history = appointments 
+            });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CancelSearchAppointment(int id)
+        {
+            var appointment = await _context.Appointments.FindAsync(id);
+            if (appointment == null) return Json(new { success = false, message = "Randevu bulunamadı." });
+
+            if (appointment.Status is AppointmentStatus.Iptal or AppointmentStatus.Tamamlandi)
+                return Json(new { success = false, message = "Bu randevu iptal edilemez." });
+
+            var actor = await GetCurrentActorAsync();
+            appointment.Status = AppointmentStatus.Iptal;
+            appointment.CancelledByUserId = actor.UserId;
+            appointment.CancelledByName = actor.DisplayName + " (Sekreter)";
+            appointment.CancelledDate = DateTime.Now;
+            
+            await _context.SaveChangesAsync();
+
+            if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
+            {
+                await CreateNotificationAsync(
+                    appointment.PatientUserId,
+                    "Randevunuz iptal edildi",
+                    $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli randevunuz sekreter tarafindan iptal edildi.",
+                    "Durum",
+                    "/Appointment/Index");
+            }
+
+            return Json(new { success = true });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ExportDailyList()
+        {
+            var today = DateTime.Today;
+            var appointments = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .Where(a => a.AppointmentDate >= today && a.AppointmentDate < today.AddDays(1) && a.Status != AppointmentStatus.Iptal)
+                .OrderBy(a => a.AppointmentDate)
+                .ToListAsync();
+
+            var pdfBytes = SimplePdfGenerator.CreateDailyListPdf($"Tarih: {today:dd.MM.yyyy}", appointments);
+            return File(pdfBytes, "application/pdf", $"Gunluk_Liste_{today:dd_MM_yyyy}.pdf");
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAnnouncement(int id)
+        {
+            var announcement = await _context.Notifications.FindAsync(id);
+            if (announcement == null) return Json(new { success = false, message = "Duyuru bulunamadı." });
+
+            _context.Notifications.Remove(announcement);
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
         }
     }
 }

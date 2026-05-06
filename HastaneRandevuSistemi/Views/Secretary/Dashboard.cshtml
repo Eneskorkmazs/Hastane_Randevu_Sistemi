@@ -1,121 +1,150 @@
-﻿@using HastaneRandevuSistemi.Models
+@model HastaneRandevuSistemi.ViewModels.SecretaryDashboardViewModel
+@using HastaneRandevuSistemi.Models
 @{
-    ViewData["Title"] = "Sekreter Paneli";
-    var pendingAppointments = (List<Appointment>)ViewBag.PendingAppointments;
-    var unsentPrescriptions = (List<Appointment>)ViewBag.UnsentPrescriptions;
-    var appointmentsForPrescription = (List<Appointment>)ViewBag.AppointmentsForPrescription;
-    var sentPrescriptions = ViewBag.SentPrescriptions as List<Appointment> ?? new List<Appointment>();
-    
-    // Reminders & Stats
-    var upcomingNext2Hours = ViewBag.UpcomingNext2Hours as List<Appointment> ?? new List<Appointment>();
-    int todaysTotal = ViewBag.TodaysTotal ?? 0;
-    int todaysCompleted = ViewBag.TodaysCompleted ?? 0;
-    int urgentApprovals = ViewBag.UrgentApprovals ?? 0;
-    int delayedPrescriptions = ViewBag.DelayedPrescriptions ?? 0;
-    
-    double todayProgress = todaysTotal > 0 ? (double)todaysCompleted / todaysTotal * 100 : 0;
+    ViewData["Title"] = "Sekreter Operasyon Merkezi";
+    double todayProgress = Model.TodaysTotal > 0 ? (double)Model.TodaysCompleted / Model.TodaysTotal * 100 : 0;
 }
 
+<!-- Security Token for AJAX -->
+<div id="antiforgery-token-container" style="display:none">
+    @Html.AntiForgeryToken()
+</div>
+
 <div class="container-fluid px-md-4 py-4">
+    <!-- Header & Stats Overview -->
+    <div class="row align-items-center mb-4">
+        <div class="col-md-6">
+            <h2 class="fw-bold text-dark mb-0"><i class="fa-solid fa-shield-heart text-primary me-2"></i>Operasyon Merkezi</h2>
+            <p class="text-muted small mb-0">Hastanenin tüm idari akışı tek bir noktada.</p>
+        </div>
+        <div class="col-md-6 text-md-end">
+            <div class="d-inline-flex align-items-center gap-3">
+                <!-- Real-time Clock -->
+                <div class="text-end me-3 pe-3 border-end border-secondary border-opacity-25">
+                    <div id="live-clock" class="h4 fw-bold text-primary mb-0">00:00:00</div>
+                    <div id="live-date" class="x-small text-muted fw-bold text-uppercase">Yükleniyor...</div>
+                </div>
+                <div class="d-inline-flex align-items-center bg-white p-2 rounded-pill shadow-sm" style="cursor: pointer;" onclick="const tab = new bootstrap.Tab(document.getElementById('nav-pending-tab')); tab.show();">
+                    <div class="px-3 border-end">
+                        <div class="x-small text-muted text-uppercase">Bugünkü Verim</div>
+                        <div class="fw-bold text-success">%@todayProgress.ToString("F0")</div>
+                    </div>
+                    <div class="px-3">
+                        <div class="x-small text-muted text-uppercase">Bekleyen</div>
+                        <div class="fw-bold text-danger">@Model.PendingAppointments.Count</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- QUICK ACTION BAR -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-12">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body p-3 bg-light bg-opacity-50">
+                    <div class="row g-2">
+                        <div class="col-md-2">
+                            <button class="btn btn-white w-100 h-100 py-3 rounded-4 border shadow-sm transition-all hover-up" onclick="document.getElementById('nav-pending-tab').click()">
+                                <i class="fa-solid fa-user-check d-block h4 text-primary mb-2"></i>
+                                <span class="small fw-bold">Onay Merkezi</span>
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-white w-100 h-100 py-3 rounded-4 border shadow-sm transition-all hover-up" onclick="document.getElementById('nav-prescriptions-tab').click()">
+                                <i class="fa-solid fa-file-export d-block h4 text-warning mb-2"></i>
+                                <span class="small fw-bold">Reçete Gönder</span>
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-white w-100 h-100 py-3 rounded-4 border shadow-sm transition-all hover-up" onclick="openDailyList()">
+                                <i class="fa-solid fa-calendar-day d-block h4 text-danger mb-2"></i>
+                                <span class="small fw-bold text-dark">Günlük Kayıtlar</span>
+                            </button>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-white w-100 h-100 py-3 rounded-4 border shadow-sm transition-all hover-up" data-bs-toggle="modal" data-bs-target="#announcementModal">
+                                <i class="fa-solid fa-bullhorn d-block h4 text-info mb-2"></i>
+                                <span class="small fw-bold text-dark">Duyuru Yayınla</span>
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button class="btn btn-primary w-100 h-100 py-3 rounded-4 shadow-sm transition-all hover-up d-flex align-items-center justify-content-center gap-3" data-bs-toggle="modal" data-bs-target="#patientSearchModal">
+                                <i class="fa-solid fa-magnifying-glass h4 mb-0"></i>
+                                <div class="text-start">
+                                    <div class="fw-bold">Hasta Sorgula</div>
+                                    <div class="x-small opacity-75">T.C. veya İsim ile bul</div>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     <div class="row g-4">
-        <!-- Main Content (Left) -->
+        <!-- Main Content (Tabs) -->
         <div class="col-lg-9">
-            <div class="d-flex align-items-center mb-4">
-                <div>
-                    <h2 class="mb-1 fw-bold text-dark"><i class="fa-solid fa-clipboard-check text-primary me-3"></i>Sekreter Operasyon Merkezi</h2>
-                    <p class="text-muted mb-0">Hastanenin günlük operasyonlarını, onaylarını ve reçete akışını buradan yönetin.</p>
+            <nav class="mb-3">
+                <div class="nav nav-tabs border-0 gap-2" id="nav-tab" role="tablist">
+                    <button class="nav-link active rounded-pill px-4 border-0 shadow-sm fw-bold" id="nav-pending-tab" data-bs-toggle="tab" data-bs-target="#nav-pending" type="button" role="tab">Onay Merkezi</button>
+                    <button class="nav-link rounded-pill px-4 border-0 shadow-sm fw-bold" id="nav-prescriptions-tab" data-bs-toggle="tab" data-bs-target="#nav-prescriptions" type="button" role="tab">Reçete Akışı</button>
+                    <button class="nav-link rounded-pill px-4 border-0 shadow-sm fw-bold" id="nav-status-tab" data-bs-toggle="tab" data-bs-target="#nav-status" type="button" role="tab">Hastane Durumu</button>
                 </div>
-            </div>
+            </nav>
 
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show rounded-4 border-0 shadow-sm" role="alert">
-                    <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            }
-
-            <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
-                        <div class="card-body p-4 text-center">
-                            <div class="small text-muted text-uppercase fw-bold mb-2">Onay Bekleyen</div>
-                            <div class="h2 fw-bold mb-0 @(pendingAppointments.Count > 5 ? "text-danger" : "text-dark")">@pendingAppointments.Count</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
-                        <div class="card-body p-4 text-center">
-                            <div class="small text-muted text-uppercase fw-bold mb-2">Bekleyen Reçete</div>
-                            <div class="h2 fw-bold mb-0 text-warning">@unsentPrescriptions.Count</div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm rounded-4 h-100">
-                        <div class="card-body p-4 text-center">
-                            <div class="small text-muted text-uppercase fw-bold mb-2">Bugünkü İlerleme</div>
-                            <div class="h2 fw-bold mb-0 text-success">% @todayProgress.ToString("F0")</div>
-                            <div class="progress mt-2" style="height: 4px;">
-                                <div class="progress-bar bg-success" style="width: @todayProgress%"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-header bg-white p-4 border-0">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="fw-bold mb-0"><i class="fa-solid fa-calendar-check text-primary me-2"></i>Onay Bekleyen Randevular</h5>
-                        <span class="badge bg-light text-dark border rounded-pill px-3">Toplam @pendingAppointments.Count</span>
-                    </div>
-                </div>
-                <div class="card-body px-4 pb-4">
-                    @if (!pendingAppointments.Any())
-                    {
-                        <div class="text-center py-5">
-                            <div class="display-1 text-light mb-3"><i class="fa-solid fa-check-circle"></i></div>
-                            <p class="text-muted">Onay bekleyen herhangi bir randevu bulunmamaktadır.</p>
-                        </div>
-                    }
-                    else
-                    {
+            <div class="tab-content" id="nav-tabContent">
+                <!-- Tab: Onay Merkezi -->
+                <div class="tab-pane fade show active" id="nav-pending" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
                         <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead class="text-muted small text-uppercase">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light text-muted x-small text-uppercase">
                                     <tr>
-                                        <th>Tarih</th>
-                                        <th>Hasta</th>
-                                        <th>Doktor</th>
-                                        <th>Bölüm</th>
-                                        <th class="text-end">İşlem</th>
+                                        <th class="ps-4">Zaman</th>
+                                        <th>Hasta Bilgileri</th>
+                                        <th>Doktor / Poliklinik</th>
+                                        <th class="text-end pe-4">İşlem</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in pendingAppointments)
+                                    @if (!Model.PendingAppointments.Any())
                                     {
-                                        <tr class="@(item.AppointmentDate.Date == DateTime.Today ? "table-light border-start border-4 border-warning" : "")">
-                                            <td>
+                                        <tr><td colspan="4" class="text-center py-5 text-muted">Bekleyen randevu talebi bulunmuyor.</td></tr>
+                                    }
+                                    @foreach (var item in Model.PendingAppointments)
+                                    {
+                                        <tr>
+                                            <td class="ps-4">
                                                 <div class="fw-bold">@item.AppointmentDate.ToString("HH:mm")</div>
-                                                <div class="small text-muted">@item.AppointmentDate.ToString("dd.MM.yyyy")</div>
+                                                <div class="x-small text-muted">@item.AppointmentDate.ToString("dd.MM.yyyy")</div>
                                             </td>
                                             <td>
                                                 <div class="fw-bold">@item.PatientName @item.PatientSurname</div>
-                                                <div class="small text-muted">@item.PatientPhone</div>
+                                                <div class="x-small text-muted">@item.PatientPhone</div>
                                             </td>
-                                            <td>@(item.Doctor != null ? $"{item.Doctor.Title} {item.Doctor.Name} {item.Doctor.Surname}" : "-")</td>
-                                            <td><span class="badge bg-info-soft text-info rounded-pill">@item.Doctor?.Department?.Name</span></td>
-                                            <td class="text-end">
+                                            <td>
+                                                <div class="small fw-semibold">Dr. @item.Doctor?.Surname</div>
+                                                <div class="x-small text-muted">@item.Doctor?.Department?.Name</div>
+                                            </td>
+                                            <td class="text-end pe-4">
                                                 <div class="d-flex justify-content-end gap-2">
                                                     <form asp-action="ApproveAppointment" asp-route-id="@item.Id" method="post">
                                                         @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-success btn-sm rounded-pill px-3">Onayla</button>
+                                                        <button type="submit" class="btn btn-sm btn-success rounded-pill px-3">Onayla</button>
                                                     </form>
                                                     <form asp-action="RejectAppointment" asp-route-id="@item.Id" method="post">
                                                         @Html.AntiForgeryToken()
-                                                        <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Reddet</button>
+                                                        <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">Reddet</button>
                                                     </form>
                                                 </div>
                                             </td>
@@ -124,195 +153,185 @@
                                 </tbody>
                             </table>
                         </div>
-                    }
+                    </div>
                 </div>
-            </div>
 
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-header bg-white p-4 border-0">
-                    <h5 class="fw-bold mb-0"><i class="fa-solid fa-file-prescription text-primary me-2"></i>Gönderilmeyi Bekleyen Reçeteler</h5>
-                    <p class="small text-muted mb-0">Doktorlar tarafından yazılmış, hastaya iletilmeyi bekleyen dijital reçeteler.</p>
-                </div>
-                <div class="card-body px-4 pb-4">
-                    @if (!unsentPrescriptions.Any())
-                    {
-                        <div class="text-center py-4">
-                            <i class="fa-solid fa-envelope-open text-light display-4 mb-3"></i>
-                            <p class="text-muted mb-0">Gönderilmeyi bekleyen yeni reçete bulunmuyor.</p>
+                <!-- Tab: Reçete Akışı -->
+                <div class="tab-pane fade" id="nav-prescriptions" role="tabpanel">
+                    <div class="card border-0 shadow-sm rounded-4 mb-4">
+                        <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0">Gönderilecek Reçeteler</h6>
+                            @if (Model.UnsentPrescriptions.Any())
+                            {
+                                <button type="button" id="sendAllPrescriptionsBtn" class="btn btn-warning btn-sm rounded-pill px-4 shadow-sm fw-bold">
+                                    <i class="fa-solid fa-paper-plane me-2"></i>Tümünü Gönder
+                                </button>
+                            }
                         </div>
-                    }
-                    else
-                    {
                         <div class="table-responsive">
-                            <table class="table align-middle">
-                                <thead class="text-muted small text-uppercase">
+                            <table class="table align-middle mb-0">
+                                <thead class="bg-light text-muted x-small text-uppercase">
                                     <tr>
-                                        <th>Hasta</th>
-                                        <th>Doktor / Bölüm</th>
-                                        <th>Yazıldı</th>
-                                        <th class="text-end">İşlem</th>
+                                        <th class="ps-4">Hasta</th>
+                                        <th>Doktor</th>
+                                        <th>Tanı Özeti</th>
+                                        <th class="text-end pe-4">Aksiyon</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @foreach (var item in unsentPrescriptions)
+                                    @if (!Model.UnsentPrescriptions.Any())
+                                    {
+                                        <tr><td colspan="4" class="text-center py-4 text-muted">Bekleyen reçete kaydı bulunmuyor.</td></tr>
+                                    }
+                                    @foreach (var item in Model.UnsentPrescriptions)
                                     {
                                         <tr>
-                                            <td class="fw-bold">@item.PatientName @item.PatientSurname</td>
-                                            <td>
-                                                <div class="small">@(item.Doctor != null ? $"{item.Doctor.Title} {item.Doctor.Name} {item.Doctor.Surname}" : "-")</div>
-                                                <div class="x-small text-muted">@item.Doctor?.Department?.Name</div>
+                                            <td class="ps-4">
+                                                <div class="fw-bold">@item.PatientName @item.PatientSurname</div>
+                                                <div class="x-small text-muted">@item.AppointmentDate.ToString("dd.MM.yyyy")</div>
                                             </td>
-                                            <td class="small text-muted">@(item.PrescriptionCreatedAt?.ToString("dd.MM.yyyy HH:mm") ?? "-")</td>
-                                            <td class="text-end">
-                                                <form asp-action="SendPrescription" asp-route-id="@item.Id" method="post">
-                                                    @Html.AntiForgeryToken()
-                                                    <button type="submit" class="btn btn-primary btn-sm rounded-pill px-4">
-                                                        <i class="fa-solid fa-paper-plane me-2"></i>Hastaya Gönder
-                                                    </button>
-                                                </form>
+                                            <td><div class="small">Dr. @item.Doctor?.Surname</div></td>
+                                            <td class="x-small text-muted text-truncate" style="max-width: 200px;">@item.PrescriptionDiagnosis</td>
+                                            <td class="text-end pe-4">
+                                                <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 send-single-btn" data-id="@item.Id">İlet</button>
                                             </td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
                         </div>
-                    }
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm rounded-4 mb-4">
-                <div class="card-header bg-white p-4 border-0 d-flex align-items-center gap-2">
-                    <h5 class="fw-bold mb-0"><i class="fa-solid fa-circle-check text-success me-2"></i>Gönderilmiş Reçeteler</h5>
-                    <span class="badge bg-success rounded-pill px-3">@sentPrescriptions.Count</span>
-                </div>
-                <div class="card-body px-4 pb-4">
-                    @if (!sentPrescriptions.Any())
-                    {
-                        <p class="text-muted mb-0 small">Henüz gönderilmiş reçete yok.</p>
-                    }
-                    else
-                    {
+                    </div>
+                    
+                    <div class="card border-0 shadow-sm rounded-4">
+                        <div class="card-header bg-white p-4 border-0">
+                            <h6 class="fw-bold mb-0 text-success">Son Gönderilenler</h6>
+                        </div>
                         <div class="table-responsive">
-                            <table class="table table-sm align-middle">
-                                <thead class="text-muted small text-uppercase">
-                                    <tr>
-                                        <th>Hasta</th>
-                                        <th>Doktor</th>
-                                        <th>Yazıldı</th>
-                                        <th>Gönderildi</th>
-                                        <th>Gönderen</th>
-                                    </tr>
-                                </thead>
+                            <table class="table table-sm align-middle mb-0">
                                 <tbody>
-                                    @foreach (var item in sentPrescriptions)
+                                    @foreach (var item in Model.SentPrescriptions)
                                     {
                                         <tr>
-                                            <td class="fw-bold">@item.PatientName @item.PatientSurname</td>
-                                            <td class="small">Dr. @item.Doctor?.Surname</td>
-                                            <td class="small text-muted">@(item.PrescriptionCreatedAt?.ToString("dd.MM.yyyy HH:mm") ?? "-")</td>
-                                            <td>
-                                                <span class="badge bg-success rounded-pill px-3">
-                                                    <i class="fa-solid fa-check me-1"></i>@(item.PrescriptionSentAt?.ToString("dd.MM.yyyy HH:mm") ?? "-")
+                                            <td class="ps-4 py-3 fw-bold">@item.PatientName @item.PatientSurname</td>
+                                            <td class="small text-muted">Dr. @item.Doctor?.Surname</td>
+                                            <td class="text-end pe-4">
+                                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill x-small">
+                                                    <i class="fa-solid fa-check me-1"></i>@item.PrescriptionSentAt?.ToString("HH:mm")
                                                 </span>
                                             </td>
-                                            <td class="small text-muted">@(item.PrescriptionSentByName ?? "-")</td>
                                         </tr>
                                     }
                                 </tbody>
                             </table>
                         </div>
-                    }
+                    </div>
+                </div>
+
+                <!-- Tab: Hastane Durumu -->
+                <div class="tab-pane fade" id="nav-status" role="tabpanel">
+                    <div class="row g-4">
+                        <div class="col-md-7">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-white p-4 border-0">
+                                    <h6 class="fw-bold mb-0">Poliklinik Yoğunluk Durumu</h6>
+                                </div>
+                                <div class="card-body p-4 pt-0">
+                                    @foreach (var load in Model.DepartmentLoads)
+                                    {
+                                        <div class="mb-4">
+                                            <div class="d-flex justify-content-between mb-1">
+                                                <span class="small fw-bold">@load.DepartmentName</span>
+                                                <span class="x-small text-muted">%@load.LoadPercent.ToString("F0")</span>
+                                            </div>
+                                            <div class="progress rounded-pill" style="height: 10px;">
+                                                <div class="progress-bar bg-@load.StatusColor" style="width: @load.LoadPercent%"></div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="card border-0 shadow-sm rounded-4 h-100">
+                                <div class="card-header bg-white p-4 border-0">
+                                    <h6 class="fw-bold mb-0 text-info">Sistem Duyuruları</h6>
+                                </div>
+                                <div class="card-body p-4 pt-0">
+                                    @foreach (var ann in Model.SystemAnnouncements)
+                                    {
+                                        <div class="d-flex gap-3 mb-3 pb-3 border-bottom border-light position-relative announcement-item">
+                                            <div class="bg-info bg-opacity-10 text-info rounded-circle p-2" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center;">
+                                                <i class="fa-solid fa-info small"></i>
+                                            </div>
+                                            <div class="pe-5">
+                                                <div class="fw-bold small">@ann.Title</div>
+                                                <div class="x-small text-muted line-clamp-2">@ann.Message</div>
+                                            </div>
+                                            <button class="btn btn-sm btn-light text-danger p-2 position-absolute top-0 end-0 rounded-circle shadow-sm opacity-75 hover-opacity-100 transition-all" 
+                                                    onclick="deleteAnnouncement(@ann.Id)" title="Bu Duyuruyu Sil">
+                                                <i class="fa-solid fa-trash-can x-small"></i>
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Reminders Sidebar (Right) -->
+        <!-- Sidebar: Reminders & Quick Track -->
         <div class="col-lg-3">
-            <div class="sticky-top" style="top: 100px;">
-                <h5 class="fw-bold mb-3 d-flex align-items-center">
-                    <i class="fa-solid fa-bell text-warning me-2"></i> Operasyonel Hatırlatıcılar
-                </h5>
-
-                <!-- Urgent Alerts -->
-                @if (urgentApprovals > 0 || delayedPrescriptions > 0)
-                {
-                    <div class="card border-0 shadow-sm rounded-4 mb-4 bg-danger-soft border-start border-4 border-danger">
-                        <div class="card-body p-3">
-                            <h6 class="fw-bold text-danger mb-3 small text-uppercase">Dikkat Gerekenler</h6>
-                            
-                            @if (urgentApprovals > 0)
-                            {
-                                <div class="d-flex gap-3 mb-3">
-                                    <div class="text-danger h4 mb-0"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                                    <div>
-                                        <div class="fw-bold small text-dark">Bugüne Ait @urgentApprovals Bekleyen Onay</div>
-                                        <div class="x-small text-muted">Hemen onaylamanız veya reddetmeniz önerilir.</div>
-                                    </div>
-                                </div>
-                            }
-
-                            @if (delayedPrescriptions > 0)
-                            {
-                                <div class="d-flex gap-3">
-                                    <div class="text-danger h4 mb-0"><i class="fa-solid fa-triangle-exclamation"></i></div>
-                                    <div>
-                                        <div class="fw-bold small text-dark">@delayedPrescriptions Gecikmiş Reçete</div>
-                                        <div class="x-small text-muted">Önceki günlerden kalan reçete kayıtları var.</div>
-                                    </div>
-                                </div>
-                            }
+            <div class="sticky-top" style="top: 2rem;">
+                <div class="card border-0 shadow-sm rounded-4 mb-4 bg-primary text-white">
+                    <div class="card-body p-4 text-center">
+                        <div class="h3 fw-bold mb-0">@Model.TodaysCompleted / @Model.TodaysTotal</div>
+                        <div class="x-small opacity-75 text-uppercase fw-bold">Günlük Randevu Tamamlama</div>
+                        <div class="progress bg-white bg-opacity-25 mt-3 rounded-pill" style="height: 6px;">
+                            <div class="progress-bar bg-white" style="width: @todayProgress%"></div>
                         </div>
-                    </div>
-                }
-
-                <!-- Next 2 Hours -->
-                <div class="card border-0 shadow-sm rounded-4 mb-4">
-                    <div class="card-header bg-white py-3 px-4 border-0 border-bottom">
-                        <h6 class="fw-bold mb-0 small text-uppercase"><i class="fa-solid fa-hourglass-start text-primary me-2"></i>Sıradaki Randevular (2 Saat)</h6>
-                    </div>
-                    <div class="card-body p-0">
-                        @if (!upcomingNext2Hours.Any())
-                        {
-                            <div class="p-4 text-center text-muted small">
-                                Önümüzdeki 2 saat içinde onaylanmış randevu bulunmuyor.
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="list-group list-group-flush">
-                                @foreach (var next in upcomingNext2Hours)
-                                {
-                                    <div class="list-group-item p-3 border-0 border-bottom">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span class="badge bg-primary rounded-pill">@next.AppointmentDate.ToString("HH:mm")</span>
-                                            <span class="small text-muted">@next.Doctor?.Department?.Name</span>
-                                        </div>
-                                        <div class="fw-bold text-dark small">@next.PatientName @next.PatientSurname</div>
-                                        <div class="x-small text-muted">Dr. @next.Doctor?.Surname</div>
-                                    </div>
-                                }
-                            </div>
-                        }
-                    </div>
-                    <div class="card-footer bg-light border-0 text-center py-2">
-                        <a href="#" class="x-small text-primary text-decoration-none fw-bold">TÜM GÜNLÜK LİSTE</a>
                     </div>
                 </div>
 
-                <!-- Daily Summary Box -->
-                <div class="card border-0 shadow-sm rounded-4 bg-primary text-white">
+                <div class="card border-0 shadow-sm rounded-4 mb-4 bg-danger bg-opacity-10 border-start border-4 border-danger">
                     <div class="card-body p-4">
-                        <h6 class="small text-uppercase fw-bold mb-3 opacity-75">Günün Özeti</h6>
-                        <div class="row text-center">
-                            <div class="col-6 border-end border-white border-opacity-25">
-                                <div class="h3 fw-bold mb-0">@todaysTotal</div>
-                                <div class="x-small opacity-75">Toplam</div>
+                        <h6 class="fw-bold text-danger mb-3 x-small text-uppercase">Kritik Uyarılar</h6>
+                        @if (Model.UrgentApprovals > 0)
+                        {
+                            <div class="d-flex gap-3 mb-3" style="cursor: pointer;" onclick="const tab = new bootstrap.Tab(document.getElementById('nav-pending-tab')); tab.show();">
+                                <div class="text-danger h5 mb-0"><i class="fa-solid fa-bell"></i></div>
+                                <div>
+                                    <div class="fw-bold small">@Model.UrgentApprovals Yeni Talep</div>
+                                    <div class="x-small text-muted">Onay bekleyen randevular var.</div>
+                                </div>
                             </div>
-                            <div class="col-6">
-                                <div class="h3 fw-bold mb-0">@todaysCompleted</div>
-                                <div class="x-small opacity-75">Tamamlanan</div>
+                        }
+                        @if (Model.DelayedPrescriptions > 0)
+                        {
+                            <div class="d-flex gap-3" style="cursor: pointer;" onclick="const tab = new bootstrap.Tab(document.getElementById('nav-prescriptions-tab')); tab.show();">
+                                <div class="text-danger h5 mb-0"><i class="fa-solid fa-envelope-open-text"></i></div>
+                                <div>
+                                    <div class="fw-bold small">@Model.DelayedPrescriptions Gecikmiş Reçete</div>
+                                    <div class="x-small text-muted">Gönderilmesi gereken reçeteler var.</div>
+                                </div>
                             </div>
-                        </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm rounded-4 mb-4">
+                    <div class="card-header bg-white py-3 px-4 border-0 border-bottom">
+                        <h6 class="fw-bold mb-0 small text-uppercase text-secondary">İptal Takip</h6>
+                    </div>
+                    <div class="card-body p-0">
+                        @foreach (var c in Model.RecentlyCancelled)
+                        {
+                            <div class="p-3 border-bottom border-light">
+                                <div class="fw-bold x-small">@c.PatientName @c.PatientSurname</div>
+                                <div class="x-small text-danger">İptal: @c.AppointmentDate.ToString("HH:mm")</div>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
@@ -320,11 +339,407 @@
     </div>
 </div>
 
+<!-- Daily List Preview Modal -->
+<div class="modal fade" id="dailyListModal" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-light p-4 border-0">
+                <h5 class="modal-title fw-bold">Günlük Randevu Kayıtları</h5>
+                <div class="ms-auto me-3">
+                    <a asp-action="ExportDailyList" class="btn btn-danger btn-sm rounded-pill px-3 shadow-sm">
+                        <i class="fa-solid fa-file-pdf me-2"></i>PDF Olarak İndir
+                    </a>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="dailyListTable">
+                        <thead class="bg-light x-small text-uppercase text-muted">
+                            <tr>
+                                <th class="ps-4">Saat</th>
+                                <th>Hasta Adı Soyadı</th>
+                                <th>Doktor</th>
+                                <th>Bölüm</th>
+                                <th class="text-end pe-4">Durum</th>
+                            </tr>
+                        </thead>
+                        <tbody class="small">
+                            <!-- JS fills -->
+                        </tbody>
+                    </table>
+                </div>
+                <div id="dailyListEmpty" class="p-5 text-center d-none">
+                    <div class="text-muted">Bugün için randevu kaydı bulunmuyor.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Announcement Modal -->
+<div class="modal fade" id="announcementModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-info bg-opacity-10 p-4 border-0">
+                <h5 class="modal-title fw-bold text-info"><i class="fa-solid fa-bullhorn me-2"></i>Hastalara Duyuru Gönder</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="patientAnnouncementForm">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Duyuru Başlığı</label>
+                        <input type="text" name="Title" class="form-control rounded-3" placeholder="Örn: Çalışma Saatleri Hakkında" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold">Duyuru Metni</label>
+                        <textarea name="Message" class="form-control rounded-3" rows="4" placeholder="Mesajınızı buraya yazınız..." required></textarea>
+                    </div>
+                    <div class="alert alert-info x-small border-0 shadow-none mb-0">
+                        <i class="fa-solid fa-circle-info me-1"></i> Bu duyuru tüm hasta kullanıcılarına iletilecektir.
+                    </div>
+                </div>
+                <div class="modal-footer p-4 border-0 pt-0">
+                    <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">İptal</button>
+                    <button type="submit" class="btn btn-info text-white rounded-pill px-4">Yayınla</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Search Modal -->
+<div class="modal fade" id="patientSearchModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary bg-opacity-10 p-4 border-0">
+                <h5 class="modal-title fw-bold text-primary"><i class="fa-solid fa-magnifying-glass me-2"></i>Hasta Sorgulama</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="position-relative mb-4">
+                    <i class="fa-solid fa-magnifying-glass position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+                    <input type="text" id="modalPatientSearchInput" class="form-control form-control-lg rounded-pill border shadow-sm ps-5" placeholder="Hasta adı, soyadı veya T.C. No yazın...">
+                </div>
+                <div id="modalSearchResults" class="rounded-4 overflow-hidden border d-none">
+                    <!-- Search results will appear here -->
+                </div>
+                <div id="searchPlaceholder" class="text-center py-5 text-muted">
+                    <i class="fa-solid fa-search fa-3x mb-3 opacity-25"></i>
+                    <p>Sorgulamak için en az 3 karakter yazın.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Patient Details Modal -->
+<div class="modal fade" id="patientDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-light p-4 border-0">
+                <h5 class="modal-title fw-bold" id="modalPatientName">Hasta Detayları</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="mb-4">
+                    <h6 class="text-muted text-uppercase x-small fw-bold mb-3">Randevu Geçmişi</h6>
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover mb-0" id="patientHistoryTable">
+                            <thead class="bg-light">
+                                <tr class="x-small">
+                                    <th>Tarih</th>
+                                    <th>Bölüm / Doktor</th>
+                                    <th>Durum</th>
+                                    <th class="text-end">İşlem</th>
+                                </tr>
+                            </thead>
+                            <tbody class="small"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateClock() {
+            const now = new Date();
+            const clock = document.getElementById('live-clock');
+            const dateEl = document.getElementById('live-date');
+            if (clock && dateEl) {
+                clock.textContent = now.toLocaleTimeString('tr-TR', { hour12: false });
+                dateEl.textContent = now.toLocaleDateString('tr-TR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('modalPatientSearchInput');
+            const searchResults = document.getElementById('modalSearchResults');
+            const searchPlaceholder = document.getElementById('searchPlaceholder');
+            const patientModal = new bootstrap.Modal(document.getElementById('patientDetailsModal'));
+            const searchModalEl = document.getElementById('patientSearchModal');
+            const searchModal = new bootstrap.Modal(searchModalEl);
+            const dailyListModal = new bootstrap.Modal(document.getElementById('dailyListModal'));
+            const historyTableBody = document.querySelector('#patientHistoryTable tbody');
+            const dailyTableBody = document.querySelector('#dailyListTable tbody');
+            const modalTitle = document.getElementById('modalPatientName');
+            let searchTimeout;
+            
+            // Tab Persistence
+            const activeTab = localStorage.getItem('secretaryActiveTab');
+            if (activeTab) {
+                const tabEl = document.querySelector(`button[data-bs-target="${activeTab}"]`);
+                if (tabEl) {
+                    const tab = new bootstrap.Tab(tabEl);
+                    tab.show();
+                }
+            }
+
+            document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tabEl => {
+                tabEl.addEventListener('shown.bs.tab', function (event) {
+                    localStorage.setItem('secretaryActiveTab', event.target.getAttribute('data-bs-target'));
+                });
+            });
+
+            // Search Interaction
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+                if (query.length < 3) { 
+                    searchResults.classList.add('d-none'); 
+                    searchPlaceholder.classList.remove('d-none');
+                    return; 
+                }
+
+                searchTimeout = setTimeout(async () => {
+                    try {
+                        const response = await fetch(`@Url.Action("SearchPatients", "Secretary")?query=${encodeURIComponent(query)}`);
+                        const result = await response.json();
+                        if (result.success && result.data.length > 0) {
+                            searchPlaceholder.classList.add('d-none');
+                            let html = '<div class="list-group list-group-flush">';
+                            result.data.forEach(item => {
+                                html += `<button type="button" class="list-group-item list-group-item-action p-3 border-0 border-bottom search-item" data-id="${item.id}">
+                                            <div class="d-flex justify-content-between"><span class="fw-bold text-primary">${item.name}</span><span class="x-small text-muted">${item.date}</span></div>
+                                            <div class="d-flex justify-content-between align-items-center mt-1"><span class="x-small text-muted">${item.phone}</span><span class="badge bg-light text-dark x-small">${item.status}</span></div>
+                                         </button>`;
+                            });
+                            searchResults.innerHTML = html + '</div>';
+                            searchResults.classList.remove('d-none');
+                            document.querySelectorAll('.search-item').forEach(btn => {
+                                btn.onclick = () => {
+                                    bootstrap.Modal.getInstance(searchModalEl).hide();
+                                    openPatientDetails(btn.dataset.id);
+                                };
+                            });
+                        } else {
+                            searchResults.innerHTML = '<div class="p-4 text-center text-muted small">Sonuç bulunamadı.</div>';
+                            searchResults.classList.remove('d-none');
+                            searchPlaceholder.classList.add('d-none');
+                        }
+                    } catch (e) { console.error(e); }
+                }, 300);
+            });
+
+            window.openPatientDetails = async function(id) {
+                searchResults.classList.add('d-none');
+                historyTableBody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary"></div></td></tr>';
+                patientModal.show();
+                try {
+                    const response = await fetch(`@Url.Action("GetPatientDetails", "Secretary")?appointmentId=${id}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        modalTitle.textContent = result.patientName;
+                        let rows = '';
+                        result.history.forEach(h => {
+                            const badge = h.status === 'Tamamlandi' ? 'bg-success' : (h.status === 'Iptal' ? 'bg-secondary' : 'bg-primary');
+                            rows += `<tr><td class="fw-bold">${h.date}</td><td><div class="fw-semibold">${h.department}</div><div class="x-small text-muted">${h.doctor}</div></td><td><span class="badge ${badge} rounded-pill x-small">${h.status}</span></td><td class="text-end">${h.canCancel ? `<button class="btn btn-sm btn-outline-danger rounded-pill cancel-btn" onclick="cancelAppointment(${h.id}, ${id})">İptal</button>` : '-'}</td></tr>`;
+                        });
+                        historyTableBody.innerHTML = rows;
+                    }
+                } catch (e) { console.error(e); }
+            };
+
+            window.cancelAppointment = async function(appId, patientId) {
+                if (!confirm('İptal etmek istediğinize emin misiniz?')) return;
+                try {
+                    const token = document.querySelector('#antiforgery-token-container input').value;
+                    const formData = new URLSearchParams();
+                    formData.append('__RequestVerificationToken', token);
+
+                    const res = await fetch(`@Url.Action("CancelSearchAppointment", "Secretary")?id=${appId}`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                    });
+                    const result = await res.json();
+                    if (result.success) openPatientDetails(patientId);
+                    else alert("Hata: " + result.message);
+                } catch (e) { console.error(e); alert("İşlem sırasında bir hata oluştu."); }
+            };
+
+            window.deleteAnnouncement = async function(id) {
+                if (!confirm('Bu duyuruyu silmek istediğinize emin misiniz?')) return;
+                try {
+                    const token = document.querySelector('#antiforgery-token-container input').value;
+                    const formData = new URLSearchParams();
+                    formData.append('__RequestVerificationToken', token);
+
+                    const res = await fetch(`@Url.Action("DeleteAnnouncement", "Secretary")?id=${id}`, {
+                        method: 'POST',
+                        body: formData,
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+                    });
+                    const result = await res.json();
+                    if (result.success) location.reload();
+                    else alert("Hata: " + result.message);
+                } catch (e) { console.error(e); }
+            };
+
+            // Daily List Preview
+            window.openDailyList = async function() {
+                dailyTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5"><div class="spinner-border text-primary"></div></td></tr>';
+                dailyListModal.show();
+                try {
+                    const response = await fetch(`@Url.Action("SearchPatients", "Secretary")?query=today`); 
+                    const result = await response.json();
+                    if (result.success && result.data.length > 0) {
+                        let rows = '';
+                        result.data.forEach(item => {
+                            rows += `<tr><td class="ps-4 fw-bold">${item.date.split(' ')[1]}</td><td>${item.name}</td><td>${item.doctor}</td><td><span class="x-small text-muted fw-bold">${item.department}</span></td><td class="text-end pe-4"><span class="badge bg-light text-dark x-small">${item.status}</span></td></tr>`;
+                        });
+                        dailyTableBody.innerHTML = rows;
+                    } else {
+                        dailyTableBody.innerHTML = '<tr><td colspan="5" class="text-center py-5 text-muted">Bugün için randevu kaydı bulunmuyor.</td></tr>';
+                    }
+                } catch (e) { console.error(e); }
+            };
+
+            // Announcement Form
+            document.getElementById('patientAnnouncementForm').onsubmit = async function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const token = document.querySelector('#antiforgery-token-container input').value;
+                formData.append('__RequestVerificationToken', token);
+                
+                try {
+                    const res = await fetch(`@Url.Action("CreateAnnouncement", "Secretary")`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        bootstrap.Modal.getInstance(document.getElementById('announcementModal')).hide();
+                        location.reload();
+                    } else {
+                        alert("Hata: " + result.message);
+                    }
+                } catch (e) { console.error(e); alert("Duyuru yayınlanırken bir teknik hata oluştu."); }
+            };
+
+            // Prescription Sending AJAX
+            document.querySelectorAll('.send-single-btn').forEach(btn => {
+                btn.onclick = async function() {
+                    const id = this.dataset.id;
+                    const row = this.closest('tr');
+                    const originalContent = this.innerHTML;
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+                    
+                    try {
+                        const token = document.querySelector('#antiforgery-token-container input').value;
+                        const formData = new URLSearchParams();
+                        formData.append('__RequestVerificationToken', token);
+
+                        const res = await fetch(`@Url.Action("SendPrescription", "Secretary")?id=${id}`, {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        
+                        if (res.ok) {
+                            row.style.transition = 'opacity 0.5s';
+                            row.style.opacity = '0';
+                            setTimeout(() => { 
+                                row.remove();
+                                if (document.querySelectorAll('.send-single-btn').length === 0) {
+                                    location.reload(); // Re-fetch all to update Sent list
+                                }
+                            }, 500);
+                        } else {
+                            alert("Reçete gönderilemedi.");
+                            this.disabled = false;
+                            this.innerHTML = originalContent;
+                        }
+                    } catch (e) { 
+                        console.error(e); 
+                        this.disabled = false;
+                        this.innerHTML = originalContent;
+                    }
+                };
+            });
+
+            const sendAllBtn = document.getElementById('sendAllPrescriptionsBtn');
+            if (sendAllBtn) {
+                sendAllBtn.onclick = async function() {
+                    if (!confirm('Tüm bekleyen reçeteleri göndermek istediğinize emin misiniz?')) return;
+                    
+                    const originalContent = this.innerHTML;
+                    this.disabled = true;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Gönderiliyor...';
+
+                    try {
+                        const token = document.querySelector('#antiforgery-token-container input').value;
+                        const formData = new URLSearchParams();
+                        formData.append('__RequestVerificationToken', token);
+
+                        const res = await fetch(`@Url.Action("SendAllPrescriptions", "Secretary")`, {
+                            method: 'POST',
+                            body: formData,
+                            headers: { 
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+
+                        if (res.ok) {
+                            location.reload(); // Refresh to update all lists
+                        } else {
+                            alert("Reçeteler gönderilirken bir hata oluştu.");
+                            this.disabled = false;
+                            this.innerHTML = originalContent;
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        this.disabled = false;
+                        this.innerHTML = originalContent;
+                    }
+                };
+            }
+        });
+    </script>
+}
+
 <style>
-    .bg-info-soft { background-color: rgba(13, 202, 240, 0.1); }
-    .bg-danger-soft { background-color: rgba(220, 53, 69, 0.05); }
-    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.05); }
-    .x-small { font-size: 0.75rem; }
-    .nav-pills .nav-link { color: #6c757d; background: #f8f9fa; }
-    .nav-pills .nav-link.active { background-color: #0d6efd; color: #fff; }
+    .btn-white { background: var(--surface-color); color: var(--text-main); border-color: var(--border-color); }
+    .btn-white:hover { background: var(--border-color); }
+    .nav-tabs .nav-link { color: var(--text-muted); background: var(--border-color); border: none; margin-right: 5px; transition: all 0.3s; }
+    .nav-tabs .nav-link.active { background: #0d6efd !important; color: white !important; }
+    .search-results-dropdown { background: var(--surface-color); border: 1px solid var(--border-color); position: absolute; top: 100%; left: 0; right: 0; z-index: 1050; margin-top: 5px; max-height: 400px; overflow-y: auto; }
+    .list-group-item { background: var(--surface-color); color: var(--text-main); border-color: var(--border-color); }
+    .form-control { background: var(--surface-color); color: var(--text-main); border-color: var(--border-color); }
+
+    .hover-opacity-100:hover { opacity: 1 !important; }
+    .transition-all { transition: all 0.3s ease; }
+    .hover-up:hover { transform: translateY(-4px); box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important; }
+    .x-small { font-size: 0.7rem; }
+    .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 </style>

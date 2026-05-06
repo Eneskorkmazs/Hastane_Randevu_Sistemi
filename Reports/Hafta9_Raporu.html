@@ -8,7 +8,7 @@
     <style>
         @page {
             size: A4;
-            margin: 16mm;
+            margin: 20mm 18mm;
         }
 
         :root {
@@ -195,12 +195,12 @@
 
         .file-table th:nth-child(1),
         .file-table td:nth-child(1) {
-            width: 90px;
+            width: 80px;
         }
 
         .file-table th:nth-child(2),
         .file-table td:nth-child(2) {
-            width: 260px;
+            width: 220px;
         }
 
         .file-table th:nth-child(3),
@@ -312,7 +312,7 @@
     <main class="report">
         <section class="hero">
             <h1>Hastane Randevu Sistemi — Hafta 9 Raporu</h1>
-            <p>AI Semptom Kontrolcüsü, QR Kod Randevu Doğrulama, Dijital Reçete PDF, Serilog Loglama, Integration Testler, Kod Refactoring</p>
+            <p>AI Semptom Kontrolcüsü, QR Kod Randevu Doğrulama, Dijital Reçete PDF, Serilog Loglama, Integration Testler, Sekreter Toplu Reçete Yönetimi</p>
             <div class="meta">
                 <div class="meta-card"><strong>Proje</strong>Hastane Randevu Sistemi</div>
                 <div class="meta-card"><strong>Hafta</strong>9 — 28 Nisan 2026</div>
@@ -325,7 +325,7 @@
         <section class="section">
             <h2>Genel Değerlendirme</h2>
             <div class="summary">
-                Dokuzuncu haftada projenin ileri seviye özellikleri tamamlanmıştır. Kural tabanlı AI Semptom Kontrolcüsü ile hastalar poliklinik yönlendirmesi alabilmektedir. QR Kod altyapısı randevu doğrulama için devreye alınmış, dijital reçeteler QR imzalı ve yazdırılabilir hale getirilmiştir. Serilog ile profesyonel loglama, xUnit ile kapsamlı integration testleri eklenmiş; gereksiz kodlar temizlenmiştir.
+                Dokuzuncu haftada projenin ileri seviye özellikleri tamamlanmıştır. Kural tabanlı AI Semptom Kontrolcüsü ile hastalar poliklinik yönlendirmesi alabilmektedir. QR Kod altyapısı randevu doğrulama için devreye alınmış, dijital reçeteler QR imzalı ve yazdırılabilir hale getirilmiştir. Serilog ile profesyonel loglama eklenmiş, ayrıca Sekreter Paneli üzerinden tüm reçetelerin tek tıkla AJAX kullanılarak hastaya iletilmesi (Toplu Gönderim) ve yetki bazlı 404 hatalarının çözümleri gibi kritik operasyonel iyileştirmeler yapılmıştır.
             </div>
         </section>
 
@@ -353,8 +353,12 @@
                     <p>xUnit test projesi genişletildi. 15+ senaryo: public sayfalar, auth gerektiren sayfalar, API güvenliği, semptom kontrolcüsü.</p>
                 </div>
                 <div class="card">
-                    <h4>🧹 Kod Refactoring</h4>
-                    <p>Doktor erişim isteği özelliği kaldırıldı. Navbar sadeleştirildi. Orphaned view'lar silindi.</p>
+                    <h4>👩‍💼 Sekreter Paneli İyileştirmeleri</h4>
+                    <p>Sekreter arayüzünde AJAX ile sayfa yenilenmeden tüm bekleyen reçeteleri tek tıkla gönderme ("Tümünü Gönder") ve Tab (Sekme) hafızası eklendi.</p>
+                </div>
+                <div class="card">
+                    <h4>🔧 Yetki ve Akış Düzeltmeleri</h4>
+                    <p>Doktor/Sekreter arası 404 (Sayfa Bulunamadı) hataları giderildi. Günlük kayıtlardaki alanlar dinamikleştirilerek gerçek Poliklinik isimleri yansıtıldı.</p>
                 </div>
             </div>
         </section>
@@ -363,12 +367,20 @@
             <h2>Ekran Görüntüleri</h2>
             <div class="screenshot-grid">
                 <div class="screenshot-item">
-                    <img src="assets/screenshot-hasta-panel.png" alt="Hasta Paneli" onerror="this.parentElement.innerHTML='<div class=screenshot-placeholder>Hasta Paneli</div>'" />
+                    <img src="assets/screenshot-login.png" alt="Giriş Ekranı" />
+                    <p class="screenshot-caption">Giriş Ekranı — Rol Seçimi</p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="assets/screenshot-hasta-panel.png" alt="Hasta Paneli" />
                     <p class="screenshot-caption">Hasta Paneli — Dashboard</p>
                 </div>
                 <div class="screenshot-item">
-                    <img src="assets/screenshot-login.png" alt="Giriş Ekranı" onerror="this.parentElement.innerHTML='<div class=screenshot-placeholder>Giriş Ekranı</div>'" />
-                    <p class="screenshot-caption">Giriş Ekranı — Rol Seçimi</p>
+                    <img src="assets/screenshot-symptom.png" alt="Semptom Kontrolcüsü" />
+                    <p class="screenshot-caption">AI Semptom Kontrolcüsü</p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="assets/screenshot-home.png" alt="Ana Sayfa" />
+                    <p class="screenshot-caption">Ana Sayfa</p>
                 </div>
             </div>
         </section>
@@ -435,6 +447,16 @@
                         <td>Orphaned view</td>
                     </tr>
                     <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Controllers/SecretaryController.cs</td>
+                        <td>SendAllPrescriptions (Toplu gönderim) ve dinamik poliklinik bilgisi eklendi.</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Secretary/Dashboard.cshtml</td>
+                        <td>AJAX fetch çağrıları, Tümünü Gönder butonu ve tab hafızası eklendi.</td>
+                    </tr>
+                    <tr>
                         <td><span class="tag tag-del">SİLİNDİ</span></td>
                         <td>Views/Appointment/DoctorAccessRequests.cshtml</td>
                         <td>Erişim isteği kaldırıldı</td>
@@ -459,7 +481,7 @@
         <section class="section">
             <h2>Sonuç</h2>
             <div class="closing">
-                Dokuzuncu haftanın sonunda proje, yapay zeka destekli semptom analizi, QR kod doğrulama ve profesyonel loglama gibi ileri seviye özelliklerle donatılmıştır.
+                Dokuzuncu haftanın sonunda proje, yapay zeka destekli semptom analizi, QR kod doğrulama, profesyonel loglama ve kesintisiz sekreter-doktor iş akışı optimizasyonlarıyla donatılmıştır.
             </div>
         </section>
 

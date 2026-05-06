@@ -53,6 +53,10 @@
     {
         newReviewBadgeCount = await DbContext.HospitalReviews.CountAsync(r => r.AdminReply == null);
     }
+    else if (isSignedIn && isSecretary)
+    {
+        unreadNotificationCount = await DbContext.Appointments.CountAsync(a => a.Status == AppointmentStatus.Bekliyor);
+    }
 }
 
 <!DOCTYPE html>
@@ -73,6 +77,31 @@
             document.documentElement.setAttribute('data-bs-theme', currentTheme);
         })();
     </script>
+    <style>
+        :root {
+            --surface-color: #ffffff;
+            --bg-color: #f4f7f6;
+            --text-main: #333333;
+            --text-muted: #666666;
+            --border-color: #eeeeee;
+        }
+
+        [data-theme='dark'] {
+            --surface-color: #1e1e1e;
+            --bg-color: #121212;
+            --text-main: #e0e0e0;
+            --text-muted: #b0b0b0;
+            --border-color: #333333;
+        }
+
+        body { background-color: var(--bg-color); color: var(--text-main); transition: background-color 0.4s ease, color 0.4s ease; }
+        .card { background-color: var(--surface-color); border-color: var(--border-color); color: var(--text-main); }
+        .text-dark { color: var(--text-main) !important; }
+        .text-muted { color: var(--text-muted) !important; }
+        
+        .theme-btn-animate i { transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .rotate-360 { transform: rotate(360deg); }
+    </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
     <a class="skip-link" href="#main-content">Ana içeriğe geç</a>
@@ -159,6 +188,16 @@
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Secretary")" asp-controller="Secretary" asp-action="Dashboard">
                                     <i class="fa-solid fa-clipboard-check me-1"></i> Sekreter Paneli
+                                    @if (unreadNotificationCount > 0)
+                                    {
+                                        <span id="secretaryBadge" class="badge rounded-pill bg-danger text-white ms-1 nav-badge-premium">
+                                            @unreadNotificationCount
+                                        </span>
+                                    }
+                                    else if (isSecretary)
+                                    {
+                                        <span id="secretaryBadge" class="badge rounded-pill bg-danger text-white ms-1 nav-badge-premium" style="display:none;">0</span>
+                                    }
                                 </a>
                             </li>
                         }
@@ -225,9 +264,8 @@
 
                     <ul class="navbar-nav nav-user-actions ms-3 align-items-center">
                         <li class="nav-item me-3">
-                            <button id="theme-toggle" class="border-0 shadow-sm" aria-label="Tema değiştir" title="Tema Değiştir">
-                                <i class="fa-solid fa-moon"></i>
-                                <i class="fa-solid fa-sun text-warning"></i>
+                            <button id="global-theme-toggle" class="btn btn-link nav-link border-0 p-0 theme-btn-animate" title="Temayı Değiştir" style="font-size: 1.2rem;">
+                                <i class="fa-solid fa-moon text-white"></i>
                             </button>
                         </li>
                         @if (isSignedIn)
@@ -396,34 +434,79 @@
     <script src="~/js/site.js" asp-append-version="true"></script>
     <script>
         (function () {
-            const unreadBadge = document.getElementById("unreadNotificationBadge");
-            if (!unreadBadge) {
-                return;
-            }
-
             async function refreshUnreadNotificationBadge() {
-                try {
-                    const response = await fetch("@Url.Action("UnreadNotificationCount", "Patient")", {
-                        method: "GET",
-                        credentials: "same-origin"
-                    });
+                const unreadBadge = document.getElementById("unreadNotificationBadge");
+                const secretaryBadge = document.getElementById("secretaryBadge");
 
-                    if (!response.ok) {
-                        return;
-                    }
+                if (unreadBadge) {
+                    try {
+                        const response = await fetch("@Url.Action("UnreadNotificationCount", "Patient")", {
+                            method: 'GET',
+                            cache: 'no-store'
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            unreadBadge.textContent = data.count;
+                            unreadBadge.style.display = data.count > 0 ? "inline-flex" : "none";
+                        }
+                    } catch (e) { console.error("Patient badge error", e); }
+                }
 
-                    const payload = await response.json();
-                    const count = Number(payload.count || 0);
-                    unreadBadge.textContent = String(count);
-                    unreadBadge.style.display = count > 0 ? "inline-flex" : "none";
-                } catch {
-                    // ignore transient errors
+                if (secretaryBadge) {
+                    try {
+                        const response = await fetch("@Url.Action("PendingAppointmentCount", "Secretary")", {
+                            method: 'GET',
+                            cache: 'no-store'
+                        });
+                        if (response.ok) {
+                            const data = await response.json();
+                            secretaryBadge.textContent = data.count;
+                            secretaryBadge.style.display = data.count > 0 ? "inline-flex" : "none";
+                        }
+                    } catch (e) { console.error("Secretary badge error", e); }
                 }
             }
 
             refreshUnreadNotificationBadge();
             setInterval(refreshUnreadNotificationBadge, 30000);
         })();
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('global-theme-toggle');
+            if (!themeToggle) return;
+            const themeIcon = themeToggle.querySelector('i');
+            
+            // Sync icon on load
+            const currentTheme = document.documentElement.getAttribute('data-theme');
+            if (currentTheme === 'dark') {
+                themeIcon.className = 'fa-solid fa-sun text-warning';
+                document.body.classList.add('dark-mode');
+            }
+
+            themeToggle.addEventListener('click', () => {
+                themeIcon.classList.add('rotate-360');
+                
+                setTimeout(() => {
+                    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+                    const newTheme = isDark ? 'light' : 'dark';
+                    
+                    document.documentElement.setAttribute('data-theme', newTheme);
+                    document.documentElement.setAttribute('data-bs-theme', newTheme);
+                    localStorage.setItem('theme', newTheme);
+                    
+                    if (newTheme === 'dark') {
+                        themeIcon.className = 'fa-solid fa-sun text-warning';
+                        document.body.classList.add('dark-mode');
+                    } else {
+                        themeIcon.className = 'fa-solid fa-moon text-white';
+                        document.body.classList.remove('dark-mode');
+                    }
+                    
+                    themeIcon.classList.remove('rotate-360');
+                }, 250);
+            });
+        });
     </script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>

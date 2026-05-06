@@ -57,8 +57,11 @@
 
                 <div class="col-12 d-flex gap-3 justify-content-end">
                     <a asp-action="Index" class="btn btn-outline-secondary rounded-pill px-4">İptal</a>
+                    <a asp-action="DownloadPrescriptionPdf" asp-route-appointmentId="@Model.AppointmentId" class="btn btn-outline-danger rounded-pill px-4">
+                        <i class="fa-solid fa-file-pdf me-2"></i>PDF İndir
+                    </a>
                     <button type="submit" class="btn btn-primary rounded-pill px-5 fw-semibold">
-                        <i class="fa-solid fa-file-prescription me-2"></i>Reçeteyi Kaydet ve Önizle
+                        <i class="fa-solid fa-file-prescription me-2"></i>Reçeteyi Kaydet
                     </button>
                 </div>
             </form>

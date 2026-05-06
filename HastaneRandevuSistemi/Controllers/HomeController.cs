@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using HastaneRandevuSistemi.Data;
@@ -1825,8 +1825,14 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (appointment.Doctor?.UserId != user?.Id)
             {
-                 // Güvenlik kontrolü: Başkasının randevusuna reçete yazamaz
                  return Forbid();
+            }
+
+            // Tarihi gelmemiş randevulara reçete yazılamaz
+            if (appointment.AppointmentDate > DateTime.Now.AddMinutes(5))
+            {
+                TempData["ErrorMessage"] = "Tamamlanmamış randevu. Randevu saati henüz gelmediği için reçete oluşturulamaz.";
+                return RedirectToAction(nameof(DoctorDashboard));
             }
 
             var model = new HastaneRandevuSistemi.ViewModels.PrescriptionDraftViewModel
@@ -1864,10 +1870,10 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (appointment.Doctor?.UserId != user?.Id) return Forbid();
 
-            // Tarihi gelmemiş randevulara reçete yazılamaz
-            if (appointment.AppointmentDate > DateTime.Now)
+            // Tarihi gelmemiş randevulara reçete yazılamaz (Gelecek randevular)
+            if (appointment.AppointmentDate > DateTime.Now.AddMinutes(5))
             {
-                TempData["ErrorMessage"] = "Tarihi gelmemiş bir randevu için reçete oluşturulamaz.";
+                TempData["ErrorMessage"] = "Tamamlanmamış randevu. Randevu süreci henüz başlamadığı için reçete kaydedilemez.";
                 return RedirectToAction(nameof(DoctorDashboard));
             }
 

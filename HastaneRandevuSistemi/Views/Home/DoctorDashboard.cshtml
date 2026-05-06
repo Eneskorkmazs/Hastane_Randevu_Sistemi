@@ -120,9 +120,18 @@
                                             }
                                             else
                                             {
-                                                <a asp-action="DoctorPrescription" asp-route-appointmentId="@item.Id" class="btn btn-sm btn-primary rounded-pill px-3">
-                                                    <i class="fa-solid fa-file-signature me-1"></i>Muayene / Reçete
-                                                </a>
+                                                if (item.Status == AppointmentStatus.Tamamlandi)
+                                                {
+                                                    <a asp-action="DoctorPrescription" asp-route-appointmentId="@item.Id" class="btn btn-sm btn-primary rounded-pill px-3">
+                                                        <i class="fa-solid fa-file-signature me-1"></i>Muayene / Reçete
+                                                    </a>
+                                                }
+                                                else
+                                                {
+                                                    <a href="javascript:void(0);" onclick="showPrescriptionWarning('@item.Status')" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                                        <i class="fa-solid fa-triangle-exclamation me-1"></i>Muayene / Reçete
+                                                    </a>
+                                                }
                                             }
                                         }
                                         <a asp-controller="Appointment" asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-primary rounded-pill">
@@ -144,3 +153,20 @@
         </a>
     </div>
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function showPrescriptionWarning(status) {
+        Swal.fire({
+            title: 'Reçete Yazılamaz!',
+            text: 'Bu randevu henüz "Tamamlandı" olarak işaretlenmediği için reçete oluşturulamaz. Mevcut Durum: ' + status,
+            icon: 'warning',
+            confirmButtonText: 'Anladım',
+            confirmButtonColor: '#004e92',
+            background: '#fff',
+            customClass: {
+                popup: 'rounded-5 border-0 shadow-lg'
+            }
+        });
+    }
+</script>

@@ -53,8 +53,11 @@
                 </div>
 
                 <div class="col-12 d-flex gap-2 justify-content-end mt-4">
+                    <a asp-controller="DoctorTools" asp-action="DownloadPrescriptionPdf" asp-route-appointmentId="@Model.AppointmentId" class="btn btn-outline-danger rounded-pill px-4 py-3 fw-bold shadow-sm">
+                        <i class="fa-solid fa-file-pdf me-2"></i>PDF Olarak İndir
+                    </a>
                     <button type="submit" class="btn btn-primary rounded-pill px-5 py-3 fw-bold shadow-sm">
-                        <i class="fa-solid fa-file-signature me-2"></i>Reçeteyi Tamamla ve Kaydet
+                        <i class="fa-solid fa-file-signature me-2"></i>Reçeteyi Kaydet
                     </button>
                 </div>
             </form>

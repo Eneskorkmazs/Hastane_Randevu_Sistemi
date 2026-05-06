@@ -11,7 +11,7 @@
         <div class="col-lg-8">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
-                    <h5 class="fw-bold mb-4">Bölüm Bazlı Gelir ve Performans</h5>
+                    <h5 class="fw-bold mb-4">Bölüm Bazlı Gelir ve Performans Analizi</h5>
                     @if (!Model.DepartmentBreakdown.Any())
                     {
                         <div class="text-muted text-center py-5">Veri bulunamadı.</div>
@@ -25,10 +25,10 @@
                                         <th>Bölüm</th>
                                         <th class="text-center">Doktor</th>
                                         <th class="text-center">Randevu</th>
-                                        <th class="text-center">Hasta</th>
-                                        <th class="text-end text-success">Tahsilat</th>
-                                        <th class="text-end text-warning">Bekleyen</th>
-                                        <th class="text-end">Pay %</th>
+                                        <th class="text-center">Hasta Sayısı</th>
+                                        <th class="text-end text-success">Tahsil Edilen</th>
+                                        <th class="text-end text-warning">Bekleyen Tahsilat</th>
+                                        <th class="text-end">Gelir Payı %</th>
                                     </tr>
                                 </thead>
                                 <tbody>

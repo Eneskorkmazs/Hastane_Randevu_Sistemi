@@ -73,15 +73,23 @@ namespace HastaneRandevuSistemi.Controllers
 
             var recentAppointments = await _context.Appointments
                 .Include(a => a.PatientUser)
-                .Where(a => a.DoctorId == doctor.Id)
+                .Include(a => a.Doctor)
+                .Where(a => a.Doctor != null && a.Doctor.DepartmentId == doctor.DepartmentId)
                 .OrderByDescending(a => a.CreatedDate)
                 .ThenByDescending(a => a.Id)
-                .Take(8)
+                .Take(10)
+                .ToListAsync();
+
+            var myPrescriptions = await _context.Appointments
+                .Where(a => a.DoctorId == doctor.Id && a.PrescriptionCreatedAt != null)
+                .OrderByDescending(a => a.PrescriptionCreatedAt)
+                .Take(10)
                 .ToListAsync();
 
             ViewBag.DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim();
             ViewBag.DepartmentName = doctor.Department?.Name ?? string.Empty;
             ViewBag.RecentAppointments = recentAppointments;
+            ViewBag.MyPrescriptions = myPrescriptions;
 
             return View();
         }
@@ -192,9 +200,9 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (appointment == null) return NotFound();
 
-            if (appointment.Status != AppointmentStatus.Tamamlandi || appointment.AppointmentDate > DateTime.Now)
+            if (appointment.AppointmentDate > DateTime.Now.AddMinutes(5))
             {
-                TempData["ErrorMessage"] = "Reçete yalnızca tarihi geçmiş ve tamamlanmış randevular için yazılabilir.";
+                TempData["ErrorMessage"] = "Tamamlanmamış randevu. Randevu saati henüz gelmediği için reçete oluşturulamaz.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -226,9 +234,9 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (appointment == null) return NotFound();
 
-            if (appointment.Status != AppointmentStatus.Tamamlandi || appointment.AppointmentDate > DateTime.Now)
+            if (appointment.AppointmentDate > DateTime.Now.AddMinutes(5))
             {
-                TempData["ErrorMessage"] = "Reçete yalnızca tarihi geçmiş ve tamamlanmış randevular için yazılabilir.";
+                TempData["ErrorMessage"] = "Tamamlanmamış randevu. Randevu süreci henüz başlamadığı için reçete kaydedilemez.";
                 return RedirectToAction(nameof(Index));
             }
 
@@ -253,13 +261,20 @@ namespace HastaneRandevuSistemi.Controllers
             appointment.PrescriptionCreatedAt = model.PrescriptionDate;
             appointment.PrescriptionSentAt = null;
             appointment.PrescriptionSentByName = null;
+            
+            // Eğer randevu henüz tamamlanmamışsa otomatik tamamla
+            if (appointment.Status != AppointmentStatus.Tamamlandi)
+            {
+                appointment.Status = AppointmentStatus.Tamamlandi;
+            }
+
             await _context.SaveChangesAsync();
 
             if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
                 _cache.Remove($"patient:prescriptions:{appointment.PatientUserId}");
 
-            TempData["SuccessMessage"] = "Reçete kaydedildi. Sekreter tarafından hastaya iletilecek.";
-            return View("PrescriptionPreview", model);
+            TempData["SuccessMessage"] = "Reçete başarıyla kaydedildi ve sekreter onayına gönderildi.";
+            return RedirectToAction(nameof(Index));
         }
 
         [HttpGet]
@@ -585,6 +600,34 @@ namespace HastaneRandevuSistemi.Controllers
             });
 
             await _context.SaveChangesAsync();
+        }
+        [HttpGet]
+        [AllowAnonymous]
+        public async Task<IActionResult> SeedPastAppointments()
+        {
+            var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.Name == "Mehmet" && d.Surname == "Korkmaz");
+            if (doctor == null) return Content("Doktor Mehmet Korkmaz bulunamadı.");
+
+            var patient = await _context.Users.FirstOrDefaultAsync(u => u.Email != null && u.Email.Contains("hasta")) 
+                          ?? await _context.Users.FirstOrDefaultAsync();
+            if (patient == null) return Content("Hasta kullanıcısı bulunamadı.");
+
+            for (int i = 1; i <= 5; i++)
+            {
+                var app = new Appointment
+                {
+                    DoctorId = doctor.Id,
+                    PatientUserId = patient.Id,
+                    PatientName = patient.Name ?? "Test",
+                    PatientSurname = patient.Surname ?? "Hasta",
+                    AppointmentDate = DateTime.Now.AddDays(-i).Date.AddHours(9 + i),
+                    Status = i % 2 == 0 ? AppointmentStatus.Onaylandi : AppointmentStatus.Bekliyor,
+                    CreatedDate = DateTime.Now.AddDays(-10)
+                };
+                _context.Appointments.Add(app);
+            }
+            await _context.SaveChangesAsync();
+            return Content("Başarılı! Mehmet Korkmaz için 5 adet geçmiş tarihli (tamamlanmamış) randevu oluşturuldu. Artık doktor panelinden reçete yazmayı deneyip engelini test edebilirsiniz.");
         }
     }
 }
