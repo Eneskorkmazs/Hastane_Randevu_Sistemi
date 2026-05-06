@@ -1,52 +1,324 @@
 <!doctype html>
 <html lang="tr">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Hastane Randevu Sistemi - Hafta 9 Raporu</title>
     <style>
-        @page { size: A4; margin: 16mm; }
-        :root { --ink: #1f2937; --muted: #5b6472; --line: #d9e1ea; --accent: #0b5cad; --soft: #eef6ff; --paper: #ffffff; --bg: #f4f7fb; }
-        * { box-sizing: border-box; }
-        body { margin: 0; padding: 24px; background: var(--bg); color: var(--ink); font-family: "Segoe UI", Tahoma, Arial, sans-serif; line-height: 1.6; }
-        .report { max-width: 920px; margin: 0 auto; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: 0 18px 44px rgba(15,23,42,0.08); }
-        .hero { padding: 32px; background: linear-gradient(135deg, #eff7ff 0%, #ffffff 60%, #edf5ff 100%); border-bottom: 1px solid var(--line); }
-        .hero h1 { margin: 0 0 10px; font-size: 28px; line-height: 1.2; }
-        .hero p { margin: 0; color: var(--muted); font-size: 15px; }
-        .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 20px; }
-        .meta-card { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: rgba(255,255,255,0.92); font-size: 14px; }
-        .meta-card strong { display: block; margin-bottom: 4px; color: var(--accent); font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; }
-        .section { padding: 26px 32px 0; }
-        h2 { margin: 0 0 12px; font-size: 22px; }
-        h3 { margin: 0 0 10px; font-size: 18px; color: var(--accent); }
-        p { margin: 0 0 12px; }
-        ul { margin: 0 0 12px; padding-left: 20px; }
-        li { margin-bottom: 4px; font-size: 14px; }
-        .summary { padding: 16px 18px; border-left: 5px solid var(--accent); border-radius: 12px; background: var(--soft); }
-        .tag { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; margin-right: 4px; }
-        .tag-new { background: #d1fae5; color: #065f46; }
-        .tag-mod { background: #dbeafe; color: #1e40af; }
-        .tag-del { background: #fee2e2; color: #991b1b; }
-        .file-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
-        .file-table th { background: var(--soft); color: var(--accent); padding: 8px 12px; text-align: left; border-bottom: 2px solid var(--line); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
-        .file-table td { padding: 8px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-        .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
-        .card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: #fff; }
-        .card h4 { margin: 0 0 6px; font-size: 15px; color: var(--accent); }
-        .card p { margin: 0; font-size: 14px; color: var(--muted); }
-        .closing { margin-top: 16px; padding: 18px; border: 1px dashed #b9c7d8; border-radius: 14px; background: #f8fafc; }
-        .footer { padding: 24px 32px 30px; font-size: 12px; color: var(--muted); }
+        @page {
+            size: A4;
+            margin: 16mm;
+        }
+
+        :root {
+            --ink: #1f2937;
+            --muted: #5b6472;
+            --line: #d9e1ea;
+            --accent: #0b5cad;
+            --soft: #eef6ff;
+            --paper: #ffffff;
+            --bg: #f4f7fb;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            line-height: 1.6;
+        }
+
+        .report {
+            max-width: 920px;
+            margin: 0 auto;
+            background: var(--paper);
+            border: 1px solid var(--line);
+            border-radius: 18px;
+            overflow: hidden;
+            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+        }
+
+        .hero {
+            padding: 32px;
+            background: linear-gradient(135deg, #eff7ff 0%, #ffffff 60%, #edf5ff 100%);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .hero h1 {
+            margin: 0 0 10px;
+            font-size: 28px;
+            line-height: 1.2;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+            font-size: 15px;
+        }
+
+        .meta {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .meta-card {
+            padding: 12px 14px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.92);
+            font-size: 14px;
+        }
+
+        .meta-card strong {
+            display: block;
+            margin-bottom: 4px;
+            color: var(--accent);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .section {
+            padding: 26px 32px 0;
+        }
+
+        h2 {
+            margin: 0 0 12px;
+            font-size: 22px;
+        }
+
+        h3 {
+            margin: 0 0 10px;
+            font-size: 18px;
+            color: var(--accent);
+        }
+
+        p {
+            margin: 0 0 12px;
+        }
+
+        .summary {
+            padding: 16px 18px;
+            border-left: 5px solid var(--accent);
+            border-radius: 12px;
+            background: var(--soft);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 14px;
+            margin-top: 10px;
+        }
+
+        .card {
+            padding: 14px 16px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .card h4 {
+            margin: 0 0 6px;
+            font-size: 15px;
+            color: var(--accent);
+        }
+
+        .card p {
+            margin: 0;
+            font-size: 14px;
+            color: var(--muted);
+        }
+
+        .tag {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 4px;
+        }
+
+        .tag-new {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .tag-mod {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .tag-del {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .file-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-top: 10px;
+            table-layout: fixed;
+        }
+
+        .file-table th {
+            background: var(--soft);
+            color: var(--accent);
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 2px solid var(--line);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .file-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .file-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .file-table th:nth-child(1),
+        .file-table td:nth-child(1) {
+            width: 90px;
+        }
+
+        .file-table th:nth-child(2),
+        .file-table td:nth-child(2) {
+            width: 260px;
+        }
+
+        .file-table th:nth-child(3),
+        .file-table td:nth-child(3) {
+            width: auto;
+        }
+
+        .closing {
+            margin-top: 16px;
+            padding: 18px;
+            border: 1px dashed #b9c7d8;
+            border-radius: 14px;
+            background: #f8fafc;
+        }
+
+        .readme-box {
+            margin-top: 14px;
+            padding: 14px 18px;
+            border: 1px solid #93c5fd;
+            border-radius: 12px;
+            background: #eff6ff;
+            font-size: 14px;
+        }
+
+        .readme-box a {
+            color: var(--accent);
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .footer {
+            padding: 24px 32px 30px;
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .screenshot-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-top: 10px;
+        }
+
+        .screenshot-item {
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .screenshot-item img {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .screenshot-caption {
+            margin: 0;
+            padding: 8px 12px;
+            font-size: 13px;
+            color: var(--muted);
+            background: var(--soft);
+        }
+
+        .screenshot-placeholder {
+            height: 160px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f1f5f9;
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+                background: #fff;
+            }
+
+            .report {
+                border: none;
+                border-radius: 0;
+                box-shadow: none;
+            }
+        }
+
+        @media (max-width: 720px) {
+            body {
+                padding: 0;
+            }
+
+            .meta,
+            .card-grid,
+            .screenshot-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .hero,
+            .section,
+            .footer {
+                padding-left: 18px;
+                padding-right: 18px;
+            }
+        }
     </style>
 </head>
+
 <body>
     <main class="report">
         <section class="hero">
             <h1>Hastane Randevu Sistemi — Hafta 9 Raporu</h1>
-            <p>Bu rapor, projenin 9. haftasında gerçekleştirilen AI Semptom Kontrolcüsü, QR Kod randevu doğrulama, dijital reçete PDF çıktısı, Serilog loglama, integration testler ve kod refactoring çalışmalarını özetlemektedir.</p>
+            <p>AI Semptom Kontrolcüsü, QR Kod Randevu Doğrulama, Dijital Reçete PDF, Serilog Loglama, Integration Testler, Kod Refactoring</p>
             <div class="meta">
                 <div class="meta-card"><strong>Proje</strong>Hastane Randevu Sistemi</div>
-                <div class="meta-card"><strong>Hafta</strong>9 (28 Nisan 2026)</div>
-                <div class="meta-card"><strong>GitHub</strong>Eneskorkmazs / Hastane_Randevu_Sistemi</div>
+                <div class="meta-card"><strong>Hafta</strong>9 — 28 Nisan 2026</div>
+                <div class="meta-card"><strong>GitHub</strong><a
+                        href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi" target="_blank">Eneskorkmazs /
+                        Hastane_Randevu_Sistemi</a></div>
             </div>
         </section>
 
@@ -62,27 +334,41 @@
             <div class="card-grid">
                 <div class="card">
                     <h4>🤖 AI Semptom Kontrolcüsü</h4>
-                    <p>Kural tabanlı semptom → poliklinik eşleştirme motoru yazıldı. 30+ semptom, 15+ bölüm, güven skoru hesaplama. Hasta panelinden ve ana sayfadan erişilebilir.</p>
+                    <p>Kural tabanlı semptom → poliklinik eşleştirme motoru. 30+ semptom, 15+ bölüm, güven skoru hesaplama. Hasta panelinden erişilebilir.</p>
                 </div>
                 <div class="card">
                     <h4>📱 QR Kod Randevu Doğrulama</h4>
-                    <p>QRCoder kütüphanesi ile her randevu için benzersiz QR bilet üretildi. Randevu detay sayfasında ve randevu listesinde modal ile gösterilmektedir.</p>
+                    <p>QRCoder kütüphanesi ile her randevu için benzersiz QR bilet üretildi. Randevu detay sayfasında modal ile gösterilmektedir.</p>
                 </div>
                 <div class="card">
                     <h4>📄 Dijital Reçete PDF Çıktısı</h4>
-                    <p>Reçete önizleme sayfası yeniden tasarlandı: QR imza, doktor bilgileri, yazdır/PDF kaydet butonu. Tarayıcı print diyaloğu ile PDF alınabiliyor.</p>
+                    <p>Reçete önizleme sayfası yeniden tasarlandı: QR imza, doktor bilgileri, yazdır/PDF kaydet butonu.</p>
                 </div>
                 <div class="card">
                     <h4>📝 Serilog Loglama</h4>
-                    <p>Serilog.AspNetCore entegrasyonu tamamlandı. Günlük dönen log dosyaları <code>Logs/hrs-*.log</code> klasörüne yazılıyor. Console ve Debug sink'leri aktif.</p>
+                    <p>Serilog.AspNetCore entegrasyonu tamamlandı. Günlük dönen log dosyaları Logs/hrs-*.log klasörüne yazılıyor.</p>
                 </div>
                 <div class="card">
                     <h4>🧪 Integration Testleri</h4>
-                    <p>xUnit test projesi genişletildi. 15+ senaryo: public sayfalar, auth gerektiren sayfalar, API güvenliği, semptom kontrolcüsü, güvenlik başlıkları.</p>
+                    <p>xUnit test projesi genişletildi. 15+ senaryo: public sayfalar, auth gerektiren sayfalar, API güvenliği, semptom kontrolcüsü.</p>
                 </div>
                 <div class="card">
                     <h4>🧹 Kod Refactoring</h4>
-                    <p>Doktor erişim isteği özelliği kaldırıldı. Navbar sadeleştirildi. Orphaned view'lar silindi. Kullanılmayan değişkenler temizlendi. Doktor reçete yetkisi sekreter'e taşındı.</p>
+                    <p>Doktor erişim isteği özelliği kaldırıldı. Navbar sadeleştirildi. Orphaned view'lar silindi.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="section" style="padding-top:22px;">
+            <h2>Ekran Görüntüleri</h2>
+            <div class="screenshot-grid">
+                <div class="screenshot-item">
+                    <img src="assets/screenshot-hasta-panel.png" alt="Hasta Paneli" onerror="this.parentElement.innerHTML='<div class=screenshot-placeholder>Hasta Paneli</div>'" />
+                    <p class="screenshot-caption">Hasta Paneli — Dashboard</p>
+                </div>
+                <div class="screenshot-item">
+                    <img src="assets/screenshot-login.png" alt="Giriş Ekranı" onerror="this.parentElement.innerHTML='<div class=screenshot-placeholder>Giriş Ekranı</div>'" />
+                    <p class="screenshot-caption">Giriş Ekranı — Rol Seçimi</p>
                 </div>
             </div>
         </section>
@@ -90,46 +376,95 @@
         <section class="section" style="padding-top:22px;">
             <h2>Değişen / Eklenen Dosyalar</h2>
             <table class="file-table">
-                <thead><tr><th>Durum</th><th>Dosya</th><th>Açıklama</th></tr></thead>
+                <thead>
+                    <tr>
+                        <th>Durum</th>
+                        <th>Dosya</th>
+                        <th>Açıklama</th>
+                    </tr>
+                </thead>
                 <tbody>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Controllers/SymptomController.cs</td><td>Semptom analiz controller'ı oluşturuldu.</td></tr>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Services/SymptomCheckerService.cs</td><td>Kural tabanlı semptom analiz motoru.</td></tr>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Services/ISymptomCheckerService.cs</td><td>Semptom servis arayüzü.</td></tr>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>ViewModels/SymptomViewModel.cs</td><td>30+ semptom seçeneği ile form ViewModel.</td></tr>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>ViewModels/SymptomResultViewModel.cs</td><td>Analiz sonuç ViewModel.</td></tr>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Views/Symptom/Index.cshtml</td><td>Semptom seçim formu.</td></tr>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>Views/Symptom/Result.cshtml</td><td>Poliklinik öneri sonuç ekranı.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/DoctorTools/PrescriptionPreview.cshtml</td><td>QR imzalı, yazdırılabilir reçete tasarımı.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Controllers/DoctorToolsController.cs</td><td>GetPrescriptionQr action eklendi.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/Appointment/Details.cshtml</td><td>QR bilet gösterimi ve doktor değerlendirme butonu eklendi.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Controllers/AppointmentController.cs</td><td>GetQrTicket action eklendi, erişim isteği kodu temizlendi.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Program.cs</td><td>Serilog ve ISymptomCheckerService kaydı eklendi.</td></tr>
-                    <tr><td><span class="tag tag-mod">GÜNCELLEME</span></td><td>Views/Shared/_Layout.cshtml</td><td>Navbar sadeleştirildi, gereksiz linkler kaldırıldı.</td></tr>
-                    <tr><td><span class="tag tag-new">YENİ</span></td><td>HastaneRandevuSistemi.Tests/IntegrationTests.cs</td><td>15+ integration test senaryosu.</td></tr>
-                    <tr><td><span class="tag tag-del">SİLİNDİ</span></td><td>Views/DoctorTools/Prescription.cshtml</td><td>Orphaned view — reçete sekreter'e taşındı.</td></tr>
-                    <tr><td><span class="tag tag-del">SİLİNDİ</span></td><td>Views/Appointment/DoctorAccessRequests.cshtml</td><td>Erişim isteği özelliği kaldırıldı.</td></tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Controllers/SymptomController.cs</td>
+                        <td>Semptom analiz controller</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Services/SymptomCheckerService.cs</td>
+                        <td>Kural tabanlı semptom analiz motoru</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Views/Symptom/Index.cshtml</td>
+                        <td>Semptom seçim formu</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Views/Symptom/Result.cshtml</td>
+                        <td>Poliklinik öneri sonuç ekranı</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/DoctorTools/PrescriptionPreview.cshtml</td>
+                        <td>QR imzalı reçete tasarımı</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Controllers/AppointmentController.cs</td>
+                        <td>GetQrTicket action eklendi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Program.cs</td>
+                        <td>Serilog ve ISymptomCheckerService kaydı</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Shared/_Layout.cshtml</td>
+                        <td>Navbar sadeleştirildi</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>HastaneRandevuSistemi.Tests/IntegrationTests.cs</td>
+                        <td>15+ integration test</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-del">SİLİNDİ</span></td>
+                        <td>Views/DoctorTools/Prescription.cshtml</td>
+                        <td>Orphaned view</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-del">SİLİNDİ</span></td>
+                        <td>Views/Appointment/DoctorAccessRequests.cshtml</td>
+                        <td>Erişim isteği kaldırıldı</td>
+                    </tr>
                 </tbody>
             </table>
         </section>
 
-        <section class="section">
-            <h2>Teknik Detaylar</h2>
-            <h3>AI Semptom Kontrolcüsü Mimarisi</h3>
-            <p>Kural tabanlı bir skor sistemi kullanılmaktadır. Her semptom anahtarı için hangi bölümlerin kaç puan alacağı <code>SymptomCheckerService.cs</code> içindeki statik tabloda tanımlanmıştır. Kullanıcı birden fazla semptom seçtiğinde puanlar toplanır, en yüksek 4 bölüm güven skoru ile birlikte gösterilir.</p>
-            <h3>QR Kod Altyapısı</h3>
-            <p><code>QRCoder</code> NuGet paketi kullanılmaktadır. Her randevu için hasta adı, tarih, poliklinik ve durum bilgilerini içeren bir metin QR koda dönüştürülür ve PNG olarak döndürülür. Reçete QR'ı ise tanı ve ilaç bilgilerini içerir.</p>
+        <section class="section" style="padding-top:22px; padding-bottom:24px;">
+            <h2>Proje Kaynakları</h2>
+            <div class="readme-box">
+                📄 <strong>README:</strong>
+                <a href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi/blob/main/HastaneRandevuSistemi%20(2)/HastaneRandevuSistemi/README.md"
+                    target="_blank">README.md — GitHub</a>
+                &nbsp;|&nbsp;
+                🔗 <strong>Depo:</strong>
+                <a href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi"
+                    target="_blank">github.com/Eneskorkmazs/Hastane_Randevu_Sistemi</a>
+            </div>
         </section>
 
         <section class="section">
             <h2>Sonuç</h2>
             <div class="closing">
-                Dokuzuncu haftanın sonunda proje, yapay zeka destekli semptom analizi, QR kod doğrulama ve profesyonel loglama gibi ileri seviye özelliklerle donatılmıştır. Kod tabanı temizlenmiş, test kapsamı genişletilmiş ve güvenlik açıkları kapatılmıştır. Proje final haftasına sağlam bir altyapıyla girmiştir.
+                Dokuzuncu haftanın sonunda proje, yapay zeka destekli semptom analizi, QR kod doğrulama ve profesyonel loglama gibi ileri seviye özelliklerle donatılmıştır.
             </div>
         </section>
 
-        <div class="footer">
-            Bu rapor, 28 Nisan 2026 tarihinde proje kaynak kodu ve geliştirme geçmişi referans alınarak hazırlanmıştır. &nbsp;|&nbsp; Geliştirici: Enes Korkmaz
-        </div>
+        <div class="footer">Bu rapor, 28 Nisan 2026 tarihinde proje kaynak kodu ve geliştirme geçmişi referans alınarak hazırlanmıştır. &nbsp;|&nbsp; Geliştirici: Enes Korkmaz</div>
     </main>
 </body>
+
 </html>
