@@ -254,15 +254,112 @@ namespace HastaneRandevuSistemi.Controllers
                 .OrderByDescending(n => n.CreatedDate)
                 .ToListAsync();
 
-            // Mark all as read
-            var unread = notifications.Where(n => !n.IsRead).ToList();
-            if (unread.Any())
+            // FIXED: Removed automatic mark as read. Users can now control marking notifications as read
+            // var unread = notifications.Where(n => !n.IsRead).ToList();
+            // if (unread.Any())
+            // {
+            //     unread.ForEach(n => n.IsRead = true);
+            //     await _context.SaveChangesAsync();
+            // }
+
+            return View(notifications);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAsReadAjax(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var notification = await _context.Notifications
+                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == user.Id);
+
+            if (notification == null)
+                return NotFound();
+
+            if (!notification.IsRead)
             {
-                unread.ForEach(n => n.IsRead = true);
+                notification.IsRead = true;
                 await _context.SaveChangesAsync();
             }
 
-            return View(notifications);
+            var unreadCount = await _context.Notifications
+                .CountAsync(n => n.UserId == user.Id && !n.IsRead);
+
+            return Json(new { success = true, unreadCount });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllAsReadAjax()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var unreadNotifications = await _context.Notifications
+                .Where(n => n.UserId == user.Id && !n.IsRead)
+                .ToListAsync();
+
+            if (unreadNotifications.Any())
+            {
+                unreadNotifications.ForEach(n => n.IsRead = true);
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true, unreadCount = 0 });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteSelected(int[] ids)
+        {
+            if (ids == null || ids.Length == 0)
+            {
+                TempData["ErrorMessage"] = "Lütfen silinecek bildirimleri seçin.";
+                return RedirectToAction(nameof(Notifications));
+            }
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var notificationsToDelete = await _context.Notifications
+                .Where(n => n.UserId == user.Id && ids.Contains(n.Id))
+                .ToListAsync();
+
+            if (notificationsToDelete.Any())
+            {
+                _context.Notifications.RemoveRange(notificationsToDelete);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = $"{notificationsToDelete.Count} bildirim başarıyla silindi.";
+            }
+
+            return RedirectToAction(nameof(Notifications));
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAll()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var allNotifications = await _context.Notifications
+                .Where(n => n.UserId == user.Id)
+                .ToListAsync();
+
+            if (allNotifications.Any())
+            {
+                _context.Notifications.RemoveRange(allNotifications);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Tüm bildirimler başarıyla silindi.";
+            }
+            else
+            {
+                TempData["InfoMessage"] = "Silinecek bildirim bulunmuyor.";
+            }
+
+            return RedirectToAction(nameof(Notifications));
         }
 
         [HttpGet]
@@ -329,7 +426,7 @@ namespace HastaneRandevuSistemi.Controllers
                 {
                     if (!lowerText.Contains("mide") && !lowerText.Contains("bulantı") && !lowerText.Contains("ışık"))
                     {
-                        return Json(new { IsChat = true, Message = "Baş ağrınızın yanında mide bulantısı veya ışığa karşı hassasiyet var mı? (Bu bilgiler migren olasılığını değerlendirmem için önemli)" });
+                        return Json(new { IsChat = true, Message = "Baş ağrınızın yanında mide bulantısı veya ışığa karşı hassasiyet var mı? (Bu bilgiler migren olasılığını de[...]
                     }
                 }
 
@@ -338,7 +435,7 @@ namespace HastaneRandevuSistemi.Controllers
                 {
                     if (!lowerText.Contains("şiddet") && !lowerText.Contains("sağ") && !lowerText.Contains("sol"))
                     {
-                        return Json(new { IsChat = true, Message = "Anladım. Ağrınız karnınızın tam olarak neresinde? Sağ alt tarafta bir batma hissi veya şiddetli bir kramp var mı?" });
+                        return Json(new { IsChat = true, Message = "Anladım. Ağrınız karnınızın tam olarak neresinde? Sağ alt tarafta bir batma hissi veya şiddetli bir kramp var mı?" })[...]
                     }
                 }
 
@@ -373,7 +470,7 @@ namespace HastaneRandevuSistemi.Controllers
 
                 if (!detectedKeys.Any())
                 {
-                    return Json(new { IsChat = true, Message = "Üzgünüm, şikayetinizi tam anlayamadım. Biraz daha detay verebilir misiniz ya da 'Dahiliye' gibi genel bir bölüm önermemi ister misiniz?" });
+                    return Json(new { IsChat = true, Message = "Üzgünüm, şikayetinizi tam anlayamadım. Biraz daha detay verebilir misiniz ya da 'Dahiliye' gibi genel bir bölüm önermemi is[...]
                 }
 
                 var suggestions = _symptomCheckerService.Analyze(detectedKeys);
