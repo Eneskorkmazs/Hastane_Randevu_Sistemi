@@ -83,9 +83,7 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 
 - [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
 
-## Test ve Loglama
-- Testleri calistirmak icin: `dotnet test .\HastaneRandevuSistemi.Tests\HastaneRandevuSistemi.Tests.csproj`
-- Uygulama loglari: `HastaneRandevuSistemi\Logs\hrs-*.log`
+
 
 ## Varsayılan Roller
 - `Admin`
