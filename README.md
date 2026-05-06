@@ -77,8 +77,9 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 | 5 | Gelişmiş arama/filtreleme, UX iyileştirmeleri | [📄 PDF](Reports/Hafta5_Raporu.pdf) |
 | 6 | API katmanı, Tahsilat sayfası, Randevu fiyat alanı | [📄 PDF](Reports/Hafta6_Raporu.pdf) ·  |
 | 7 | Dosya yükleme, Tıbbi geçmiş modülü, Dijital reçete | [📄 PDF](Reports/Hafta7_Raporu.pdf) |
-| 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 PDF](Reports/Hafta8_Raporu.pdf)  |
-| 9 | AI Semptom Kontrolcüsü, QR Kod, Reçete PDF, Serilog, Testler 
+| 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 PDF](Reports/Hafta8_Raporu.pdf)  
+
+| 9 | AI Semptom Kontrolcüsü, QR Kod, Reçete PDF, Serilog, Testler [Hafta9_Raporu.pdf]
 | 10 | Doktor Değerlendirme, Chart.js Dashboard, Accessibility, Final 
 
 - [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
