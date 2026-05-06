@@ -1,4 +1,4 @@
-﻿@model HastaneRandevuSistemi.Models.Appointment
+@model HastaneRandevuSistemi.Models.Appointment
 
 @{
     ViewData["Title"] = "Randevu Al";
@@ -282,6 +282,12 @@
             const $availabilityDays = $("#availabilityDays");
             const $availabilityHours = $("#availabilityHours");
             let doctorAvailability = null;
+            let preselectedDeptId = '@ViewBag.PreselectedDepartmentId';
+
+            if (preselectedDeptId) {
+                $deptSelect.val(preselectedDeptId);
+                setTimeout(() => $deptSelect.trigger('change'), 100);
+            }
 
             $deptSelect.change(function () {
                 const deptId = $(this).val();

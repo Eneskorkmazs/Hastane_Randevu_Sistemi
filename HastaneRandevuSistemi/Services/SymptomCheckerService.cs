@@ -93,5 +93,110 @@ namespace HastaneRandevuSistemi.Services
                 .Take(4)
                 .ToList();
         }
+
+        public ChatResponse ProcessChat(string message, List<string> history)
+        {
+            var allText = string.Join(" ", history) + " " + message;
+            var lowerText = allText.ToLower(new System.Globalization.CultureInfo("tr-TR"));
+            
+            var matchedKeys = new List<string>();
+            
+            // Nöroloji / Baş
+            if (lowerText.Contains("baş") && (lowerText.Contains("ağrı") || lowerText.Contains("agri") || lowerText.Contains("çatlıyor") || lowerText.Contains("patlıyor"))) matchedKeys.Add("bas_agrisi");
+            if (lowerText.Contains("baş") && (lowerText.Contains("dön") || lowerText.Contains("don"))) matchedKeys.Add("bas_donmesi");
+            if (lowerText.Contains("migren")) matchedKeys.Add("migren");
+            if (lowerText.Contains("bilinç") || lowerText.Contains("bayıl") || lowerText.Contains("bayil") || lowerText.Contains("uyuşma")) matchedKeys.Add("bilinc_bulanikligi");
+            
+            // Enfeksiyon / Dahiliye
+            if (lowerText.Contains("ateş") || lowerText.Contains("ates") || lowerText.Contains("yanıyo") || lowerText.Contains("yaniyo") || lowerText.Contains("sıcak")) matchedKeys.Add("ates");
+            if (lowerText.Contains("üşüt") || lowerText.Contains("soğuk algınlığı") || lowerText.Contains("grip") || lowerText.Contains("titre") || lowerText.Contains("usume") || lowerText.Contains("üşüme")) matchedKeys.Add("titreme");
+            if (lowerText.Contains("halsiz") || lowerText.Contains("yorgun") || lowerText.Contains("bitkin") || lowerText.Contains("kalkamıyorum")) matchedKeys.Add("yorgunluk");
+            if (lowerText.Contains("terli") || lowerText.Contains("terleme")) matchedKeys.Add("gece_terleme");
+            
+            // Kardiyoloji / Göğüs
+            if (lowerText.Contains("göğüs") || lowerText.Contains("gogus") || lowerText.Contains("kalp") || lowerText.Contains("çarpıntı") || lowerText.Contains("carpinti") || lowerText.Contains("tansiyon") || lowerText.Contains("nabız")) {
+                if (lowerText.Contains("çarpıntı") || lowerText.Contains("carpinti")) matchedKeys.Add("carpinti");
+                else if (lowerText.Contains("tansiyon")) matchedKeys.Add("kan_basinci_yuksek");
+                else matchedKeys.Add("gogus_agrisi");
+            }
+            if (lowerText.Contains("nefes") || lowerText.Contains("daral") || lowerText.Contains("tıkan") || lowerText.Contains("astım")) matchedKeys.Add("nefes_darligi");
+            
+            // Sindirim Sistemi / Dahiliye
+            if (lowerText.Contains("mide") && (lowerText.Contains("bulant") || lowerText.Contains("bulan") || lowerText.Contains("kustu") || lowerText.Contains("kusma") || lowerText.Contains("yanma") || lowerText.Contains("eksi"))) matchedKeys.Add("bulanti_kusma");
+            if (lowerText.Contains("karın") || lowerText.Contains("karin") || lowerText.Contains("karnım") || lowerText.Contains("sancı") || lowerText.Contains("kramp")) matchedKeys.Add("karin_agrisi");
+            if (lowerText.Contains("ishal") || lowerText.Contains("cırcır") || lowerText.Contains("su gibi")) matchedKeys.Add("ishal");
+            if (lowerText.Contains("kabız") || lowerText.Contains("tuvalete çıkam")) matchedKeys.Add("kabizlik");
+            if (lowerText.Contains("sarar") || lowerText.Contains("sarılık")) matchedKeys.Add("sarilik");
+
+            // KBB
+            if (lowerText.Contains("boğaz") || lowerText.Contains("bogaz") || lowerText.Contains("yutkun") || lowerText.Contains("bademcik")) matchedKeys.Add("bogaz_agrisi");
+            if (lowerText.Contains("kulak") || lowerText.Contains("çınla") || lowerText.Contains("cinla") || lowerText.Contains("duyma") || lowerText.Contains("işitme")) matchedKeys.Add("kulak_agrisi");
+            if (lowerText.Contains("burun") || lowerText.Contains("akıntı") || lowerText.Contains("akinti") || lowerText.Contains("tıkanık") || lowerText.Contains("nezle") || lowerText.Contains("hapşır")) matchedKeys.Add("burun_tikanikligi");
+            if (lowerText.Contains("ses") && (lowerText.Contains("kısıl") || lowerText.Contains("kisil") || lowerText.Contains("çıkmı"))) matchedKeys.Add("ses_kisikligi");
+            if (lowerText.Contains("öksür") || lowerText.Contains("oksur") || lowerText.Contains("balgam")) matchedKeys.Add("nefes_darligi");
+
+            // Göz
+            if (lowerText.Contains("göz") || lowerText.Contains("goz") || lowerText.Contains("görm") || lowerText.Contains("bulanık") || lowerText.Contains("kamaş")) {
+                if (lowerText.Contains("kızar") || lowerText.Contains("kizar") || lowerText.Contains("kanlan") || lowerText.Contains("çapak")) matchedKeys.Add("goz_kizarikligi");
+                else matchedKeys.Add("gorme_bozuklugu");
+            }
+
+            // Dermatoloji
+            if (lowerText.Contains("kaşın") || lowerText.Contains("kasin") || lowerText.Contains("döküntü") || lowerText.Contains("dokuntu") || lowerText.Contains("kızarıklık") || lowerText.Contains("sivilce") || lowerText.Contains("leke") || lowerText.Contains("yara") || lowerText.Contains("ben ")) {
+                if (lowerText.Contains("kaşın") || lowerText.Contains("kasin")) matchedKeys.Add("kasinti");
+                else matchedKeys.Add("dokuntu");
+            }
+
+            // Fizik Tedavi / Ortopedi
+            if (lowerText.Contains("sırt") || lowerText.Contains("sirt") || lowerText.Contains("bel ") || lowerText.Contains("belim") || lowerText.Contains("boyun") || lowerText.Contains("omuz")) matchedKeys.Add("sirt_agrisi");
+            if (lowerText.Contains("eklem") || lowerText.Contains("kemik") || lowerText.Contains("diz") || lowerText.Contains("ayak") || lowerText.Contains("bilek") || lowerText.Contains("kırık") || lowerText.Contains("çıkık")) matchedKeys.Add("eklem_agrisi");
+            if (lowerText.Contains("kas ") || lowerText.Contains("kasım") || lowerText.Contains("et kesiği")) matchedKeys.Add("kas_agrisi");
+
+            // Psikiyatri
+            if (lowerText.Contains("stres") || lowerText.Contains("kaygı") || lowerText.Contains("anksiyete") || lowerText.Contains("panik") || lowerText.Contains("korku")) matchedKeys.Add("anksiyete");
+            if (lowerText.Contains("depresyon") || lowerText.Contains("üzgün") || lowerText.Contains("mutsuz") || lowerText.Contains("ağlama")) matchedKeys.Add("depresyon");
+            if (lowerText.Contains("uyku") || lowerText.Contains("uyuyamı") || lowerText.Contains("uyanamı")) matchedKeys.Add("uyku_bozuklugu");
+
+            // Kadın Doğum & Üroloji
+            if (lowerText.Contains("adet") || lowerText.Contains("regl") || lowerText.Contains("kanama") || lowerText.Contains("gebe") || lowerText.Contains("hamile")) matchedKeys.Add("adet_duzensizligi");
+            if (lowerText.Contains("idrar") || lowerText.Contains("işe") || lowerText.Contains("çiş") || lowerText.Contains("yanma") || lowerText.Contains("bobrek") || lowerText.Contains("böbrek")) {
+                if (lowerText.Contains("yanma")) matchedKeys.Add("idrar_yanmasi");
+                else matchedKeys.Add("sik_idrar");
+            }
+
+            bool hasDuration = lowerText.Contains("gün") || lowerText.Contains("gun") || lowerText.Contains("hafta") || lowerText.Contains("ay") || lowerText.Contains("saat") || lowerText.Contains("beri") || lowerText.Contains("zaman") || lowerText.Contains("yıldır") || lowerText.Contains("süredir") || lowerText.Contains("suredir") || lowerText.Contains("yeni") || lowerText.Contains("bugün") || lowerText.Contains("dun") || lowerText.Contains("dün");
+
+            if (matchedKeys.Count == 0) {
+                return new ChatResponse {
+                    Message = "Anlıyorum. Size en doğru şekilde yardımcı olabilmem için şikayetinizden biraz daha detaylı bahseder misiniz? İsterseniz aşağıdaki seçeneklerden birini de seçebilirsiniz:",
+                    IsFinished = false,
+                    QuickReplies = new List<string> { "Başım Ağrıyor", "Ateşim Var", "Midem Bulanıyor", "Öksürüyorum", "Göğsüm Ağrıyor", "Karnım Ağrıyor" }
+                };
+            }
+
+            if (!hasDuration && history.Count < 2) {
+                return new ChatResponse {
+                    Message = "Geçmiş olsun, anladım. Peki bu şikayetleriniz yaklaşık ne zamandır devam ediyor?",
+                    IsFinished = false,
+                    QuickReplies = new List<string> { "Sabahtan beri", "1-2 Gündür", "1 Haftadır", "Uzun Zamandır" }
+                };
+            }
+
+            var suggestions = Analyze(matchedKeys);
+            if (suggestions.Count > 0) {
+                var topDept = suggestions.First().DepartmentName;
+                return new ChatResponse {
+                    Message = $"Anlattıklarınızı değerlendirdim. Şikayetlerinizin **{topDept}** polikliniğinin uzmanlık alanına girdiğini öngörüyorum. Sizin için en uygun bölümleri aşağıda listeledim, dilerseniz hemen randevu alabilirsiniz. Çok geçmiş olsun, acil şifalar dilerim!",
+                    IsFinished = true,
+                    Suggestions = suggestions
+                };
+            }
+            
+            return new ChatResponse {
+                Message = "Anlattıklarınızı inceledim ancak kesin bir branş belirleyemedim. Kapsamlı bir muayene ve genel değerlendirme için **Dahiliye (İç Hastalıkları)** bölümüne görünmeniz en doğrusu olacaktır. Çok geçmiş olsun.",
+                IsFinished = true,
+                Suggestions = Analyze(new[] { "ates" }) 
+            };
+        }
     }
 }

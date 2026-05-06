@@ -244,7 +244,7 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         [Authorize(Roles = "Sekreter,Hasta")]
-        public async Task<IActionResult> Create()
+        public async Task<IActionResult> Create(int? departmentId = null)
         {
             var user = await _userManager.GetUserAsync(User);
             if (user != null)
@@ -254,6 +254,7 @@ namespace HastaneRandevuSistemi.Controllers
                 ViewBag.PatientPhone = user.Telefon ?? user.PhoneNumber;
             }
 
+            ViewBag.PreselectedDepartmentId = departmentId;
             await LoadDepartmentSelectListAsync();
             return View();
         }

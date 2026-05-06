@@ -35,6 +35,7 @@
         return isActive ? "nav-link nav-link-premium is-active" : "nav-link nav-link-premium";
     }
 
+    List<HastaneRandevuSistemi.Models.Appointment> recentAppointments = new();
     if (isSignedIn && isPatient)
     {
         var currentUserForCount = await UserManager.GetUserAsync(User);
@@ -42,6 +43,14 @@
         {
             unreadNotificationCount = await DbContext.Notifications
                 .CountAsync(n => n.UserId == currentUserForCount.Id && !n.IsRead);
+            recentAppointments = await DbContext.Appointments
+                .Where(a => a.PatientUserId == currentUserForCount.Id
+                         && a.Status == HastaneRandevuSistemi.Models.AppointmentStatus.Bekliyor
+                         && a.AppointmentDate >= DateTime.Now)
+                .Include(a => a.Doctor)
+                .OrderBy(a => a.AppointmentDate)
+                .Take(5)
+                .ToListAsync();
         }
     }
 
@@ -168,6 +177,42 @@
                                 <a class="@GetNavLinkClass("Appointment", "Create")" asp-controller="Appointment" asp-action="Create">
                                     <i class="fa-solid fa-calendar-plus me-1"></i> Randevu Al
                                 </a>
+                            </li>
+                        }
+
+                        @if (isPatient && recentAppointments.Any())
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link nav-link-premium dropdown-toggle" href="#" id="navSonRandevular" role="button" data-bs-toggle="dropdown">
+                                    <i class="fa-solid fa-clock me-1"></i> Bekleyen Randevularım
+                                    <span class="badge rounded-pill bg-warning text-dark ms-1" style="font-size:0.65rem;">@recentAppointments.Count</span>
+                                </a>
+                                <ul class="dropdown-menu border-0 shadow mt-2" aria-labelledby="navSonRandevular" style="min-width:280px;">
+                                    @foreach (var apt in recentAppointments)
+                                    {
+                                        var statusColor = apt.Status == HastaneRandevuSistemi.Models.AppointmentStatus.Onaylandi ? "success"
+                                            : apt.Status == HastaneRandevuSistemi.Models.AppointmentStatus.Bekliyor ? "warning"
+                                            : apt.Status == HastaneRandevuSistemi.Models.AppointmentStatus.Tamamlandi ? "primary"
+                                            : "danger";
+                                        <li>
+                                            <a class="dropdown-item py-2" asp-controller="Appointment" asp-action="Index">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <div class="fw-semibold small">Dr. @(apt.Doctor != null ? apt.Doctor.Name + " " + apt.Doctor.Surname : "—")</div>
+                                                        <div class="text-muted" style="font-size:0.75rem;">@apt.AppointmentDate.ToString("dd MMM yyyy HH:mm")</div>
+                                                    </div>
+                                                    <span class="badge bg-@statusColor ms-2">@apt.Status</span>
+                                                </div>
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider my-0"></li>
+                                    }
+                                    <li>
+                                        <a class="dropdown-item text-center text-primary small py-2" asp-controller="Appointment" asp-action="Index">
+                                            <i class="fa-solid fa-list me-1"></i> Tüm Randevuları Gör
+                                        </a>
+                                    </li>
+                                </ul>
                             </li>
                         }
 

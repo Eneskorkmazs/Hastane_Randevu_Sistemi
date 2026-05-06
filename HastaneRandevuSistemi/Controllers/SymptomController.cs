@@ -22,34 +22,16 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Analyze(SymptomViewModel model)
+        [IgnoreAntiforgeryToken]
+        public IActionResult Chat([FromBody] ChatMessageRequest request)
         {
-            if (model.SelectedSymptoms == null || model.SelectedSymptoms.Count == 0 || model.SelectedSymptoms.All(string.IsNullOrWhiteSpace))
+            if (request == null || string.IsNullOrWhiteSpace(request.Message))
             {
-                ModelState.AddModelError(nameof(model.SelectedSymptoms), "Lütfen en az bir semptom seçiniz.");
+                return BadRequest("Mesaj boş olamaz.");
             }
 
-            if (!ModelState.IsValid)
-            {
-                return View("Index", model);
-            }
-
-            var selectedSymptoms = model.SelectedSymptoms ?? new List<string>();
-            var labels = SymptomViewModel.AvailableSymptoms
-                .Where(option => selectedSymptoms.Contains(option.Key))
-                .Select(option => option.Label)
-                .ToList();
-
-            var suggestions = _symptomCheckerService.Analyze(selectedSymptoms);
-            return View("Result", new SymptomResultViewModel
-            {
-                SelectedSymptomLabels = labels,
-                Suggestions = suggestions,
-                WarningMessage = suggestions.Count == 0
-                    ? "Seçtiğiniz semptomlara göre güçlü bir bölüm eşleşmesi bulunamadı. Genel değerlendirme için Dahiliye bölümünden randevu alabilirsiniz."
-                    : "Bu öneriler tıbbi tanı değildir; acil veya şiddetli belirtilerde en yakın sağlık kuruluşuna başvurun."
-            });
+            var response = _symptomCheckerService.ProcessChat(request.Message, request.History ?? new List<string>());
+            return Json(response);
         }
     }
 }

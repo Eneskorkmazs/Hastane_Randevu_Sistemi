@@ -173,6 +173,35 @@ namespace HastaneRandevuSistemi.Controllers
             return View(model);
         }
 
+        public async Task<IActionResult> Prescriptions()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var prescriptions = await _context.Appointments
+                .Include(a => a.Doctor)
+                .ThenInclude(d => d!.Department)
+                .Where(a => a.PatientUserId == user.Id && a.PrescriptionCreatedAt != null)
+                .OrderByDescending(a => a.PrescriptionCreatedAt)
+                .Select(a => new PatientPrescriptionItemViewModel
+                {
+                    AppointmentId = a.Id,
+                    AppointmentDate = a.AppointmentDate,
+                    DoctorName = $"Dr. {a.Doctor!.Name} {a.Doctor.Surname}",
+                    DepartmentName = a.Doctor.Department!.Name,
+                    PrescriptionDate = a.PrescriptionCreatedAt!.Value,
+                    Diagnosis = a.PrescriptionDiagnosis ?? "-",
+                    Medications = a.PrescriptionMedications ?? "-",
+                    Notes = a.PrescriptionNotes
+                })
+                .ToListAsync();
+
+            return View(new PatientPrescriptionsViewModel
+            {
+                Items = prescriptions
+            });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AddMedicalHistory(PatientMedicalHistoryViewModel model, IFormFile? attachmentFile)

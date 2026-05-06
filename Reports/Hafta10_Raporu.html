@@ -251,7 +251,7 @@
 
         .screenshot-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             margin-top: 10px;
         }
@@ -274,6 +274,12 @@
             font-size: 13px;
             color: var(--muted);
             background: var(--soft);
+        }
+
+        .screenshot-note {
+            margin-top: 10px;
+            color: var(--muted);
+            font-size: 13px;
         }
 
         .screenshot-placeholder {
@@ -324,7 +330,7 @@
     <main class="report">
         <section class="hero">
             <h1>Hastane Randevu Sistemi — Hafta 10 Raporu <span class="badge-final">FINAL</span></h1>
-            <p>Doktor Değerlendirme Sistemi, Chart.js Canlı Dashboard, Dark Mode, Erişilebilirlik, Kod Temizliği, Dokümantasyon</p>
+            <p>Hasta/Hastane Değerlendirme Sistemi, ENS Akıllı Asistan, Hasta Paneli İyileştirmeleri, Reçete Sayfası, UI Düzenlemeleri, Dokümantasyon</p>
             <div class="meta">
                 <div class="meta-card"><strong>Proje</strong>Hastane Randevu Sistemi</div>
                 <div class="meta-card"><strong>Hafta</strong>10 — Final (30 Nisan 2026)</div>
@@ -337,7 +343,7 @@
         <section class="section">
             <h2>Genel Değerlendirme</h2>
             <div class="summary">
-                Onuncu ve son haftada projenin tüm eksik özellikleri tamamlanmıştır. Doktor Değerlendirme Sistemi ile hastalar tamamlanan randevuları sonrasında doktorlarına yıldız puanı ve yorum bırakabilmektedir. Admin dashboard'a Chart.js ile animasyonlu donut ve bar grafikleri eklenmiştir. Dark Mode tüm sayfalarda çalışmakta, erişilebilirlik standartları iyileştirilmiş ve gereksiz kodlar temizlenmiştir.
+                Onuncu haftada proje, hasta deneyimi ve yönetim akışları üzerinden tamamlayıcı iyileştirmeler almıştır. Hasta/Hastane Değerlendirme Sistemi ile hastalar hastane deneyimlerine yıldız puanı ve yorum bırakabilmekte, admin bu geri bildirimleri yönetip kurumsal yanıt verebilmektedir. ENS Akıllı Asistan sohbet yapısına taşınmış, hasta panelindeki kısayollar mevcut sekmede doğru veriye gidecek şekilde düzenlenmiş, reçeteler için ayrı hasta sayfası eklenmiş ve arayüzdeki görsel taşma problemleri giderilmiştir.
             </div>
         </section>
 
@@ -345,27 +351,27 @@
             <h2>Bu Hafta Yapılan Çalışmalar</h2>
             <div class="card-grid">
                 <div class="card">
-                    <h4>⭐ Doktor Değerlendirme Sistemi</h4>
-                    <p>Hastalar tamamlanan randevuları sonrasında doktorlarına 1-5 yıldız puanı ve yorum bırakabiliyor. Her hesap her doktora yalnızca bir yorum yapabiliyor. Admin yorumları silebiliyor.</p>
+                    <h4>Hasta/Hastane Değerlendirme Sistemi</h4>
+                    <p>Hastalar hastane deneyimlerini 1-5 yıldız puanı ve yorumla paylaşabiliyor. Giriş yapan kullanıcıların tekrar değerlendirme yapması engelleniyor; admin yorumları filtreleyebiliyor, silebiliyor ve yanıtlayabiliyor.</p>
                 </div>
                 <div class="card">
-                    <h4>📊 Chart.js Canlı Dashboard</h4>
-                    <p>Admin paneline animasyonlu grafikler eklendi: Randevu durum dağılımı (donut chart) ve haftalık trend (bar chart). Chart.js 4.4.1 kullanılıyor.</p>
+                    <h4>ENS Akıllı Asistan</h4>
+                    <p>Semptom kontrolcüsü klasik formdan sohbet tabanlı akışa taşındı. Kullanıcı mesajları kural tabanlı analiz edilerek uygun poliklinik önerileri ve hızlı cevaplar üretiliyor.</p>
                 </div>
                 <div class="card">
-                    <h4>🌙 Dark Mode</h4>
-                    <p>Tüm sayfalarda çalışan tema değiştirme sistemi. Tercih localStorage'a kaydediliyor. CSS değişkenleri ile tutarlı renk geçişleri.</p>
+                    <h4>Hasta Paneli Kısayolları</h4>
+                    <p>Bekleyen, tamamlanan, reçete ve bildirim kartları yeni pencere açmadan ilgili sayfaya yönlendirildi. Tamamlanan randevu filtresi doğru durum değeriyle güncellendi.</p>
                 </div>
                 <div class="card">
-                    <h4>♿ Erişilebilirlik</h4>
-                    <p>ARIA etiketleri eklendi, skip link düzeltildi, navbar toggler aria-hidden eklendi. WCAG 2.1 temel gereksinimlerine uyum.</p>
+                    <h4>Reçetelerim Sayfası</h4>
+                    <p>Hasta panelindeki reçete kartı için eksik Prescriptions action'ı eklendi. Hasta kendi reçetelerini ayrı listede görebiliyor ve randevu detayına ulaşabiliyor.</p>
                 </div>
                 <div class="card">
-                    <h4>🧹 Kod Temizliği</h4>
-                    <p>Orphaned view'lar silindi. Kullanılmayan değişkenler kaldırıldı. DoctorToolsController'dan gereksiz using temizlendi.</p>
+                    <h4>Navbar ve Bekleyen Randevular</h4>
+                    <p>Hasta kullanıcılar için navbar'a bekleyen randevuları gösteren açılır liste eklendi. Yeni hasta yorumu bildirimi admin menüsünde rozet olarak gösteriliyor.</p>
                 </div>
                 <div class="card">
-                    <h4>📚 Dokümantasyon</h4>
+                    <h4>Dokümantasyon</h4>
                     <p>README.md 10 haftalık kapsam ile güncellendi. Haftalık raporlar tablosu tamamlandı.</p>
                 </div>
             </div>
@@ -373,6 +379,7 @@
 
         <section class="section" style="padding-top:22px;">
             <h2>Ekran Görüntüleri</h2>
+            <p class="screenshot-note">Bu raporda 9. haftadaki giriş, ana sayfa, hasta paneli ve semptom kontrolcüsü ekranları tekrar kullanılmamış; final haftasını temsil eden yönetim panelleri seçilmiştir.</p>
             <div class="screenshot-grid">
                 <div class="screenshot-item">
                     <img src="assets/screenshot-admin-panel.png" alt="Admin Paneli" />
@@ -385,10 +392,6 @@
                 <div class="screenshot-item">
                     <img src="assets/screenshot-sekreter-panel.png" alt="Sekreter Paneli" />
                     <p class="screenshot-caption">Sekreter Operasyon Merkezi</p>
-                </div>
-                <div class="screenshot-item">
-                    <img src="assets/screenshot-hasta-panel.png" alt="Hasta Paneli" />
-                    <p class="screenshot-caption">Hasta Paneli — Dashboard</p>
                 </div>
             </div>
         </section>
@@ -406,48 +409,48 @@
                 <tbody>
                     <tr>
                         <td><span class="tag tag-new">YENİ</span></td>
-                        <td>Models/DoctorReview.cs</td>
-                        <td>Doktor değerlendirme modeli</td>
+                        <td>Models/HospitalReview.cs</td>
+                        <td>Hasta/hastane değerlendirme modeli</td>
                     </tr>
                     <tr>
-                        <td><span class="tag tag-new">YENİ</span></td>
-                        <td>Controllers/DoctorReviewController.cs</td>
-                        <td>Değerlendirme controller</td>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Controllers/HomeController.cs</td>
+                        <td>SubmitHospitalReview, AdminHospitalReviews, silme ve admin yanıt akışları</td>
                     </tr>
                     <tr>
-                        <td><span class="tag tag-new">YENİ</span></td>
-                        <td>Views/DoctorReview/Profile.cshtml</td>
-                        <td>Doktor profil + yıldız puanlama</td>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Home/Index.cshtml</td>
+                        <td>Ana sayfada hastane değerlendirme formu ve son yorumlar alanı</td>
                     </tr>
                     <tr>
                         <td><span class="tag tag-mod">GÜNCELLEME</span></td>
                         <td>Data/ApplicationDbContext.cs</td>
-                        <td>DoctorReviews DbSet eklendi</td>
+                        <td>HospitalReviews DbSet ve tekil kullanıcı değerlendirme kuralı eklendi</td>
                     </tr>
                     <tr>
                         <td><span class="tag tag-mod">GÜNCELLEME</span></td>
                         <td>Data/DbSeeder.cs</td>
-                        <td>EnsureDoctorReviewsTableAsync eklendi</td>
+                        <td>HospitalReviews tablosu ve örnek veri akışı güvenceye alındı</td>
                     </tr>
                     <tr>
                         <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Views/Home/AdminDashboard.cshtml</td>
-                        <td>Chart.js grafik kartları</td>
+                        <td>Services/SymptomCheckerService.cs</td>
+                        <td>ENS sohbet mesajlarını semptom anahtarlarına çeviren kural tabanlı akış</td>
                     </tr>
                     <tr>
                         <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Views/Doctor/Index.cshtml</td>
-                        <td>Değerlendir butonu eklendi</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Views/Appointment/Details.cshtml</td>
-                        <td>Doktoru Değerlendir butonu</td>
+                        <td>Views/Home/AdminHospitalReviews.cshtml</td>
+                        <td>Hasta yorumları için admin listeleme, filtreleme ve yanıt ekranı</td>
                     </tr>
                     <tr>
                         <td><span class="tag tag-mod">GÜNCELLEME</span></td>
                         <td>Views/Shared/_Layout.cshtml</td>
-                        <td>ARIA etiketleri, navbar temizliği</td>
+                        <td>Yeni hasta yorumu rozeti ve admin menüsünde Hasta Yorumları bağlantısı</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Symptom/Index.cshtml</td>
+                        <td>Semptom kontrolcüsünün sohbet arayüzüne dönüştürülmesi</td>
                     </tr>
                     <tr>
                         <td><span class="tag tag-mod">GÜNCELLEME</span></td>
@@ -455,14 +458,19 @@
                         <td>10 haftalık kapsam güncellendi</td>
                     </tr>
                     <tr>
-                        <td><span class="tag tag-del">SİLİNDİ</span></td>
-                        <td>Views/DoctorTools/Prescription.cshtml</td>
-                        <td>Orphaned view</td>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Views/Patient/Dashboard.cshtml</td>
+                        <td>Kart linkleri, reçete yönlendirmesi ve sıradaki randevu kartı görsel düzenlemesi</td>
                     </tr>
                     <tr>
-                        <td><span class="tag tag-del">SİLİNDİ</span></td>
-                        <td>Views/Appointment/DoctorAccessRequests.cshtml</td>
-                        <td>Erişim isteği kaldırıldı</td>
+                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
+                        <td>Controllers/PatientController.cs</td>
+                        <td>Prescriptions action'ı ve hasta reçete listeleme sorgusu</td>
+                    </tr>
+                    <tr>
+                        <td><span class="tag tag-new">YENİ</span></td>
+                        <td>Views/Patient/Prescriptions.cshtml</td>
+                        <td>Hasta reçeteleri için ayrı liste ekranı</td>
                     </tr>
                 </tbody>
             </table>
