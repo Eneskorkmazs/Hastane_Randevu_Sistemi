@@ -57,15 +57,6 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - xUnit integration testleri genişletildi (15+ senaryo).
 - Kod refactoring: doktor erişim isteği kaldırıldı, navbar sadeleştirildi.
 
-### Hafta 10
-- **Doktor Değerlendirme Sistemi**: yıldız puanlama ve yorum yapabilme (`DoctorReview`).
-- **Chart.js Canlı Dashboard**: admin panelinde donut + bar grafikleri.
-- **Dark Mode** desteği: tüm sayfalarda tema değiştirme.
-- Erişilebilirlik (accessibility) iyileştirmeleri: ARIA etiketleri, skip link.
-- Proje dokümantasyonu güncellendi.
-- Final testleri tamamlandı.
-
-
 ## Haftalık Raporlar
 
 | Hafta | Konu | Rapor |
@@ -79,7 +70,6 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 | 7 | Dosya yükleme, Tıbbi geçmiş modülü, Dijital reçete | [📄 PDF](Reports/Hafta7_Raporu.pdf) |
 | 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 PDF](Reports/Hafta8_Raporu.pdf)  |
 | 9 | AI Semptom Kontrolcüsü, QR Kod, Reçete PDF, Serilog, Testler, Sekreter Reçete Yönetimi | [📄 PDF](Reports/Hafta9_Raporu.pdf) |
-| 10 | Doktor Değerlendirme, Chart.js Dashboard, Accessibility, Final | [📄 PDF](Reports/Hafta10_Raporu.pdf) |
 
 - [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
 
