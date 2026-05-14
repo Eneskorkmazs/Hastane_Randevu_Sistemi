@@ -2,9 +2,7 @@
 
 ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu uygulaması.
 
-## 10. Hafta Raporu
 
-[📄 10. Hafta Raporu PDF](Reports/Hafta10_Raporu.pdf)
 
 ## Güncel Kapsam
 
@@ -68,6 +66,7 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 - Hasta reçeteleri için ayrı `Patient/Prescriptions` sayfası eklendi.
 - Navbar'a hasta için bekleyen randevular açılır listesi ve admin için yeni hasta yorumu rozeti eklendi.
 - Hasta panelindeki sıradaki randevu kartında görsel taşma problemi giderildi.
+- ezcane bölümü eklendi konum bilgisi eklendi
 
 ## Haftalık Raporlar
 
@@ -84,7 +83,7 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 | 9 | AI Semptom Kontrolcüsü, QR Kod, Reçete PDF, Serilog, Testler, Sekreter Reçete Yönetimi | [📄 PDF](Reports/Hafta9_Raporu.pdf) |
 | 10 | Hasta/Hastane Değerlendirmesi, ENS sohbet asistanı, hasta paneli kısayolları, reçete sayfası | [📄 PDF](Reports/Hafta10_Raporu.pdf) |
 
-- [📄 10. Hafta Raporu (PDF)](Reports/Hafta10_Raporu.pdf)
+
 - [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
 
 
