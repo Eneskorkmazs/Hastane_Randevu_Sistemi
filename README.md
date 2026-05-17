@@ -57,7 +57,8 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 - xUnit integration testleri genişletildi.
 
 ### Hafta 10 (Final Sürümü)
-- **Eczane Keşif ve Mesafe Sistemi**: Şanlıurfa (Acı Biber, Karaköprü, Siverek, Birecik, Viranşehir, Meydan Ecz.), Sinop ve diğer büyük şehirleri kapsayan eczane verileri eklendi.
+-ens asistan eklendi kolayca hangi bölüme randevu alabileceğini gördü kullanıcı
+- **Eczane Keşif ve Mesafe Sistemi**: Şanlıurfa  eczane verileri eklendi.
 - **Canlı GPS ve Akıllı Sıralama**: Tarayıcı konumu üzerinden Haversine formülü ile kullanıcının mevcut konumuna göre en yakın eczaneyi hesaplayan ve anlık sıralayan sistem eklendi.
 - **Çift Katmanlı Hastane Değerlendirme Modülü**: Hastaların hastane hakkında tek seferlik yorum ve puan bırakabileceği, adminin yanıtlayabileceği, hem uygulama hem de UNIQUE constraint ile korunan sistem eklendi.
 - **Navbar Güvenlik Zırhı ve Cache Fix**: Çıkış sonrası linklerin ve sayfaların temizlenmesini garanti altına alan `isAuthenticated` kontrolleri ve NoStore politikaları uygulandı.
