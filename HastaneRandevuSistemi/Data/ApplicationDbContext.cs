@@ -18,6 +18,7 @@ namespace HastaneRandevuSistemi.Data
         public DbSet<MedicalHistory> MedicalHistories { get; set; }
         public DbSet<HospitalReview> HospitalReviews { get; set; }
         public DbSet<DoctorReview> DoctorReviews { get; set; }
+        public DbSet<Pharmacy> Pharmacies { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

@@ -9,7 +9,7 @@ namespace HastaneRandevuSistemi.Services
 
         private static readonly IReadOnlyDictionary<string, Rule[]> Rules = new Dictionary<string, Rule[]>(StringComparer.OrdinalIgnoreCase)
         {
-            ["bas_agrisi"] = [new("Nöroloji", "fa-brain", "Baş ağrısı ve sinir sistemi kaynaklı yakınmalar için uygundur.", 34)],
+            ["bas_agrisi"] = [new("Nöroloji", "fa-brain", "ağrısı ve sinir sistemi kaynaklı yakınmalar için uygundur.", 34)],
             ["bas_donmesi"] = [new("Nöroloji", "fa-brain", "Baş dönmesi denge ve nörolojik değerlendirme gerektirebilir.", 32), new("Kulak Burun Boğaz", "fa-ear-listen", "İç kulak ve denge sistemi açısından da değerlendirilebilir.", 22)],
             ["migren"] = [new("Nöroloji", "fa-brain", "Migren tipi ağrılarda nöroloji ilk başvuru bölümüdür.", 45)],
             ["bilinc_bulanikligi"] = [new("Nöroloji", "fa-brain", "Bilinç değişiklikleri acil ve nörolojik değerlendirme gerektirir.", 50)],

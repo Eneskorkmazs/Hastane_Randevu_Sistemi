@@ -3,6 +3,7 @@
 @{
     ViewData["Title"] = "Sekreter Operasyon Merkezi";
     double todayProgress = Model.TodaysTotal > 0 ? (double)Model.TodaysCompleted / Model.TodaysTotal * 100 : 0;
+    var pendingPrescriptionCount = Model.UnsentPrescriptions.Count;
 }
 
 <!-- Security Token for AJAX -->
@@ -51,7 +52,10 @@
                             </button>
                         </div>
                         <div class="col-md-2">
-                            <button class="btn btn-white w-100 h-100 py-3 rounded-4 border shadow-sm transition-all hover-up" onclick="document.getElementById('nav-prescriptions-tab').click()">
+                            <button class="btn btn-white w-100 h-100 py-3 rounded-4 border shadow-sm transition-all hover-up position-relative" onclick="document.getElementById('nav-prescriptions-tab').click()">
+                                <span id="quickPrescriptionBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="@(pendingPrescriptionCount > 0 ? "display:inline-flex;" : "display:none;")">
+                                    @pendingPrescriptionCount
+                                </span>
                                 <i class="fa-solid fa-file-export d-block h4 text-warning mb-2"></i>
                                 <span class="small fw-bold">Reçete Gönder</span>
                             </button>
@@ -97,7 +101,12 @@
             <nav class="mb-3">
                 <div class="nav nav-tabs border-0 gap-2" id="nav-tab" role="tablist">
                     <button class="nav-link active rounded-pill px-4 border-0 shadow-sm fw-bold" id="nav-pending-tab" data-bs-toggle="tab" data-bs-target="#nav-pending" type="button" role="tab">Onay Merkezi</button>
-                    <button class="nav-link rounded-pill px-4 border-0 shadow-sm fw-bold" id="nav-prescriptions-tab" data-bs-toggle="tab" data-bs-target="#nav-prescriptions" type="button" role="tab">Reçete Akışı</button>
+                    <button class="nav-link rounded-pill px-4 border-0 shadow-sm fw-bold d-inline-flex align-items-center gap-2" id="nav-prescriptions-tab" data-bs-toggle="tab" data-bs-target="#nav-prescriptions" type="button" role="tab">
+                        Reçete Akışı
+                        <span id="prescriptionFlowBadge" class="badge rounded-pill bg-danger" style="@(pendingPrescriptionCount > 0 ? "display:inline-flex;" : "display:none;")">
+                            @pendingPrescriptionCount
+                        </span>
+                    </button>
                     <button class="nav-link rounded-pill px-4 border-0 shadow-sm fw-bold" id="nav-status-tab" data-bs-toggle="tab" data-bs-target="#nav-status" type="button" role="tab">Hastane Durumu</button>
                 </div>
             </nav>
@@ -160,7 +169,12 @@
                 <div class="tab-pane fade" id="nav-prescriptions" role="tabpanel">
                     <div class="card border-0 shadow-sm rounded-4 mb-4">
                         <div class="card-header bg-white p-4 border-0 d-flex justify-content-between align-items-center">
-                            <h6 class="fw-bold mb-0">Gönderilecek Reçeteler</h6>
+                            <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+                                Gönderilecek Reçeteler
+                                <span id="pendingPrescriptionTextBadge" class="badge rounded-pill bg-warning text-dark" style="@(pendingPrescriptionCount > 0 ? "display:inline-flex;" : "display:none;")">
+                                    Bekleyen: @pendingPrescriptionCount
+                                </span>
+                            </h6>
                             @if (Model.UnsentPrescriptions.Any())
                             {
                                 <button type="button" id="sendAllPrescriptionsBtn" class="btn btn-warning btn-sm rounded-pill px-4 shadow-sm fw-bold">
@@ -193,7 +207,16 @@
                                             <td><div class="small">Dr. @item.Doctor?.Surname</div></td>
                                             <td class="x-small text-muted text-truncate" style="max-width: 200px;">@item.PrescriptionDiagnosis</td>
                                             <td class="text-end pe-4">
-                                                <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 send-single-btn" data-id="@item.Id">İlet</button>
+                                                <div class="d-flex justify-content-end gap-2">
+                                                    <select class="form-select form-select-sm rounded-pill pharmacy-select" style="max-width: 180px;">
+                                                        <option value="">(Eczane Seçme)</option>
+                                                        @foreach (var p in Model.Pharmacies)
+                                                        {
+                                                            <option value="@p.Id">@p.Name (@p.District)</option>
+                                                        }
+                                                    </select>
+                                                    <button type="button" class="btn btn-primary btn-sm rounded-pill px-3 send-single-btn" data-id="@item.Id">İlet</button>
+                                                </div>
                                             </td>
                                         </tr>
                                     }
@@ -488,7 +511,44 @@
             const historyTableBody = document.querySelector('#patientHistoryTable tbody');
             const dailyTableBody = document.querySelector('#dailyListTable tbody');
             const modalTitle = document.getElementById('modalPatientName');
+            let renderedPendingPrescriptionCount = @pendingPrescriptionCount;
             let searchTimeout;
+
+            function setPendingPrescriptionBadges(count) {
+                const badges = [
+                    document.getElementById('quickPrescriptionBadge'),
+                    document.getElementById('prescriptionFlowBadge')
+                ];
+                badges.forEach(badge => {
+                    if (!badge) return;
+                    badge.textContent = count;
+                    badge.style.display = count > 0 ? 'inline-flex' : 'none';
+                });
+
+                const textBadge = document.getElementById('pendingPrescriptionTextBadge');
+                if (textBadge) {
+                    textBadge.textContent = `Bekleyen: ${count}`;
+                    textBadge.style.display = count > 0 ? 'inline-flex' : 'none';
+                }
+            }
+
+            async function refreshPendingPrescriptionBadges() {
+                try {
+                    const response = await fetch(`@Url.Action("PendingPrescriptionCount", "Secretary")`, {
+                        method: 'GET',
+                        cache: 'no-store'
+                    });
+
+                    if (!response.ok) return;
+                    const data = await response.json();
+                    renderedPendingPrescriptionCount = data.count;
+                    setPendingPrescriptionBadges(data.count);
+                } catch (e) {
+                    console.error('Prescription badge error', e);
+                }
+            }
+            refreshPendingPrescriptionBadges();
+            setInterval(refreshPendingPrescriptionBadges, 30000);
             
             // Tab Persistence
             const activeTab = localStorage.getItem('secretaryActiveTab');
@@ -648,6 +708,9 @@
                     const id = this.dataset.id;
                     const row = this.closest('tr');
                     const originalContent = this.innerHTML;
+                    const select = row.querySelector('.pharmacy-select');
+                    const pharmacyId = select ? select.value : '';
+
                     this.disabled = true;
                     this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
                     
@@ -655,6 +718,9 @@
                         const token = document.querySelector('#antiforgery-token-container input').value;
                         const formData = new URLSearchParams();
                         formData.append('__RequestVerificationToken', token);
+                        if (pharmacyId) {
+                            formData.append('pharmacyId', pharmacyId);
+                        }
 
                         const res = await fetch(`@Url.Action("SendPrescription", "Secretary")?id=${id}`, {
                             method: 'POST',
@@ -670,6 +736,8 @@
                             row.style.opacity = '0';
                             setTimeout(() => { 
                                 row.remove();
+                                renderedPendingPrescriptionCount = Math.max(0, renderedPendingPrescriptionCount - 1);
+                                setPendingPrescriptionBadges(renderedPendingPrescriptionCount);
                                 if (document.querySelectorAll('.send-single-btn').length === 0) {
                                     location.reload(); // Re-fetch all to update Sent list
                                 }

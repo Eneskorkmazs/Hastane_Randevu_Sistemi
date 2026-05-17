@@ -59,7 +59,7 @@ namespace HastaneRandevuSistemi.Controllers
         [HttpPost]
         [Authorize]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Submit(int doctorId, int rating, string? comment)
+        public IActionResult Submit(int doctorId, int rating, string? comment)
         {
             TempData["ErrorMessage"] = "Doktor değerlendirme özelliği şu an kapalıdır.";
             return RedirectToAction(nameof(Profile), new { id = doctorId });

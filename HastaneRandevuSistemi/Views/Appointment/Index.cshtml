@@ -344,7 +344,6 @@
                             {
                                 var canPatientCancel = isHasta && item.AppointmentDate > DateTime.Now && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
                                 var isFutureApprovedAppointment = item.Status == AppointmentStatus.Onaylandi && item.AppointmentDate > DateTime.Now;
-                                var adminCanManage = true;
                                 var isPastAppointment = item.AppointmentDate <= DateTime.Now;
                                 var canAdminCompletePastAppointment = isAdmin && isPastAppointment && item.Status != AppointmentStatus.Iptal && item.Status != AppointmentStatus.Tamamlandi;
                                 <tr>
@@ -470,7 +469,7 @@
             </div>
         </div>
     }
-}
+</div>
 
 @foreach(var item in Model) {
     <div class="modal fade" id="qrModal-@item.Id" tabindex="-1" aria-hidden="true">

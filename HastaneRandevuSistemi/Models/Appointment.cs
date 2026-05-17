@@ -1,4 +1,4 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace HastaneRandevuSistemi.Models
@@ -98,6 +98,14 @@ namespace HastaneRandevuSistemi.Models
 
         [StringLength(200)]
         public string? PrescriptionSentByName { get; set; }
+
+        [Display(Name = "Yönlendirilen Eczane")]
+        public int? PharmacyId { get; set; }
+
+        [ForeignKey(nameof(PharmacyId))]
+        public virtual Pharmacy? Pharmacy { get; set; }
+
+        public PrescriptionPharmacyStatus PharmacyStatus { get; set; } = PrescriptionPharmacyStatus.Yok;
 
         public virtual ICollection<MedicalReport> MedicalReports { get; set; } = new List<MedicalReport>();
     }

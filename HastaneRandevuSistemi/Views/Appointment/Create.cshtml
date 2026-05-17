@@ -282,7 +282,11 @@
             const $availabilityDays = $("#availabilityDays");
             const $availabilityHours = $("#availabilityHours");
             let doctorAvailability = null;
-            let preselectedDeptId = '@ViewBag.PreselectedDepartmentId';
+
+            let preselectedDeptId = '@(ViewBag.PreselectedDepartmentId ?? "")';
+            let preselectedDoctorId = '@(Model?.DoctorId ?? 0)';
+            let preselectedDate = '@(Model?.AppointmentDate != null && Model.AppointmentDate != DateTime.MinValue ? Model.AppointmentDate.ToString("yyyy-MM-dd") : "")';
+            let preselectedTime = '@(Model?.AppointmentDate != null && Model.AppointmentDate != DateTime.MinValue ? Model.AppointmentDate.ToString("HH:mm") : "")';
 
             if (preselectedDeptId) {
                 $deptSelect.val(preselectedDeptId);
@@ -309,13 +313,21 @@
                     data: { departmentId: deptId },
                     success: function (doctors) {
                         $doctorSelect.empty().append('<option value="">-- Doktor seçiniz --</option>');
-                        if (doctors.length === 0) {
+                        if (!doctors || doctors.length === 0) {
                             $doctorSelect.append("<option disabled>Bu bölümde doktor bulunamadı.</option>");
                         } else {
                             $.each(doctors, function (_, doctor) {
-                                $doctorSelect.append($("<option></option>").val(doctor.id).html(doctor.name));
+                                const docId = doctor.id ?? doctor.Id;
+                                const docName = doctor.name ?? doctor.Name;
+                                $doctorSelect.append($("<option></option>").val(docId).html(docName));
                             });
                             $doctorSelect.prop("disabled", false);
+
+                            if (preselectedDoctorId && preselectedDoctorId !== '0') {
+                                $doctorSelect.val(preselectedDoctorId);
+                                setTimeout(() => $doctorSelect.trigger('change'), 100);
+                                preselectedDoctorId = null; // Sadece ilk yüklemede çalışsın
+                            }
                         }
                     },
                     error: function () {
@@ -360,10 +372,17 @@
                     data: { doctorId: doctorId },
                     success: function (availability) {
                         doctorAvailability = availability;
-                        $scheduleNote.text("Çalışma planı: " + availability.summary + ".");
+                        const summary = availability.summary || availability.Summary || "";
+                        $scheduleNote.text("Çalışma planı: " + summary + ".");
                         renderAvailability(availability);
                         $msgBox.text("Doktor için uygun gün ve saat planı hazır.").removeClass("text-danger").addClass("text-success");
                         loadRecommendations();
+
+                        if (preselectedDate) {
+                            $datePicker.val(preselectedDate);
+                            setTimeout(() => $datePicker.trigger('change'), 100);
+                            preselectedDate = null;
+                        }
                     },
                     error: function () {
                         doctorAvailability = null;
@@ -383,11 +402,14 @@
                     return;
                 }
 
-                $.each(availability.workingDayNames, function (_, dayName) {
+                const workingDayNames = availability.workingDayNames || availability.WorkingDayNames || [];
+                const availableHours = availability.availableHours || availability.AvailableHours || [];
+
+                $.each(workingDayNames, function (_, dayName) {
                     $availabilityDays.append(`<span class="availability-chip day">${dayName}</span>`);
                 });
 
-                $.each(availability.availableHours, function (_, hour) {
+                $.each(availableHours, function (_, hour) {
                     $availabilityHours.append(`<span class="availability-chip hour">${hour}</span>`);
                 });
 
@@ -396,16 +418,20 @@
 
             function isSelectedDateAllowed() {
                 const dateVal = $datePicker.val();
-                if (!dateVal || !doctorAvailability || !doctorAvailability.workingDays) {
+                if (!dateVal || !doctorAvailability) {
                     return true;
                 }
+
+                const workingDays = doctorAvailability.workingDays || doctorAvailability.WorkingDays;
+                if (!workingDays) return true;
 
                 const selectedDate = new Date(dateVal + "T00:00:00");
-                if (doctorAvailability.workingDays.includes(selectedDate.getDay())) {
+                if (workingDays.includes(selectedDate.getDay())) {
                     return true;
                 }
 
-                $msgBox.text("Seçtiğiniz gün bu doktorun çalışma planında yok. " + doctorAvailability.summary + " hizmet vermektedir.")
+                const summary = doctorAvailability.summary || doctorAvailability.Summary || "";
+                $msgBox.text("Seçtiğiniz gün bu doktorun çalışma planında yok. " + summary + " hizmet vermektedir.")
                     .removeClass("text-success")
                     .addClass("text-danger");
                 return false;
@@ -428,18 +454,24 @@
                     data: { doctorId: doctorId, date: dateVal },
                     success: function (payload) {
                         $timeSelect.empty().append('<option value="">-- Saat seçiniz --</option>');
-                        if (!payload.isAvailableDay) {
-                            if (payload.isHoliday) {
+                        const isAvailableDay = payload.isAvailableDay ?? payload.IsAvailableDay;
+                        const isHoliday = payload.isHoliday ?? payload.IsHoliday;
+                        const message = payload.message ?? payload.Message ?? "";
+                        const availableHours = payload.availableHours ?? payload.AvailableHours ?? [];
+                        const takenSlots = payload.takenSlots ?? payload.TakenSlots ?? [];
+
+                        if (!isAvailableDay) {
+                            if (isHoliday) {
                                 $msgBox.text("Bugün resmi tatil.").removeClass("text-success").addClass("text-danger");
                             } else {
-                                $msgBox.text(payload.message).removeClass("text-success").addClass("text-danger");
+                                $msgBox.text(message).removeClass("text-success").addClass("text-danger");
                             }
                             return;
                         }
 
                         let hasSlot = false;
-                        $.each(payload.availableHours, function (_, hourString) {
-                            if (payload.takenSlots.includes(hourString)) {
+                        $.each(availableHours, function (_, hourString) {
+                            if (takenSlots.includes(hourString)) {
                                 $timeSelect.append(`<option value="${hourString}" disabled>${hourString} (DOLU)</option>`);
                             } else {
                                 $timeSelect.append(`<option value="${hourString}">${hourString}</option>`);
@@ -450,8 +482,13 @@
                         if (!hasSlot) {
                             $msgBox.text("Bugün için boş yer kalmamıştır.").addClass("text-danger");
                         } else {
-                            $msgBox.text(payload.message).addClass("text-success");
+                            $msgBox.text(message).addClass("text-success");
                             $timeSelect.prop("disabled", false);
+
+                            if (preselectedTime) {
+                                $timeSelect.val(preselectedTime);
+                                preselectedTime = null;
+                            }
                         }
                     },
                     error: function () {
@@ -491,9 +528,13 @@
                         }
 
                         $.each(items, function (_, slot) {
-                            const [datePart, timePart] = slot.value.split("T");
+                            const val = slot.value || slot.Value;
+                            const lbl = slot.label || slot.Label;
+                            if (!val) return;
+
+                            const [datePart, timePart] = val.split("T");
                             const $btn = $('<button type="button" class="btn btn-sm btn-outline-primary rounded-pill"></button>');
-                            $btn.text(slot.label);
+                            $btn.text(lbl);
                             $btn.on("click", function () {
                                 $datePicker.val(datePart);
                                 loadSlots();

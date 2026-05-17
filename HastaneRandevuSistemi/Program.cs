@@ -1,4 +1,4 @@
-﻿using HastaneRandevuSistemi.Data;
+using HastaneRandevuSistemi.Data;
 using HastaneRandevuSistemi.Models;
 using HastaneRandevuSistemi.Validators;
 using FluentValidation;
@@ -121,11 +121,7 @@ builder.Services.AddScoped<HastaneRandevuSistemi.Services.ISymptomCheckerService
 builder.Services.AddHttpClient<HastaneRandevuSistemi.Services.SmsService>();
 builder.Services.AddHostedService<HastaneRandevuSistemi.Services.AppointmentReminderService>();
 builder.Services.AddMemoryCache();
-builder.Services.AddResponseCaching(options =>
-{
-    options.MaximumBodySize = 1024 * 1024;
-    options.SizeLimit = 1024 * 1024 * 10;
-});
+builder.Services.AddResponseCaching();
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";

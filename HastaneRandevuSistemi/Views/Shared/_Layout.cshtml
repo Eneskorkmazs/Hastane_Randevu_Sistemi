@@ -21,10 +21,10 @@
             || string.Equals(currentAction, "ResetPasswordConfirmation", StringComparison.OrdinalIgnoreCase)
         );
     var isAuthenticated = !isAccountAuthScreen && User.Identity?.IsAuthenticated == true;
-    var isDoctor = !isAccountAuthScreen && User.IsInRole("Doktor");
-    var isPatient = !isAccountAuthScreen && User.IsInRole("Hasta");
-    var isAdmin = !isAccountAuthScreen && User.IsInRole("Admin");
-    var isSecretary = !isAccountAuthScreen && User.IsInRole("Sekreter");
+    var isDoctor = isAuthenticated && User.IsInRole("Doktor");
+    var isPatient = isAuthenticated && User.IsInRole("Hasta");
+    var isAdmin = isAuthenticated && User.IsInRole("Admin");
+    var isSecretary = isAuthenticated && User.IsInRole("Sekreter");
     var isSignedIn = !isAccountAuthScreen && SignInManager.IsSignedIn(User);
 
     string GetNavLinkClass(string controller, params string[] actions)
@@ -81,7 +81,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
     <script>
         (function () {
-            var currentTheme = localStorage.getItem('theme') || "light";
+            var themeEnabled = @isSignedIn.ToString().ToLowerInvariant();
+            var currentTheme = themeEnabled ? (localStorage.getItem('theme') || "light") : "light";
             document.documentElement.setAttribute('data-theme', currentTheme);
             document.documentElement.setAttribute('data-bs-theme', currentTheme);
         })();
@@ -154,6 +155,15 @@
                             </li>
                         }
 
+                        @if (!isSignedIn)
+                        {
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("Appointment", "Create")" asp-controller="Appointment" asp-action="Create">
+                                    <i class="fa-solid fa-calendar-plus me-1"></i> Randevu Al
+                                </a>
+                            </li>
+                        }
+
                         @if (isPatient)
                         {
                             <li class="nav-item">
@@ -169,10 +179,11 @@
                                     </span>
                                 </a>
                             </li>
-                        }
-
-                        @if (isPatient || !isAuthenticated)
-                        {
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("Patient", "Pharmacies")" asp-controller="Patient" asp-action="Pharmacies">
+                                    <i class="fa-solid fa-staff-snake me-1"></i> Eczaneler
+                                </a>
+                            </li>
                             <li class="nav-item">
                                 <a class="@GetNavLinkClass("Appointment", "Create")" asp-controller="Appointment" asp-action="Create">
                                     <i class="fa-solid fa-calendar-plus me-1"></i> Randevu Al
@@ -308,11 +319,14 @@
                     </ul>
 
                     <ul class="navbar-nav nav-user-actions ms-3 align-items-center">
+                        @if (isSignedIn)
+                        {
                         <li class="nav-item me-3">
                             <button id="global-theme-toggle" class="btn btn-link nav-link border-0 p-0 theme-btn-animate" title="Temayı Değiştir" style="font-size: 1.2rem;">
                                 <i class="fa-solid fa-moon text-white"></i>
                             </button>
                         </li>
+                        }
                         @if (isSignedIn)
                         {
                             var currentUser = await UserManager.GetUserAsync(User);
@@ -342,6 +356,11 @@
                                         <li>
                                             <a class="dropdown-item" asp-controller="Patient" asp-action="MedicalHistory">
                                                 <i class="fa-solid fa-notes-medical me-2"></i> Sağlık Geçmişim
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="Patient" asp-action="Pharmacies">
+                                                <i class="fa-solid fa-staff-snake me-2"></i> Nöbetçi Eczaneler
                                             </a>
                                         </li>
                                         <li>

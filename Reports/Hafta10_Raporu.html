@@ -4,7 +4,9 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Hastane Randevu Sistemi - Hafta 10 Raporu (Final)</title>
+    <title>Hastane Randevu Sistemi - 10. Hafta ve Final Özeti</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         @page {
             size: A4;
@@ -12,491 +14,385 @@
         }
 
         :root {
-            --ink: #1f2937;
-            --muted: #5b6472;
-            --line: #d9e1ea;
-            --accent: #0b5cad;
-            --soft: #eef6ff;
+            --ink: #1e293b;
+            --muted: #64748b;
+            --line: #e2e8f0;
+            --accent: #0284c7;
+            --accent-dark: #0369a1;
+            --soft: #f0f9ff;
             --paper: #ffffff;
-            --bg: #f4f7fb;
+            --bg: #f8fafc;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --purple: #8b5cf6;
         }
 
-        * {
-            box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
         body {
             margin: 0;
-            padding: 24px;
-            background: var(--bg);
+            padding: 30px 20px;
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
             color: var(--ink);
-            font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+            font-family: "Inter", sans-serif;
             line-height: 1.6;
         }
 
         .report {
-            max-width: 920px;
+            max-width: 1000px;
             margin: 0 auto;
             background: var(--paper);
-            border: 1px solid var(--line);
-            border-radius: 18px;
+            border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 18px 44px rgba(15, 23, 42, 0.08);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
         }
 
         .hero {
-            padding: 32px;
-            background: linear-gradient(135deg, #eff7ff 0%, #ffffff 60%, #edf5ff 100%);
-            border-bottom: 1px solid var(--line);
+            padding: 50px 40px;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0369a1 100%);
+            color: white;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(14, 165, 233, 0.25) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -50%;
+            right: -20%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.2) 0%, transparent 70%);
+            pointer-events: none;
         }
 
         .hero h1 {
-            margin: 0 0 10px;
-            font-size: 28px;
-            line-height: 1.2;
+            margin: 0 0 15px;
+            font-size: 36px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 10px rgba(0,0,0,0.3);
         }
 
         .hero p {
             margin: 0;
-            color: var(--muted);
-            font-size: 15px;
+            color: #cbd5e1;
+            font-size: 18px;
+            font-weight: 400;
+            max-width: 700px;
+            margin: 0 auto;
         }
 
         .meta {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
-            margin-top: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 30px;
+            flex-wrap: wrap;
         }
 
         .meta-card {
-            padding: 12px 14px;
-            border: 1px solid var(--line);
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.92);
-            font-size: 14px;
+            padding: 8px 20px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 30px;
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: white;
+            font-weight: 500;
         }
 
-        .meta-card strong {
-            display: block;
-            margin-bottom: 4px;
-            color: var(--accent);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
+        .meta-card i { color: #38bdf8; }
 
         .section {
-            padding: 26px 32px 0;
+            padding: 40px 45px;
+            border-bottom: 1px solid var(--line);
         }
+
+        .section:last-of-type { border-bottom: none; }
 
         h2 {
-            margin: 0 0 12px;
-            font-size: 22px;
+            margin: 0 0 20px;
+            font-size: 24px;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
         }
 
-        h3 {
-            margin: 0 0 10px;
-            font-size: 18px;
-            color: var(--accent);
-        }
+        h2 i { color: var(--accent); }
 
-        p {
-            margin: 0 0 12px;
-        }
-
-        .summary {
-            padding: 16px 18px;
+        .summary-box {
+            padding: 24px 30px;
+            background: linear-gradient(135deg, var(--soft), #ffffff);
             border-left: 5px solid var(--accent);
-            border-radius: 12px;
-            background: var(--soft);
+            border-radius: 16px;
+            margin-bottom: 25px;
+            font-size: 15px;
+            color: var(--ink);
+            box-shadow: 0 4px 20px rgba(2, 132, 199, 0.05);
+            border: 1px solid rgba(2, 132, 199, 0.1);
         }
+
+        .timeline {
+            position: relative;
+            margin: 30px 0;
+            padding-left: 25px;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-bottom: 30px;
+            padding-left: 35px;
+            border-left: 2px solid var(--line);
+        }
+
+        .timeline-item:last-child { border-left-color: transparent; padding-bottom: 0; }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -8px;
+            top: 2;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--accent);
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px var(--accent-dark);
+        }
+
+        .timeline-item:last-child::before {
+            background: var(--success);
+            box-shadow: 0 0 0 2px #059669;
+        }
+
+        .timeline-item strong { 
+            color: var(--ink); 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            font-size: 16px; 
+            font-weight: 700;
+            margin-bottom: 6px; 
+        }
+
+        .timeline-item p { margin: 0; font-size: 14.5px; color: var(--muted); }
 
         .card-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 14px;
-            margin-top: 10px;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
         }
 
         .card {
-            padding: 14px 16px;
+            padding: 28px;
             border: 1px solid var(--line);
-            border-radius: 12px;
-            background: #fff;
-        }
-
-        .card h4 {
-            margin: 0 0 6px;
-            font-size: 15px;
-            color: var(--accent);
-        }
-
-        .card p {
-            margin: 0;
-            font-size: 14px;
-            color: var(--muted);
-        }
-
-        .tag {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-right: 4px;
-        }
-
-        .tag-new {
-            background: #d1fae5;
-            color: #065f46;
-        }
-
-        .tag-mod {
-            background: #dbeafe;
-            color: #1e40af;
-        }
-
-        .tag-del {
-            background: #fee2e2;
-            color: #991b1b;
-        }
-
-        .file-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-            margin-top: 10px;
-            table-layout: fixed;
-        }
-
-        .file-table th {
-            background: var(--soft);
-            color: var(--accent);
-            padding: 8px 12px;
-            text-align: left;
-            border-bottom: 2px solid var(--line);
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-        }
-
-        .file-table td {
-            padding: 8px 12px;
-            border-bottom: 1px solid var(--line);
-            vertical-align: top;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
-        }
-
-        .file-table tr:last-child td {
-            border-bottom: none;
-        }
-
-        .file-table th:nth-child(1),
-        .file-table td:nth-child(1) {
-            width: 80px;
-        }
-
-        .file-table th:nth-child(2),
-        .file-table td:nth-child(2) {
-            width: 220px;
-        }
-
-        .file-table th:nth-child(3),
-        .file-table td:nth-child(3) {
-            width: auto;
-        }
-
-        .closing {
-            margin-top: 16px;
-            padding: 18px;
-            border: 1px dashed #b9c7d8;
-            border-radius: 14px;
-            background: #f8fafc;
-        }
-
-        .readme-box {
-            margin-top: 14px;
-            padding: 14px 18px;
-            border: 1px solid #93c5fd;
-            border-radius: 12px;
-            background: #eff6ff;
-            font-size: 14px;
-        }
-
-        .readme-box a {
-            color: var(--accent);
-            font-weight: 600;
-            text-decoration: none;
-        }
-
-        .footer {
-            padding: 24px 32px 30px;
-            font-size: 12px;
-            color: var(--muted);
-        }
-
-        .badge-final {
-            display: inline-block;
-            background: #0b5cad;
-            color: #fff;
-            padding: 4px 14px;
-            border-radius: 999px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-left: 10px;
-            vertical-align: middle;
-        }
-
-        .screenshot-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 16px;
-            margin-top: 10px;
-        }
-
-        .screenshot-item {
-            border: 1px solid var(--line);
-            border-radius: 12px;
+            border-radius: 20px;
+            background: white;
+            transition: all 0.3s ease;
+            position: relative;
             overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
         }
 
-        .screenshot-item img {
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
-            height: auto;
-            display: block;
+            height: 4px;
+            background: var(--accent);
         }
 
-        .screenshot-caption {
-            margin: 0;
-            padding: 8px 12px;
-            font-size: 13px;
-            color: var(--muted);
-            background: var(--soft);
+        .card:hover { 
+            transform: translateY(-6px); 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.08); 
+            border-color: var(--accent);
         }
 
-        .screenshot-note {
-            margin-top: 10px;
-            color: var(--muted);
-            font-size: 13px;
-        }
+        .card:nth-child(1)::before { background: var(--warning); }
+        .card:nth-child(2)::before { background: var(--success); }
+        .card:nth-child(3)::before { background: var(--purple); }
+        .card:nth-child(4)::before { background: var(--danger); }
 
-        .screenshot-placeholder {
-            height: 160px;
+        .card h3 { 
+            margin: 0 0 12px; 
+            font-size: 19px; 
+            color: var(--ink); 
             display: flex;
             align-items: center;
-            justify-content: center;
-            background: #f1f5f9;
-            color: #94a3b8;
+            gap: 10px;
+            font-weight: 700;
+        }
+
+        .card p { margin: 0; font-size: 14.5px; color: var(--muted); line-height: 1.6; }
+
+        .badge-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 5px 14px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+
+        .badge-warning { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+        .badge-success { background: rgba(16, 185, 129, 0.15); color: #059669; }
+        .badge-purple { background: rgba(139, 92, 246, 0.15); color: #6d28d9; }
+        .badge-danger { background: rgba(239, 68, 68, 0.15); color: #dc2626; }
+
+        .tech-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .tech-tag {
+            padding: 6px 16px;
+            background: var(--bg);
+            border: 1px solid var(--line);
+            border-radius: 12px;
             font-size: 14px;
+            font-weight: 600;
+            color: var(--ink);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
         }
 
-        @media print {
-            body {
-                padding: 0;
-                background: #fff;
-            }
+        .tech-tag:hover { background: var(--soft); border-color: var(--accent); color: var(--accent); }
 
-            .report {
-                border: none;
-                border-radius: 0;
-                box-shadow: none;
-            }
+        .footer {
+            padding: 35px 45px;
+            background: #f8fafc;
+            text-align: center;
+            font-size: 14px;
+            color: var(--muted);
+            border-top: 1px solid var(--line);
         }
 
-        @media (max-width: 720px) {
-            body {
-                padding: 0;
-            }
-
-            .meta,
-            .card-grid,
-            .screenshot-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .hero,
-            .section,
-            .footer {
-                padding-left: 18px;
-                padding-right: 18px;
-            }
-        }
+        .highlight { color: var(--accent); font-weight: 700; }
+        .highlight-success { color: var(--success); font-weight: 700; }
     </style>
 </head>
 
 <body>
     <main class="report">
-        <section class="hero">
-            <h1>Hastane Randevu Sistemi — Hafta 10 Raporu <span class="badge-final">FINAL</span></h1>
-            <p>Hasta/Hastane Değerlendirme Sistemi, ENS Akıllı Asistan, Hasta Paneli İyileştirmeleri, Reçete Sayfası, UI Düzenlemeleri, Dokümantasyon</p>
+        <header class="hero">
+            <h1>10 HAFTALIK BÜYÜK FİNAL RAPORU</h1>
+            <p>Hastane Randevu Sistemi Proje Geliştirme Süreci, Kurumsal İyileştirmeler ve Tamamlanan Hedefler</p>
             <div class="meta">
-                <div class="meta-card"><strong>Proje</strong>Hastane Randevu Sistemi</div>
-                <div class="meta-card"><strong>Hafta</strong>10 — Final (30 Nisan 2026)</div>
-                <div class="meta-card"><strong>GitHub</strong><a
-                        href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi" target="_blank">Eneskorkmazs /
-                        Hastane_Randevu_Sistemi</a></div>
+                <div class="meta-card"><i class="fa-solid fa-code-compare"></i>Sürüm: v1.0 Final</div>
+                <div class="meta-card"><i class="fa-solid fa-calendar-check"></i>Tarih: 18 Mayıs 2026</div>
+                <div class="meta-card"><i class="fa-solid fa-user-shield"></i>Geliştirici: Enes Korkmaz</div>
+            </div>
+        </header>
+
+        <section class="section">
+            <h2><i class="fa-solid fa-trophy"></i> Proje Final Özeti</h2>
+            <div class="summary-box">
+                Bu rapor, 10 haftalık yoğun geliştirme sürecinin sonunda ortaya çıkan <span class="highlight">Hastane Randevu Sistemi</span>'nin tüm aşamalarını kapsamaktadır. Proje, temel randevu yönetiminden yapay zeka destekli semptom kontrolcüsüne, anlık tarayıcı GPS'i kullanan eczane keşif sisteminden çift katmanlı hastane değerlendirme modülüne kadar tam donanımlı, modern ve güvenli bir sağlık platformuna dönüşmüştür.
             </div>
         </section>
 
         <section class="section">
-            <h2>Genel Değerlendirme</h2>
-            <div class="summary">
-                Onuncu haftada proje, hasta deneyimi ve yönetim akışları üzerinden tamamlayıcı iyileştirmeler almıştır. Hasta/Hastane Değerlendirme Sistemi ile hastalar hastane deneyimlerine yıldız puanı ve yorum bırakabilmekte, admin bu geri bildirimleri yönetip kurumsal yanıt verebilmektedir. ENS Akıllı Asistan sohbet yapısına taşınmış, hasta panelindeki kısayollar mevcut sekmede doğru veriye gidecek şekilde düzenlenmiş, reçeteler için ayrı hasta sayfası eklenmiş ve arayüzdeki görsel taşma problemleri giderilmiştir.
+            <h2><i class="fa-solid fa-timeline"></i> 10 Haftalık Gelişim Süreci</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <strong><i class="fa-solid fa-layer-group text-primary"></i> Hafta 1-3: Temeller ve Mimari</strong>
+                    <p>ASP.NET Core MVC mimarisi kuruldu. Identity kütüphanesi ile Hasta, Doktor, Sekreter ve Admin rolleri tanımlandı. Veritabanı şeması ve temel CRUD operasyonları tamamlandı.</p>
+                </div>
+                <div class="timeline-item">
+                    <strong><i class="fa-solid fa-calendar-day text-primary"></i> Hafta 4-5: Randevu ve İş Akışı</strong>
+                    <p>Dinamik randevu alma motoru geliştirildi. Doktorların çalışma saatleri ve uygunluk durumları sisteme entegre edildi. Hasta dashboard tasarımı ve bildirim altyapısı yapıldı.</p>
+                </div>
+                <div class="timeline-item">
+                    <strong><i class="fa-solid fa-user-nurse text-primary"></i> Hafta 6-7: Operasyonel Güçlendirme</strong>
+                    <p>Sekreter paneli üzerinden randevu onayı, hasta yönlendirme ve reçete yönetimi eklendi. Muhasebe modülü ile gelir takibi ve finansal analizler devreye alındı.</p>
+                </div>
+                <div class="timeline-item">
+                    <strong><i class="fa-solid fa-robot text-primary"></i> Hafta 8-9: İleri Teknolojiler</strong>
+                    <p>AI Semptom Kontrolcüsü (Rule-based) ve QR Kod bilet sistemi eklendi. Dark Mode ve Serilog profesyonel loglama altyapısı ile sistem izlenebilirliği artırıldı.</p>
+                </div>
+                <div class="timeline-item">
+                    <strong class="highlight-success"><i class="fa-solid fa-flag-checkered"></i> Hafta 10: Final Dokunuşları, GPS ve Güvenlik</strong>
+                    <p>Canlı tarayıcı GPS'i ile Nöbetçi Eczane Keşif Sistemi tamamlandı. Çift katmanlı (Dual-layer) hastane değerlendirme modülü eklendi ve tüm Türkçe karakter hataları giderilerek sistem kusursuzlaştırıldı.</p>
+                </div>
             </div>
         </section>
 
         <section class="section">
-            <h2>Bu Hafta Yapılan Çalışmalar</h2>
+            <h2><i class="fa-solid fa-rocket"></i> Hafta 10: Öne Çıkan Son Güncellemeler</h2>
             <div class="card-grid">
                 <div class="card">
-                    <h4>Hasta/Hastane Değerlendirme Sistemi</h4>
-                    <p>Hastalar hastane deneyimlerini 1-5 yıldız puanı ve yorumla paylaşabiliyor. Giriş yapan kullanıcıların tekrar değerlendirme yapması engelleniyor; admin yorumları filtreleyebiliyor, silebiliyor ve yanıtlayabiliyor.</p>
+                    <span class="badge-pill badge-warning"><i class="fa-solid fa-location-crosshairs"></i> Canlı GPS</span>
+                    <h3>💊 Eczane Keşif & GPS Sıralaması</h3>
+                    <p>Kullanıcının profilindeki adres kısıtlaması kaldırılarak doğrudan tarayıcı GPS'i (mevcut konum) aktif edildi. Şanlıurfa geneli için 9 farklı eczane tohumlandı ve anlık mesafe (Haversine) sıralaması sağlandı.</p>
                 </div>
                 <div class="card">
-                    <h4>ENS Akıllı Asistan</h4>
-                    <p>Semptom kontrolcüsü klasik formdan sohbet tabanlı akışa taşındı. Kullanıcı mesajları kural tabanlı analiz edilerek uygun poliklinik önerileri ve hızlı cevaplar üretiliyor.</p>
+                    <span class="badge-pill badge-success"><i class="fa-solid fa-star"></i> Çift Katmanlı Koruma</span>
+                    <h3>⭐ Hastane Değerlendirme Modülü</h3>
+                    <p>Hastaların hastane hakkında yorum bırakabileceği yeni modül hasta paneline eklendi. Mükerrer yorumları engelleyen hem uygulama katmanı hem de veritabanı UNIQUE kısıtlaması devreye alındı.</p>
                 </div>
                 <div class="card">
-                    <h4>Hasta Paneli Kısayolları</h4>
-                    <p>Bekleyen, tamamlanan, reçete ve bildirim kartları yeni pencere açmadan ilgili sayfaya yönlendirildi. Tamamlanan randevu filtresi doğru durum değeriyle güncellendi.</p>
+                    <span class="badge-pill badge-purple"><i class="fa-solid fa-language"></i> Yerelleştirme</span>
+                    <h3>🔤 Karakter & Kodlama Revizyonu</h3>
+                    <p>Sistem genelinde (Muhasebe tahsilat tabloları, bölüm adları, durum etiketleri ve duyurular) görülen tüm Türkçe karakter bozulmaları (mojibake) titizlikle temizlendi ve dil aslına uygun hale getirildi.</p>
                 </div>
                 <div class="card">
-                    <h4>Reçetelerim Sayfası</h4>
-                    <p>Hasta panelindeki reçete kartı için eksik Prescriptions action'ı eklendi. Hasta kendi reçetelerini ayrı listede görebiliyor ve randevu detayına ulaşabiliyor.</p>
+                    <span class="badge-pill badge-danger"><i class="fa-solid fa-shield-halved"></i> Güvenlik</span>
+                    <h3>🔐 Navbar Zırhı & Cache Fix</h3>
+                    <p>Çıkış yapıldıktan sonra oturum çerezlerinin temizlenmesi ve geri tuşuyla eski sayfalara erişilmesini önleyen 'NoStore' önbellek politikaları tüm sistem kontrolcülerine uygulandı.</p>
                 </div>
-                <div class="card">
-                    <h4>Navbar ve Bekleyen Randevular</h4>
-                    <p>Hasta kullanıcılar için navbar'a bekleyen randevuları gösteren açılır liste eklendi. Yeni hasta yorumu bildirimi admin menüsünde rozet olarak gösteriliyor.</p>
-                </div>
-                <div class="card">
-                    <h4>Dokümantasyon</h4>
-                    <p>README.md 10 haftalık kapsam ile güncellendi. Haftalık raporlar tablosu tamamlandı.</p>
-                </div>
-            </div>
-        </section>
-
-        <section class="section" style="padding-top:22px;">
-            <h2>Ekran Görüntüleri</h2>
-            <p class="screenshot-note">Bu raporda 9. haftadaki giriş, ana sayfa, hasta paneli ve semptom kontrolcüsü ekranları tekrar kullanılmamış; final haftasını temsil eden yönetim panelleri seçilmiştir.</p>
-            <div class="screenshot-grid">
-                <div class="screenshot-item">
-                    <img src="assets/screenshot-admin-panel.png" alt="Admin Paneli" />
-                    <p class="screenshot-caption">Admin Paneli — Yönetim Merkezi</p>
-                </div>
-                <div class="screenshot-item">
-                    <img src="assets/screenshot-doktor-panel.png" alt="Doktor Paneli" />
-                    <p class="screenshot-caption">Doktor Paneli — Dashboard</p>
-                </div>
-                <div class="screenshot-item">
-                    <img src="assets/screenshot-sekreter-panel.png" alt="Sekreter Paneli" />
-                    <p class="screenshot-caption">Sekreter Operasyon Merkezi</p>
-                </div>
-            </div>
-        </section>
-
-        <section class="section" style="padding-top:22px;">
-            <h2>Değişen / Eklenen Dosyalar</h2>
-            <table class="file-table">
-                <thead>
-                    <tr>
-                        <th>Durum</th>
-                        <th>Dosya</th>
-                        <th>Açıklama</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><span class="tag tag-new">YENİ</span></td>
-                        <td>Models/HospitalReview.cs</td>
-                        <td>Hasta/hastane değerlendirme modeli</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Controllers/HomeController.cs</td>
-                        <td>SubmitHospitalReview, AdminHospitalReviews, silme ve admin yanıt akışları</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Views/Home/Index.cshtml</td>
-                        <td>Ana sayfada hastane değerlendirme formu ve son yorumlar alanı</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Data/ApplicationDbContext.cs</td>
-                        <td>HospitalReviews DbSet ve tekil kullanıcı değerlendirme kuralı eklendi</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Data/DbSeeder.cs</td>
-                        <td>HospitalReviews tablosu ve örnek veri akışı güvenceye alındı</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Services/SymptomCheckerService.cs</td>
-                        <td>ENS sohbet mesajlarını semptom anahtarlarına çeviren kural tabanlı akış</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Views/Home/AdminHospitalReviews.cshtml</td>
-                        <td>Hasta yorumları için admin listeleme, filtreleme ve yanıt ekranı</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Views/Shared/_Layout.cshtml</td>
-                        <td>Yeni hasta yorumu rozeti ve admin menüsünde Hasta Yorumları bağlantısı</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Views/Symptom/Index.cshtml</td>
-                        <td>Semptom kontrolcüsünün sohbet arayüzüne dönüştürülmesi</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>README.md</td>
-                        <td>10 haftalık kapsam güncellendi</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Views/Patient/Dashboard.cshtml</td>
-                        <td>Kart linkleri, reçete yönlendirmesi ve sıradaki randevu kartı görsel düzenlemesi</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-mod">GÜNCELLEME</span></td>
-                        <td>Controllers/PatientController.cs</td>
-                        <td>Prescriptions action'ı ve hasta reçete listeleme sorgusu</td>
-                    </tr>
-                    <tr>
-                        <td><span class="tag tag-new">YENİ</span></td>
-                        <td>Views/Patient/Prescriptions.cshtml</td>
-                        <td>Hasta reçeteleri için ayrı liste ekranı</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <section class="section" style="padding-top:22px; padding-bottom:24px;">
-            <h2>Proje Kaynakları</h2>
-            <div class="readme-box">
-                📄 <strong>README:</strong>
-                <a href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi/blob/main/HastaneRandevuSistemi%20(2)/HastaneRandevuSistemi/README.md"
-                    target="_blank">README.md — GitHub</a>
-                &nbsp;|&nbsp;
-                🔗 <strong>Depo:</strong>
-                <a href="https://github.com/Eneskorkmazs/Hastane_Randevu_Sistemi"
-                    target="_blank">github.com/Eneskorkmazs/Hastane_Randevu_Sistemi</a>
             </div>
         </section>
 
         <section class="section">
-            <h2>Sonuç</h2>
-            <div class="closing">
-                On haftalık geliştirme sürecinin sonunda Hastane Randevu Sistemi; Admin, Doktor, Sekreter ve Hasta olmak üzere dört farklı rol için kapsamlı, güvenli ve modern bir sağlık yönetim platformu haline gelmiştir.
+            <h2><i class="fa-solid fa-cubes"></i> Teknik Altyapı ve Teknolojiler</h2>
+            <div class="tech-tags">
+                <div class="tech-tag"><i class="fa-brands fa-microsoft text-primary"></i> .NET 8 Core</div>
+                <div class="tech-tag"><i class="fa-solid fa-database text-warning"></i> Entity Framework Core</div>
+                <div class="tech-tag"><i class="fa-solid fa-shield text-success"></i> ASP.NET Identity</div>
+                <div class="tech-tag"><i class="fa-solid fa-file-code text-danger"></i> Razor Views & MVC</div>
+                <div class="tech-tag"><i class="fa-brands fa-bootstrap text-purple"></i> Bootstrap 5</div>
+                <div class="tech-tag"><i class="fa-brands fa-js text-warning"></i> Vanilla JavaScript</div>
+                <div class="tech-tag"><i class="fa-solid fa-server text-secondary"></i> Serilog Logging</div>
+                <div class="tech-tag"><i class="fa-solid fa-qrcode text-info"></i> QRCoder</div>
+                <div class="tech-tag"><i class="fa-solid fa-location-dot text-primary"></i> Geolocation API</div>
             </div>
         </section>
 
-        <div class="footer">Bu rapor, 30 Nisan 2026 tarihinde proje kaynak kodu ve geliştirme geçmişi referans alınarak hazırlanmıştır. &nbsp;|&nbsp; Geliştirici: Enes Korkmaz &nbsp;|&nbsp; GitHub: Eneskorkmazs/Hastane_Randevu_Sistemi</div>
+        <footer class="footer">
+            <p>Bu rapor, 10 haftalık proje geliştirme sürecinin başarıyla tamamlanmasının ardından hazırlanmıştır.</p>
+            <p class="mb-0"><strong>HRS Hastane Randevu Sistemi &copy; 2026</strong> | Tüm Hakları Saklıdır.</p>
+        </footer>
     </main>
 </body>
 

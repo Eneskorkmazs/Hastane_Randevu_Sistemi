@@ -1,10 +1,8 @@
-# Hastane Randevu Sistemi
+# 🏥 Hastane Randevu Sistemi (HRS)
 
-ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu uygulaması.
+ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliştirilmiş, çok katmanlı, modern ve tam donanımlı bir hastane randevu ve yönetim platformu.
 
-
-
-## Güncel Kapsam
+## 🌟 Güncel Kapsam ve Gelişmeler
 
 ### Hafta 1
 - `AppUser` modeli TC, telefon, doğum tarihi, cinsiyet ve adres alanları ile genişletildi.
@@ -54,43 +52,37 @@ ASP.NET Core MVC ve Entity Framework Core ile hazırlanmış bir hastane randevu
 ### Hafta 9
 - **AI Semptom Kontrolcüsü** eklendi: kural tabanlı semptom → poliklinik yönlendirme.
 - **QR Kod ile Randevu Doğrulama**: randevu detay sayfasında QR bilet gösterimi.
-- **Dijital Reçete PDF çıktısı**: yazdır butonu + QR imzalı reçete önizleme.
+- **Dijital Reçete PDF Çıktısı**: yazdır butonu + QR imzalı reçete önizleme.
 - Serilog loglama altyapısı aktif edildi (`Logs/hrs-.log`).
-- xUnit integration testleri genişletildi (15+ senaryo).
-- Kod refactoring: doktor erişim isteği kaldırıldı, navbar sadeleştirildi.
+- xUnit integration testleri genişletildi.
 
-### Hafta 10
-- **Hasta/Hastane Değerlendirme Sistemi** eklendi: hastalar puan ve yorum bırakabilir, admin yorumları yönetip yanıtlayabilir.
-- **ENS Akıllı Asistan** sohbet tabanlı semptom yönlendirme akışına dönüştürüldü.
-- Hasta panelindeki bekleyen, tamamlanan, reçete ve bildirim kartları mevcut sekmede doğru veriye yönlendirilecek şekilde düzenlendi.
-- Hasta reçeteleri için ayrı `Patient/Prescriptions` sayfası eklendi.
-- Navbar'a hasta için bekleyen randevular açılır listesi ve admin için yeni hasta yorumu rozeti eklendi.
-- Hasta panelindeki sıradaki randevu kartında görsel taşma problemi giderildi.
-- ezcane bölümü eklendi konum bilgisi eklendi
+### Hafta 10 (Final Sürümü)
+- **Eczane Keşif ve Mesafe Sistemi**: Şanlıurfa (Acı Biber, Karaköprü, Siverek, Birecik, Viranşehir, Meydan Ecz.), Sinop ve diğer büyük şehirleri kapsayan eczane verileri eklendi.
+- **Canlı GPS ve Akıllı Sıralama**: Tarayıcı konumu üzerinden Haversine formülü ile kullanıcının mevcut konumuna göre en yakın eczaneyi hesaplayan ve anlık sıralayan sistem eklendi.
+- **Çift Katmanlı Hastane Değerlendirme Modülü**: Hastaların hastane hakkında tek seferlik yorum ve puan bırakabileceği, adminin yanıtlayabileceği, hem uygulama hem de UNIQUE constraint ile korunan sistem eklendi.
+- **Navbar Güvenlik Zırhı ve Cache Fix**: Çıkış sonrası linklerin ve sayfaların temizlenmesini garanti altına alan `isAuthenticated` kontrolleri ve NoStore politikaları uygulandı.
+- **Yerelleştirme ve Kodlama Revizyonu**: Sistem genelinde (Muhasebe tahsilat tabloları, bölüm adları, durum etiketleri) görülen tüm Türkçe karakter bozulmaları (mojibake) temizlendi.
 
-## Haftalık Raporlar
+## 📄 Haftalık Raporlar ve Dokümantasyon
 
-| Hafta | Konu | Rapor |
-|-------|------|-------|
-| 1 | Model sınıfları, Data Annotation, Ana sayfa UI/UX | [📄 PDF](Reports/Hafta1_Raporu.pdf) |
-| 2 | Hasta paneli, Profil güncelleme, Bildirim altyapısı | [📄 PDF](Reports/Hafta2_Raporu.pdf) |
-| 3 | Doktor paneli, Çalışma takvimi, Reçete temel yapısı | [📄 PDF](Reports/Hafta3_Raporu.pdf) |
-| 4 | Admin grafik/istatistik ekranları, Raporlama sistemi | [📄 PDF](Reports/Hafta4_Raporu.pdf) |
-| 5 | Gelişmiş arama/filtreleme, UX iyileştirmeleri | [📄 PDF](Reports/Hafta5_Raporu.pdf) |
-| 6 | API katmanı, Tahsilat sayfası, Randevu fiyat alanı | [📄 PDF](Reports/Hafta6_Raporu.pdf) ·  |
-| 7 | Dosya yükleme, Tıbbi geçmiş modülü, Dijital reçete | [📄 PDF](Reports/Hafta7_Raporu.pdf) |
-| 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 PDF](Reports/Hafta8_Raporu.pdf)  |
-| 9 | AI Semptom Kontrolcüsü, QR Kod, Reçete PDF, Serilog, Testler, Sekreter Reçete Yönetimi | [📄 PDF](Reports/Hafta9_Raporu.pdf) |
-| 10 | Hasta/Hastane Değerlendirmesi, ENS sohbet asistanı, hasta paneli kısayolları, reçete sayfası | [📄 PDF](Reports/Hafta10_Raporu.pdf) |
-
+| Hafta | Konu | Rapor Bağlantısı |
+|:---:|:---|:---|
+| 1 | Model sınıfları, Data Annotation, Ana sayfa UI/UX | [📄 Hafta 1 Raporu](Reports/Hafta1_Raporu.html) |
+| 2 | Hasta paneli, Profil güncelleme, Bildirim altyapısı | [📄 Hafta 2 Raporu](Reports/Hafta2_Raporu.html) |
+| 3 | Doktor paneli, Çalışma takvimi, Reçete temel yapısı | [📄 Hafta 3 Raporu](Reports/Hafta3_Raporu.html) |
+| 4 | Admin grafik/istatistik ekranları, Raporlama sistemi | [📄 Hafta 4 Raporu](Reports/Hafta4_Raporu.html) |
+| 5 | Gelişmiş arama/filtreleme, UX iyileştirmeleri | [📄 Hafta 5 Raporu](Reports/Hafta5_Raporu.html) |
+| 6 | API katmanı, Tahsilat sayfası, Randevu fiyat alanı | [📄 Hafta 6 Raporu](Reports/Hafta6_Raporu.html) |
+| 7 | Dosya yükleme, Tıbbi geçmiş modülü, Dijital reçete | [📄 Hafta 7 Raporu](Reports/Hafta7_Raporu.html) |
+| 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 Hafta 8 Raporu](Reports/Hafta8_Raporu.html) |
+| 9 | AI Semptom Kontrolcüsü, QR Kod, Reçete PDF, Serilog, Testler | [📄 Hafta 9 Raporu](Reports/Hafta9_Raporu.html) |
+| **10** | **Final: Eczane GPS Sistemi, Çift Katmanlı Değerlendirme, Güvenlik Zırhı** | [📄 Final Raporu](Reports/Hafta10_Raporu.html) |
 
 - [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
 
-
-
-## Varsayılan Roller
+## 🔐 Sistem Rolleri
 - `Admin`
 - `Doktor`
+- `Sekreter`
 - `Hasta`
--'sekreter'
 

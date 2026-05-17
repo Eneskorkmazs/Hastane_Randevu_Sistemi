@@ -323,6 +323,8 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (!ModelState.IsValid)
             {
+                var doc = await _context.Doctors.FindAsync(appointment.DoctorId);
+                ViewBag.PreselectedDepartmentId = doc?.DepartmentId;
                 await LoadDepartmentSelectListAsync();
                 return View(appointment);
             }

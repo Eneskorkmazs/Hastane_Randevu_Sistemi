@@ -3,6 +3,7 @@ using System;
 using HastaneRandevuSistemi.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace HastaneRandevuSistemi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260513215842_AddPharmacyCity")]
+    partial class AddPharmacyCity
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.22");
@@ -536,21 +539,9 @@ namespace HastaneRandevuSistemi.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("CloseTime")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("District")
                         .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime?>("DutyDate")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Email")
-                        .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
                     b.Property<bool>("IsOnDuty")
@@ -561,20 +552,11 @@ namespace HastaneRandevuSistemi.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("OpenTime")
-                        .IsRequired()
-                        .HasMaxLength(10)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
                         .HasColumnType("TEXT");
 
                     b.Property<string>("UserId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("Website")
-                        .HasMaxLength(200)
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");

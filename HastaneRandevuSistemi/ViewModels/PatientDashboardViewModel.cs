@@ -23,6 +23,7 @@ namespace HastaneRandevuSistemi.ViewModels
         public IReadOnlyList<Appointment> PendingAppointments { get; set; } = Array.Empty<Appointment>();
         public IReadOnlyList<Appointment> RecentAppointments { get; set; } = Array.Empty<Appointment>();
         public IReadOnlyList<Notification> RecentNotifications { get; set; } = Array.Empty<Notification>();
+        public HospitalReview? UserHospitalReview { get; set; }
     }
 
     public class DepartmentFeeItem

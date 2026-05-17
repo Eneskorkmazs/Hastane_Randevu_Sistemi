@@ -21,6 +21,7 @@ namespace HastaneRandevuSistemi.ViewModels
         
         public List<DepartmentLoadItem> DepartmentLoads { get; set; } = new();
         public List<Notification> SystemAnnouncements { get; set; } = new();
+        public List<Pharmacy> Pharmacies { get; set; } = new();
     }
 
     public class DepartmentLoadItem

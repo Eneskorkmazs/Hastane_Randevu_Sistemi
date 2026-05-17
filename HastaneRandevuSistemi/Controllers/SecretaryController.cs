@@ -113,6 +113,8 @@ namespace HastaneRandevuSistemi.Controllers
                 .Take(5)
                 .ToListAsync();
 
+            model.Pharmacies = await _context.Pharmacies.OrderBy(p => p.Name).ToListAsync();
+
             return View(model);
         }
 
@@ -135,9 +137,9 @@ namespace HastaneRandevuSistemi.Controllers
                 if (normalizedQuery.Length < 3)
                     return Json(new { success = false, message = "En az 3 karakter giriniz." });
 
-                queryable = queryable.Where(a => a.PatientName.ToLower().Contains(normalizedQuery) || 
-                                              a.PatientSurname.ToLower().Contains(normalizedQuery) || 
-                                              a.PatientPhone.Contains(normalizedQuery));
+                queryable = queryable.Where(a => (a.PatientName ?? string.Empty).ToLower().Contains(normalizedQuery) || 
+                                              (a.PatientSurname ?? string.Empty).ToLower().Contains(normalizedQuery) || 
+                                              (a.PatientPhone ?? string.Empty).Contains(normalizedQuery));
             }
 
             var results = await queryable
@@ -189,6 +191,15 @@ namespace HastaneRandevuSistemi.Controllers
         public async Task<IActionResult> PendingAppointmentCount()
         {
             var count = await _context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Bekliyor);
+            return Json(new { count });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> PendingPrescriptionCount()
+        {
+            var count = await _context.Appointments
+                .CountAsync(a => a.PrescriptionCreatedAt != null && a.PrescriptionSentAt == null);
+
             return Json(new { count });
         }
 
@@ -270,7 +281,7 @@ namespace HastaneRandevuSistemi.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SendPrescription(int id)
+        public async Task<IActionResult> SendPrescription(int id, int? pharmacyId)
         {
             var appointment = await _context.Appointments
                 .Include(a => a.Doctor)
@@ -289,15 +300,21 @@ namespace HastaneRandevuSistemi.Controllers
                 return RedirectToAction(nameof(Dashboard));
             }
 
-            // if (string.IsNullOrWhiteSpace(appointment.PatientUserId))
-            // {
-            //     TempData["ErrorMessage"] = "Bu randevuya bagli bir hasta kullanicisi bulunmadigi icin recete gonderilemedi.";
-            //     return RedirectToAction(nameof(Dashboard));
-            // }
-
             var actor = await GetCurrentActorAsync();
             appointment.PrescriptionSentAt = DateTime.Now;
             appointment.PrescriptionSentByName = actor.DisplayName + " (Sekreter)";
+
+            Pharmacy? pharmacy = null;
+            if (pharmacyId.HasValue)
+            {
+                pharmacy = await _context.Pharmacies.FindAsync(pharmacyId.Value);
+                if (pharmacy != null)
+                {
+                    appointment.PharmacyId = pharmacy.Id;
+                    appointment.PharmacyStatus = PrescriptionPharmacyStatus.Bekliyor;
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             var doctorName = appointment.Doctor == null
@@ -308,17 +325,22 @@ namespace HastaneRandevuSistemi.Controllers
                 $"{appointment.AppointmentDate:dd.MM.yyyy HH:mm} tarihli muayeneniz icin {doctorName} tarafindan yazilan recete tarafiniza iletildi. " +
                 $"Tani: {appointment.PrescriptionDiagnosis}. Ilaclar: {appointment.PrescriptionMedications}.";
 
+            if (pharmacy != null)
+            {
+                messageBody += $" Ayrıca reçeteniz {pharmacy.Name} ({pharmacy.District}) isimli eczaneye iletilmiştir.";
+            }
+
             if (!string.IsNullOrWhiteSpace(appointment.PatientUserId))
             {
                 await CreateNotificationAsync(
                     appointment.PatientUserId,
-                    "Receteniz hazir",
+                    "Receteniz hazir" + (pharmacy != null ? " ve Eczaneye İletildi" : ""),
                     messageBody,
                     "Recete",
                     "/Patient/MedicalHistory#receteler");
             }
 
-            TempData["SuccessMessage"] = "Recete hastaya gonderildi.";
+            TempData["SuccessMessage"] = pharmacy != null ? $"Reçete {pharmacy.Name} eczanesine ve hastaya gönderildi." : "Recete hastaya gonderildi.";
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Json(new { success = true });
             return RedirectToAction(nameof(Dashboard));
@@ -659,4 +681,3 @@ namespace HastaneRandevuSistemi.Controllers
         }
     }
 }
-

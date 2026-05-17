@@ -51,6 +51,10 @@ namespace HastaneRandevuSistemi.Controllers
                 .Select(d => new DepartmentFeeItem { DepartmentName = d.Name, Fee = 150.00m }) 
                 .ToListAsync();
 
+            var userReview = await _context.HospitalReviews
+                .AsNoTracking()
+                .FirstOrDefaultAsync(r => r.UserId == user.Id);
+
             var model = new PatientDashboardViewModel
             {
                 FullName = $"{user.Name} {user.Surname}",
@@ -71,12 +75,14 @@ namespace HastaneRandevuSistemi.Controllers
                 DepartmentFees = departmentFees,
                 PendingAppointments = pendingAppointments,
                 RecentAppointments = appointments.OrderByDescending(a => a.AppointmentDate).Take(5).ToList(),
-                RecentNotifications = notifications
+                RecentNotifications = notifications,
+                UserHospitalReview = userReview
             };
 
             return View(model);
         }
 
+        [HttpGet]
         public async Task<IActionResult> Profile()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -127,6 +133,36 @@ namespace HastaneRandevuSistemi.Controllers
             {
                 TempData["SuccessMessage"] = "Profiliniz başarıyla güncellendi.";
                 return RedirectToAction(nameof(Dashboard));
+            }
+
+            foreach (var error in result.Errors)
+            {
+                ModelState.AddModelError(string.Empty, error.Description);
+            }
+
+            return View(model);
+        }
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            return View(new ChangePasswordViewModel());
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
+            if (result.Succeeded)
+            {
+                TempData["SuccessMessage"] = "Sifreniz basariyla guncellendi.";
+                return RedirectToAction(nameof(Profile));
             }
 
             foreach (var error in result.Errors)
@@ -200,6 +236,43 @@ namespace HastaneRandevuSistemi.Controllers
             {
                 Items = prescriptions
             });
+        }
+
+        [AllowAnonymous]
+        public async Task<IActionResult> Pharmacies(string? city, string? district, bool showAll = false)
+        {
+            var query = _context.Pharmacies.AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(city))
+            {
+                query = query.Where(p => p.City.ToLower() == city.ToLower());
+                ViewBag.CurrentCity = city;
+            }
+
+            if (!string.IsNullOrWhiteSpace(district))
+            {
+                query = query.Where(p => p.District.ToLower() == district.ToLower());
+                ViewBag.CurrentDistrict = district;
+            }
+
+            var pharmacies = await query
+                .OrderByDescending(p => p.IsOnDuty)
+                .ThenBy(p => p.Name)
+                .ToListAsync();
+
+            ViewBag.AllCities = await _context.Pharmacies.Select(p => p.City).Distinct().ToListAsync();
+            
+            var districtQuery = _context.Pharmacies.AsQueryable();
+            string? currentCityStr = ViewBag.CurrentCity as string;
+            if (!string.IsNullOrWhiteSpace(currentCityStr))
+            {
+                districtQuery = districtQuery.Where(p => p.City.ToLower() == currentCityStr.ToLower());
+            }
+            ViewBag.AllDistricts = await districtQuery.Select(p => p.District).Distinct().ToListAsync();
+
+            ViewBag.AutoDetected = false; // Hesaptaki adrese göre kısıtlama kapatıldı, tarayıcı GPS (mevcut konum) kullanılacak
+
+            return View(pharmacies);
         }
 
         [HttpPost]
@@ -529,6 +602,6 @@ namespace HastaneRandevuSistemi.Controllers
             };
         }
 
-        public class SymptomRequest { public string Text { get; set; } }
+        public class SymptomRequest { public string Text { get; set; } = string.Empty; }
     }
 }

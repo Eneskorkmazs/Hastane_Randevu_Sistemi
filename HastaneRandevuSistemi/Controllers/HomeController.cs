@@ -17,22 +17,22 @@ namespace HastaneRandevuSistemi.Controllers
         private static readonly IReadOnlyDictionary<string, decimal> DepartmentPriceMap =
             new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
             {
-                ["DiÅŸ SaÄŸlÄ±ÄŸÄ± ve HastalÄ±klarÄ±"] = 1250m,
-                ["Dahiliye (Ä°Ã§ HastalÄ±klarÄ±)"] = 1100m,
+                ["Diş Sağlığı ve Hastalıkları"] = 1250m,
+                ["Dahiliye (İç Hastalıkları)"] = 1100m,
                 ["Kardiyoloji"] = 2200m,
-                ["NÃ¶roloji"] = 2100m,
+                ["Nöroloji"] = 2100m,
                 ["Ortopedi ve Travmatoloji"] = 1850m,
-                ["GÃ¶z HastalÄ±klarÄ±"] = 1450m,
-                ["Kulak Burun BoÄŸaz"] = 1400m,
+                ["Göz Hastalıkları"] = 1450m,
+                ["Kulak Burun Boğaz"] = 1400m,
                 ["Genel Cerrahi"] = 2300m,
                 ["Dermatoloji"] = 1200m,
                 ["Pediatri"] = 1150m,
                 ["Psikiyatri"] = 1600m,
-                ["Ãœroloji"] = 1750m,
+                ["Üroloji"] = 1750m,
                 ["Fizik Tedavi ve Rehabilitasyon"] = 1350m,
-                ["KadÄ±n HastalÄ±klarÄ± ve DoÄŸum"] = 1900m,
-                ["GÃ¶ÄŸÃ¼s HastalÄ±klarÄ±"] = 1550m,
-                ["Enfeksiyon HastalÄ±klarÄ±"] = 1300m,
+                ["Kadın Hastalıkları ve Doğum"] = 1900m,
+                ["Göğüs Hastalıkları"] = 1550m,
+                ["Enfeksiyon Hastalıkları"] = 1300m,
                 ["Beyin ve Sinir Cerrahisi"] = 2750m
             };
 
@@ -63,7 +63,7 @@ namespace HastaneRandevuSistemi.Controllers
         {
             if (model.Rating < 1 || model.Rating > 5)
             {
-                ModelState.AddModelError(nameof(model.Rating), "LÃ¼tfen 1-5 arasÄ±nda puan seÃ§in.");
+                ModelState.AddModelError(nameof(model.Rating), "Lütfen 1-5 arasında puan seçin.");
             }
 
             var reviewerName = (model.ReviewerName ?? string.Empty).Trim();
@@ -77,7 +77,7 @@ namespace HastaneRandevuSistemi.Controllers
                     .AnyAsync(r => r.UserId == user.Id);
                 if (hasExistingReview)
                 {
-                    ModelState.AddModelError(string.Empty, "Bu hesap ile daha Ã¶nce deÄŸerlendirme yaptÄ±nÄ±z. Her hesap yalnÄ±zca bir yorum bÄ±rakabilir.");
+                    ModelState.AddModelError(string.Empty, "Bu hesap ile daha önce değerlendirme yaptınız. Her hesap yalnızca bir yorum bırakabilir.");
                 }
 
                 var fullName = $"{user.Name} {user.Surname}".Trim();
@@ -118,7 +118,7 @@ namespace HastaneRandevuSistemi.Controllers
             }
             catch (DbUpdateException ex) when (IsHospitalReviewUniqueViolation(ex))
             {
-                ModelState.AddModelError(string.Empty, "Bu hesap ile daha Ã¶nce deÄŸerlendirme yaptÄ±nÄ±z. Her hesap yalnÄ±zca bir yorum bÄ±rakabilir.");
+                ModelState.AddModelError(string.Empty, "Bu hesap ile daha önce değerlendirme yaptınız. Her hesap yalnızca bir yorum bırakabilir.");
                 var invalidViewModel = await BuildHomeIndexViewModelAsync();
                 invalidViewModel.Rating = model.Rating;
                 invalidViewModel.ReviewerName = model.ReviewerName ?? string.Empty;
@@ -126,11 +126,11 @@ namespace HastaneRandevuSistemi.Controllers
                 return View("Index", invalidViewModel);
             }
 
-            TempData["SuccessMessage"] = "Genel hastane deÄŸerlendirmeniz iÃ§in teÅŸekkÃ¼r ederiz.";
+            TempData["SuccessMessage"] = "Genel hastane değerlendirmeniz için teşekkür ederiz.";
             return RedirectToAction(nameof(Index));
         }
 
-        // 2. ADMIN DASHBOARD - Sadece Admin GÃ¶rebilir
+        // 2. ADMIN DASHBOARD - Sadece Admin Görebilir
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminDashboard()
         {
@@ -179,7 +179,7 @@ namespace HastaneRandevuSistemi.Controllers
                     PatientName = $"{a.PatientName} {a.PatientSurname}".Trim(),
                     DoctorName = a.Doctor == null ? "Bilinmeyen Doktor" : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
                     DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
-                    StatusLabel = "Ã–deme Bekliyor",
+                    StatusLabel = "Ödeme Bekliyor",
                     Amount = GetFee(a),
                     IsCollected = a.IsCollected,
                     IsAppointmentFinished = true
@@ -685,7 +685,7 @@ namespace HastaneRandevuSistemi.Controllers
 
             var doctorOptions = new List<SelectListItem>
             {
-                new() { Value = string.Empty, Text = "TÃ¼m Doktorlar", Selected = !doctorId.HasValue }
+                new() { Value = string.Empty, Text = "Tüm Doktorlar", Selected = !doctorId.HasValue }
             };
 
             doctorOptions.AddRange(doctors.Select(d => new SelectListItem
@@ -842,9 +842,9 @@ namespace HastaneRandevuSistemi.Controllers
                 StartDate = normalizedStart,
                 EndDate = normalizedEnd,
                 SelectedDoctorName = selectedDoctor == null
-                    ? "TÃ¼m Doktorlar"
+                    ? "Tüm Doktorlar"
                     : $"{selectedDoctor.Title} {selectedDoctor.Name} {selectedDoctor.Surname}".Trim(),
-                SelectedDepartmentName = selectedDoctor?.Department?.Name ?? "TÃ¼m BÃ¶lÃ¼mler",
+                SelectedDepartmentName = selectedDoctor?.Department?.Name ?? "Tüm Bölümler",
                 TotalAppointments = totalAppointments,
                 UniquePatientCount = uniquePatientCount,
                 CompletedAppointments = completedAppointments,
@@ -941,7 +941,7 @@ namespace HastaneRandevuSistemi.Controllers
                 .OrderByDescending(x => x.Total)
                 .FirstOrDefault();
 
-            // Toplam kasa: tÃ¼m zamanlar tahsil edilen
+            // Toplam kasa: tüm zamanlar tahsil edilen
             var allCollectedTotal = appointments
                 .Where(a => a.IsCollected)
                 .Sum(GetFee);
@@ -974,25 +974,25 @@ namespace HastaneRandevuSistemi.Controllers
             var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == id);
             if (appointment == null)
             {
-                TempData["ErrorMessage"] = "Ã–deme iÅŸlenecek kayÄ±t bulunamadÄ±.";
+                TempData["ErrorMessage"] = "Ödeme işlenecek kayıt bulunamadı.";
                 return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
             }
 
             if (appointment.Status == AppointmentStatus.Iptal)
             {
-                TempData["ErrorMessage"] = "Ä°ptal edilen randevu iÃ§in Ã¶deme iÅŸlenemez.";
+                TempData["ErrorMessage"] = "İptal edilen randevu için ödeme işlenemez.";
                 return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
             }
 
             if (appointment.AppointmentDate > DateTime.Now)
             {
-                TempData["ErrorMessage"] = "Randevu bitmeden odeme yapildi olarak isaretlenemez.";
+                TempData["ErrorMessage"] = "Randevu bitmeden ödeme yapıldı olarak işaretlenemez.";
                 return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
             }
 
             if (IsOfficialHoliday(appointment.AppointmentDate))
             {
-                TempData["ErrorMessage"] = "Resmi tatil gunundeki randevu icin tahsilat yapilamaz.";
+                TempData["ErrorMessage"] = "Resmi tatil günündeki randevu için tahsilat yapılamaz.";
                 return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
             }
 
@@ -1005,7 +1005,7 @@ namespace HastaneRandevuSistemi.Controllers
             appointment.CollectedDate = DateTime.Now;
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Ã–deme yapÄ±ldÄ± olarak gÃ¼ncellendi.";
+            TempData["SuccessMessage"] = "Ödeme yapıldı olarak güncellendi.";
             return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
         }
 
@@ -1029,7 +1029,7 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (eligibleAppointments.Count == 0)
             {
-                TempData["InfoMessage"] = "Toplu tahsilat iÃ§in uygun, randevusu bitmiÅŸ Ã¶deme bulunamadÄ±.";
+                TempData["InfoMessage"] = "Toplu tahsilat için uygun, randevusu bitmiş ödeme bulunamadı.";
                 return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
             }
 
@@ -1041,7 +1041,7 @@ namespace HastaneRandevuSistemi.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = $"{eligibleAppointments.Count} adet bitmis randevunun odemesi toplu olarak alindi.";
+            TempData["SuccessMessage"] = $"{eligibleAppointments.Count} adet bitmiş randevunun ödemesi toplu olarak alındı.";
             return !string.IsNullOrEmpty(returnUrl) ? LocalRedirect(returnUrl) : RedirectToAction(nameof(Tahsilat));
         }
 
@@ -1053,13 +1053,13 @@ namespace HastaneRandevuSistemi.Controllers
             var appointment = await _context.Appointments.FirstOrDefaultAsync(a => a.Id == id);
             if (appointment == null)
             {
-                TempData["ErrorMessage"] = "Ã–deme iptal edilecek kayÄ±t bulunamadÄ±.";
+                TempData["ErrorMessage"] = "Ödeme iptal edilecek kayıt bulunamadı.";
                 return RedirectToAction(nameof(Tahsilat));
             }
 
             if (appointment.AppointmentDate > DateTime.Now)
             {
-                TempData["ErrorMessage"] = "Randevu bitmeden odeme kaydi degistirilemez.";
+                TempData["ErrorMessage"] = "Randevu bitmeden ödeme kaydı değiştirilemez.";
                 return RedirectToAction(nameof(Tahsilat));
             }
 
@@ -1067,7 +1067,7 @@ namespace HastaneRandevuSistemi.Controllers
             appointment.CollectedDate = null;
             await _context.SaveChangesAsync();
 
-            TempData["SuccessMessage"] = "Ã–deme iptal edildi olarak gÃ¼ncellendi.";
+            TempData["SuccessMessage"] = "Ödeme iptal edildi olarak güncellendi.";
             return RedirectToAction(nameof(Tahsilat));
         }
 
@@ -1102,7 +1102,7 @@ namespace HastaneRandevuSistemi.Controllers
             var users = await usersQuery.ToListAsync();
             if (users.Count == 0)
             {
-                ModelState.AddModelError(string.Empty, "SeÃ§ilen hedef iÃ§in kullanÄ±cÄ± bulunamadÄ±.");
+                ModelState.AddModelError(string.Empty, "Seçilen hedef için kullanıcı bulunamadı.");
                 return View(model);
             }
 
@@ -1118,11 +1118,11 @@ namespace HastaneRandevuSistemi.Controllers
             }));
 
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = $"{users.Count} kullaniciya duyuru gonderildi.";
+            TempData["SuccessMessage"] = $"{users.Count} kullanıcıya duyuru gönderildi.";
             return RedirectToAction(nameof(AdminDashboard));
         }
 
-        // 3. DOKTOR DASHBOARD - Sadece Doktor GÃ¶rebilir
+        // 3. DOKTOR DASHBOARD - Sadece Doktor Görebilir
         [Authorize(Roles = "Doktor")]
         public async Task<IActionResult> DoctorDashboard()
         {
@@ -1207,8 +1207,8 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         /// <summary>
-        /// SÄ±ra Takip EkranÄ± â€” BugÃ¼nkÃ¼ randevularÄ±n doktor bazlÄ± sÄ±rasÄ±nÄ± ve tahmini bekleme sÃ¼resini gÃ¶sterir.
-        /// Herkese aÃ§Ä±k (giriÅŸ gerekmez), admin gÃ¶remez.
+        /// Sıra Takip Ekranı — Bugünkü randevuların doktor bazlı sırasını ve tahmini bekleme süresini gösterir.
+        /// Herkese açık (giriş gerekmez), admin göremez.
         /// </summary>
         [AllowAnonymous]
         [ResponseCache(Duration = 30, Location = ResponseCacheLocation.Any)]
@@ -1358,7 +1358,7 @@ namespace HastaneRandevuSistemi.Controllers
         {
             ViewData["AnnouncementRoles"] = new List<SelectListItem>
             {
-                new() { Value = "All", Text = "TÃ¼m kullanÄ±cÄ±lar" },
+                new() { Value = "All", Text = "Tüm kullanıcılar" },
                 new() { Value = "Hasta", Text = "Hastalar" },
                 new() { Value = "Doktor", Text = "Doktorlar" },
                 new() { Value = "Admin", Text = "Adminler" }
@@ -1601,16 +1601,16 @@ namespace HastaneRandevuSistemi.Controllers
                             ? "Bilinmeyen Doktor"
                             : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
                         DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
-                        StatusLabel = a.IsCollected ? "Ã–deme YapÄ±ldÄ±" : isHoliday
+                        StatusLabel = a.IsCollected ? "Ödeme Yapıldı" : isHoliday
                             ? $"Resmi Tatil ({holidayLabel})"
                             : a.Status switch
                             {
                                 AppointmentStatus.Iptal when !string.IsNullOrWhiteSpace(a.PatientUserId)
                                     && a.CancelledByUserId == a.PatientUserId
                                     && (a.CancelledByName ?? string.Empty).Contains("Admin tarafindan odemesi geri iade edildi", StringComparison.OrdinalIgnoreCase)
-                                        => "Ã–deme iadesi yapÄ±ldÄ± / Ä°ptal edildi",
-                                AppointmentStatus.Iptal => "Ä°ptal edildi",
-                                AppointmentStatus.Tamamlandi => "Ã–deme Bekliyor",
+                                        => "Ödeme iadesi yapıldı / İptal edildi",
+                                AppointmentStatus.Iptal => "İptal edildi",
+                                AppointmentStatus.Tamamlandi => "Ödeme Bekliyor",
                                 AppointmentStatus.Onaylandi => "Randevu Bekliyor",
                                 _ => "Planlandi"
                             },
@@ -1640,7 +1640,7 @@ namespace HastaneRandevuSistemi.Controllers
                             ? "Bilinmeyen Doktor"
                             : $"{a.Doctor.Title} {a.Doctor.Name} {a.Doctor.Surname}".Trim(),
                         DepartmentName = a.Doctor?.Department?.Name ?? "Bilinmeyen",
-                        StatusLabel = isHoliday ? $"Resmi Tatil ({holidayLabel})" : "Ã–deme Bekliyor",
+                        StatusLabel = isHoliday ? $"Resmi Tatil ({holidayLabel})" : "Ödeme Bekliyor",
                         Amount = GetAppointmentFee(a),
                         IsCollected = false,
                         IsAppointmentFinished = true,
@@ -1823,10 +1823,11 @@ namespace HastaneRandevuSistemi.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
-            if (appointment.Doctor?.UserId != user?.Id)
+            if (appointment.Doctor == null || appointment.Doctor.UserId != user?.Id)
             {
                  return Forbid();
             }
+            var doctor = appointment.Doctor;
 
             // Tarihi gelmemiş randevulara reçete yazılamaz
             if (appointment.AppointmentDate > DateTime.Now.AddMinutes(5))
@@ -1840,8 +1841,8 @@ namespace HastaneRandevuSistemi.Controllers
                 AppointmentId = appointment.Id,
                 PatientName = appointment.PatientName,
                 PatientSurname = appointment.PatientSurname,
-                DoctorName = $"{appointment.Doctor.Title} {appointment.Doctor.Name} {appointment.Doctor.Surname}".Trim(),
-                DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty,
+                DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim(),
+                DepartmentName = doctor.Department?.Name ?? string.Empty,
                 PrescriptionDate = appointment.PrescriptionCreatedAt ?? DateTime.Now,
                 Diagnosis = appointment.PrescriptionDiagnosis ?? string.Empty,
                 Medications = appointment.PrescriptionMedications ?? string.Empty,
@@ -1868,7 +1869,8 @@ namespace HastaneRandevuSistemi.Controllers
             }
 
             var user = await _userManager.GetUserAsync(User);
-            if (appointment.Doctor?.UserId != user?.Id) return Forbid();
+            if (appointment.Doctor == null || appointment.Doctor.UserId != user?.Id) return Forbid();
+            var doctor = appointment.Doctor;
 
             // Tarihi gelmemiş randevulara reçete yazılamaz (Gelecek randevular)
             if (appointment.AppointmentDate > DateTime.Now.AddMinutes(5))
@@ -1879,8 +1881,8 @@ namespace HastaneRandevuSistemi.Controllers
 
             if (!ModelState.IsValid)
             {
-                model.DoctorName = $"{appointment.Doctor.Title} {appointment.Doctor.Name} {appointment.Doctor.Surname}".Trim();
-                model.DepartmentName = appointment.Doctor?.Department?.Name ?? string.Empty;
+                model.DoctorName = $"{doctor.Title} {doctor.Name} {doctor.Surname}".Trim();
+                model.DepartmentName = doctor.Department?.Name ?? string.Empty;
                 model.PatientName = appointment.PatientName;
                 model.PatientSurname = appointment.PatientSurname;
                 return View(model);
@@ -1890,6 +1892,8 @@ namespace HastaneRandevuSistemi.Controllers
             appointment.PrescriptionMedications = model.Medications.Trim();
             appointment.PrescriptionNotes = string.IsNullOrWhiteSpace(model.Notes) ? null : model.Notes.Trim();
             appointment.PrescriptionCreatedAt = DateTime.Now;
+            appointment.PrescriptionSentAt = null;
+            appointment.PrescriptionSentByName = null;
             
             // Eğer randevu henüz tamamlanmamışsa, reçete yazıldığında otomatik tamamla
             if (appointment.Status != AppointmentStatus.Tamamlandi)

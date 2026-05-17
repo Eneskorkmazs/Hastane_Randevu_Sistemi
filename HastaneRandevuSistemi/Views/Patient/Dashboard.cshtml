@@ -414,6 +414,84 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Hastane Değerlendirmem Section -->
+            <div class="row g-4 mt-1">
+                <div class="col-12">
+                    @if (Model.UserHospitalReview != null)
+                    {
+                        <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden bg-white">
+                            <div class="card-header bg-white p-4 border-bottom border-light d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="bg-warning-soft text-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 38px; height: 38px;">
+                                        <i class="fa-solid fa-star"></i>
+                                    </div>
+                                    <h6 class="fw-bold mb-0">Hastane Değerlendirmem</h6>
+                                </div>
+                                <span class="badge bg-success-soft text-success border border-success border-opacity-10 rounded-pill px-3 py-1 small">
+                                    Yayında
+                                </span>
+                            </div>
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div class="rating-stars">
+                                        @for (var i = 1; i <= 5; i++)
+                                        {
+                                            <i class="fa-solid fa-star @(i <= Model.UserHospitalReview.Rating ? "text-warning" : "text-secondary opacity-25")" style="font-size: 1.1rem;"></i>
+                                        }
+                                        <span class="fw-bold ms-2 text-dark">(@Model.UserHospitalReview.Rating / 5)</span>
+                                    </div>
+                                    <small class="text-muted">@Model.UserHospitalReview.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(Model.UserHospitalReview.Comment))
+                                {
+                                    <p class="text-muted small mb-3 p-3 bg-light rounded-4 border-start border-3 border-warning">
+                                        "@Model.UserHospitalReview.Comment"
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted small mb-3 italic">Yorum metni bırakılmadı, sadece puan verildi.</p>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(Model.UserHospitalReview.AdminReply))
+                                {
+                                    <div class="mt-3 p-3 bg-primary-soft rounded-4 border-start border-4 border-primary">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="fa-solid fa-hospital text-primary me-2"></i>
+                                            <strong class="text-dark small">Hastane Yönetimi Yanıtı</strong>
+                                            @if (Model.UserHospitalReview.AdminReplyDate.HasValue)
+                                            {
+                                                <span class="text-muted x-small ms-auto">@Model.UserHospitalReview.AdminReplyDate.Value.ToString("dd.MM.yyyy HH:mm")</span>
+                                            }
+                                        </div>
+                                        <p class="mb-0 small text-muted">@Model.UserHospitalReview.AdminReply</p>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-muted x-small italic mt-2">
+                                        <i class="fa-solid fa-clock me-1"></i> Hastane yönetimi henüz yanıt bırakmadı.
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="card border-0 shadow-sm rounded-4 mb-4 bg-primary-soft border border-primary border-opacity-10 overflow-hidden">
+                            <div class="card-body p-4 text-center">
+                                <div class="mb-3 text-primary display-6"><i class="fa-solid fa-comment-medical"></i></div>
+                                <h5 class="fw-bold mb-2">Hastane Değerlendirmesi Bırakın</h5>
+                                <p class="small text-muted mb-3">Hizmet kalitemizi geliştirmek ve diğer hastalara rehberlik etmek için hastanemizi değerlendirebilirsiniz.</p>
+                                <a href="/#features" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">
+                                    <i class="fa-solid fa-star me-2"></i>Değerlendirme Yap
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
         </div>
 
         <!-- Sidebar (Right) -->

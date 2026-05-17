@@ -297,6 +297,7 @@ namespace HastaneRandevuSistemi.Controllers
             return View();
         }
 
+        [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Logout()
         {
             await SignOutAndClearUserAsync();
