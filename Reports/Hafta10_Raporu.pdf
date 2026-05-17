@@ -1,32 +1,80 @@
 %PDF-1.4
 1 0 obj
-<</Type/Catalog/Pages 2 0 R>>
+<< /Type /Catalog /Pages 2 0 R >>
 endobj
 2 0 obj
-<</Type/Pages/Kids[3 0 R]/Count 1>>
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
 endobj
 3 0 obj
-<</Type/Page/Parent 2 0 R/MediaBox[0 0 595 842]/Resources<</Font<</F1 4 0 R>>>>/Contents 5 0 R>>
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>
 endobj
 4 0 obj
-<</Type/Font/Subtype/Type1/BaseFont/Helvetica/Encoding/MacRomanEncoding>>
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
 endobj
 5 0 obj
-<</Length 527>>
+<< /Length 2784 >>
 stream
-BT /F1 14 Tf 50 750 Td 20 TL (Hastane Randevu Sistemi - Hafta 10 Raporu) Tj T* (------------------------------------------------) Tj T* (Tarih: 30.04.2026) Tj T* (Durum: TAMAMLANDI) Tj T* () Tj T* (YAPILANLAR:) Tj T* (- Eczane Yonetimi ve Mesafe Hesaplama) Tj T* (- Geolocation API Entegrasyonu) Tj T* (- ENS Akilli Asistan Sohbet Arayuzu) Tj T* (- Hasta Paneli Modernizasyonu) Tj T* (- 30+ Eczane ve GPS Koordinatlari) Tj T* () Tj T* (Sonuc: Proje basariyla teslim edilmistir.) Tj T* () Tj T* (Gelistirici: Enes Korkmaz) Tj ET
+BT /F1 11 Tf 40 800 Td
+0 -16 Td (Hastane Randevu Sistemi \(HRS\)) Tj
+0 -16 Td (-------------------------------------------------------------) Tj
+0 -16 Td (10. HAFTA VE BUYUK FINAL RAPORU) Tj
+0 -16 Td (Tarih: 18 Mayis 2026) Tj
+0 -16 Td (Sorumlu Gelistirici: Enes Korkmaz) Tj
+0 -16 Td (Sistem Surumu: v1.0 Final Release) Tj
+0 -16 Td () Tj
+0 -16 Td (1. PROJE FINAL OZETI) Tj
+0 -16 Td (-------------------------------------------------------------) Tj
+0 -16 Td (10 haftalik gelistirme sureci sonunda Hastane Randevu Sistemi;) Tj
+0 -16 Td (temel randevu motorundan yapay zeka destekli semptom analizine,) Tj
+0 -16 Td (tarayici GPS'i kullanan eczane kesif modulunden cift katmanli) Tj
+0 -16 Td (hastane degerlendirme zirkina kadar tam donanimli bir saglik) Tj
+0 -16 Td (platformuna donusturulmustur.) Tj
+0 -16 Td () Tj
+0 -16 Td (2. HAFTA 10: ONE CIKAN SON GUNCELLEMELER) Tj
+0 -16 Td (-------------------------------------------------------------) Tj
+0 -16 Td (A\) Canli GPS Eczane Kesif Sistemi & Sanliurfa Genislemesi:) Tj
+0 -16 Td (Kullanici profilindeki adres kisitlamasi kaldirilarak tarayici) Tj
+0 -16 Td (GPS'i \(mevcut konum\) uzerinden anlik mesafe \(Haversine\) siralama) Tj
+0 -16 Td (ozelligi devreye alindi. Sanliurfa geneli icin 9 farkli eczane) Tj
+0 -16 Td (\(Karakopru, Siverek, Birecik, Viransehir, Eyyubiye\) tohumlandi.) Tj
+0 -16 Td () Tj
+0 -16 Td (B\) Cift Katmanli Hastane Degerlendirme Modulu:) Tj
+0 -16 Td (Hastalarin hastane hakkinda puan ve yorum birakabilecegi yeni) Tj
+0 -16 Td (modul eklendi. Mukerrer yorumlari engelleyen hem uygulama) Tj
+0 -16 Td (katmani hem de veritabani UNIQUE kisitlamasi devreye alindi.) Tj
+0 -16 Td () Tj
+0 -16 Td (C\) Yerellestirme ve Karakter Revizyonu \(Mojibake Fix\):) Tj
+0 -16 Td (Muhasebe tahsilat tablolari, bolum adlari, durum etiketleri ve) Tj
+0 -16 Td (duyurulardaki tum Turkce karakter bozulmalari temizlendi.) Tj
+0 -16 Td () Tj
+0 -16 Td (D\) Navbar Guvenlik Zirhi & Onbellek Yonetimi:) Tj
+0 -16 Td (Cikis sonrasi oturum cerezlerinin temizlenmesi ve geri tusuyla) Tj
+0 -16 Td (eski sayfalara erisilmesini onleyen NoStore onbellek politikalari) Tj
+0 -16 Td (tum sistem kontrolculerine uygulandi.) Tj
+0 -16 Td () Tj
+0 -16 Td (3. TEKNIK ALTYAPI VE STACK) Tj
+0 -16 Td (-------------------------------------------------------------) Tj
+0 -16 Td (Backend : .NET 8 Core, Entity Framework Core, ASP.NET Identity) Tj
+0 -16 Td (Frontend: Razor Views, Bootstrap 5, Vanilla JS, FontAwesome 6) Tj
+0 -16 Td (Veritabani: SQLite \(Gelistirme\) / PostgreSQL \(Uretim\)) Tj
+0 -16 Td (Araclar : Serilog, QRCoder, Geolocation API, iText) Tj
+0 -16 Td () Tj
+0 -16 Td (Proje tum hedefleriyle basariyla tamamlanmistir.) Tj
+0 -16 Td (HRS Hastane Randevu Sistemi \(c\) 2026 - Tum Haklari Saklidir.) Tj
+ET
+
 endstream
 endobj
 xref
 0 6
-0000000000 65535 f
-0000000009 00000 n
-0000000058 00000 n
-0000000107 00000 n
-0000000212 00000 n
-0000000302 00000 n
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000311 00000 n 
 trailer
-<</Size 6/Root 1 0 R>>
+<< /Size 6 /Root 1 0 R >>
 startxref
-0000000450
+3147
 %%EOF

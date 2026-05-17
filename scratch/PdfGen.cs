@@ -1,43 +1,72 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Text;
-using System.Globalization;
 
 public class Program {
     public static void Main() {
         var lines = new List<string> {
-            "Hastane Randevu Sistemi - Hafta 10 Final Raporu",
-            "-----------------------------------------------",
-            "Tarih: 30.04.2026",
-            "Durum: Tamamlandi",
+            "Hastane Randevu Sistemi (HRS)",
+            "-------------------------------------------------------------",
+            "10. HAFTA VE BUYUK FINAL RAPORU",
+            "Tarih: 18 Mayis 2026",
+            "Sorumlu Gelistirici: Enes Korkmaz",
+            "Sistem Surumu: v1.0 Final Release",
             "",
-            "Yapilan Calismalar:",
-            "1. Eczane Yonetimi ve Mesafe Hesaplama Sistemi",
-            "2. Geolocation API ile Canli Konum Takibi",
-            "3. ENS Akilli Asistan Sohbet Arayuzu",
-            "4. Hasta Paneli Modernizasyonu",
-            "5. Degerlendirme ve Yorum Sistemi",
-            "6. 30+ Eczane Verisi ve GPS Koordinatlari",
+            "1. PROJE FINAL OZETI",
+            "-------------------------------------------------------------",
+            "10 haftalik gelistirme sureci sonunda Hastane Randevu Sistemi;",
+            "temel randevu motorundan yapay zeka destekli semptom analizine,",
+            "tarayici GPS'i kullanan eczane kesif modulunden cift katmanli",
+            "hastane degerlendirme zirkina kadar tam donanimli bir saglik",
+            "platformuna donusturulmustur.",
             "",
-            "Sonuc: Proje 10 haftalik surec sonunda tum",
-            "fonksiyonlariyla basariyla tamamlanmistir.",
+            "2. HAFTA 10: ONE CIKAN SON GUNCELLEMELER",
+            "-------------------------------------------------------------",
+            "A) Canli GPS Eczane Kesif Sistemi & Sanliurfa Genislemesi:",
+            "Kullanici profilindeki adres kisitlamasi kaldirilarak tarayici",
+            "GPS'i (mevcut konum) uzerinden anlik mesafe (Haversine) siralama",
+            "ozelligi devreye alindi. Sanliurfa geneli icin 9 farkli eczane",
+            "(Karakopru, Siverek, Birecik, Viransehir, Eyyubiye) tohumlandi.",
             "",
-            "Gelistirici: Enes Korkmaz"
+            "B) Cift Katmanli Hastane Degerlendirme Modulu:",
+            "Hastalarin hastane hakkinda puan ve yorum birakabilecegi yeni",
+            "modul eklendi. Mukerrer yorumlari engelleyen hem uygulama",
+            "katmani hem de veritabani UNIQUE kisitlamasi devreye alindi.",
+            "",
+            "C) Yerellestirme ve Karakter Revizyonu (Mojibake Fix):",
+            "Muhasebe tahsilat tablolari, bolum adlari, durum etiketleri ve",
+            "duyurulardaki tum Turkce karakter bozulmalari temizlendi.",
+            "",
+            "D) Navbar Guvenlik Zirhi & Onbellek Yonetimi:",
+            "Cikis sonrasi oturum cerezlerinin temizlenmesi ve geri tusuyla",
+            "eski sayfalara erisilmesini onleyen NoStore onbellek politikalari",
+            "tum sistem kontrolculerine uygulandi.",
+            "",
+            "3. TEKNIK ALTYAPI VE STACK",
+            "-------------------------------------------------------------",
+            "Backend : .NET 8 Core, Entity Framework Core, ASP.NET Identity",
+            "Frontend: Razor Views, Bootstrap 5, Vanilla JS, FontAwesome 6",
+            "Veritabani: SQLite (Gelistirme) / PostgreSQL (Uretim)",
+            "Araclar : Serilog, QRCoder, Geolocation API, iText",
+            "",
+            "Proje tum hedefleriyle basariyla tamamlanmistir.",
+            "HRS Hastane Randevu Sistemi (c) 2026 - Tum Haklari Saklidir."
         };
         byte[] pdf = GeneratePdf(lines);
         File.WriteAllBytes(@"c:\Users\Enes\Desktop\Hastane_Randevu_Sistemi-main\HastaneRandevuSistemi (2)\HastaneRandevuSistemi\Reports\Hafta10_Raporu.pdf", pdf);
+        Console.WriteLine("Hafta10_Raporu.pdf basariyla uretildi.");
     }
 
     private static byte[] GeneratePdf(List<string> lines) {
         StringBuilder sb = new StringBuilder();
-        sb.AppendLine("BT /F1 12 Tf 50 800 Td");
+        sb.AppendLine("BT /F1 11 Tf 40 800 Td");
         foreach (var line in lines) {
-            sb.AppendLine("0 -18 Td (" + line.Replace("(", "\\(").Replace(")", "\\)") + ") Tj");
+            sb.AppendLine("0 -16 Td (" + line.Replace("\\", "\\\\").Replace("(", "\\(").Replace(")", "\\)") + ") Tj");
         }
         sb.AppendLine("ET");
         string stream = sb.ToString();
-        string content = "<< /Length " + stream.Length + " >>\nstream\n" + stream + "endstream";
+        string content = "<< /Length " + stream.Length + " >>\nstream\n" + stream + "\nendstream";
         
         string[] objects = {
             "<< /Type /Catalog /Pages 2 0 R >>",
