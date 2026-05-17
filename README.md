@@ -67,16 +67,16 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 
 | Hafta | Konu | Rapor Bağlantısı |
 |:---:|:---|:---|
-| 1 | Model sınıfları, Data Annotation, Ana sayfa UI/UX | [📄 Hafta 1 Raporu](Reports/Hafta1_Raporu.html) |
-| 2 | Hasta paneli, Profil güncelleme, Bildirim altyapısı | [📄 Hafta 2 Raporu](Reports/Hafta2_Raporu.html) |
-| 3 | Doktor paneli, Çalışma takvimi, Reçete temel yapısı | [📄 Hafta 3 Raporu](Reports/Hafta3_Raporu.html) |
-| 4 | Admin grafik/istatistik ekranları, Raporlama sistemi | [📄 Hafta 4 Raporu](Reports/Hafta4_Raporu.html) |
-| 5 | Gelişmiş arama/filtreleme, UX iyileştirmeleri | [📄 Hafta 5 Raporu](Reports/Hafta5_Raporu.html) |
-| 6 | API katmanı, Tahsilat sayfası, Randevu fiyat alanı | [📄 Hafta 6 Raporu](Reports/Hafta6_Raporu.html) |
-| 7 | Dosya yükleme, Tıbbi geçmiş modülü, Dijital reçete | [📄 Hafta 7 Raporu](Reports/Hafta7_Raporu.html) |
-| 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 Hafta 8 Raporu](Reports/Hafta8_Raporu.html) |
-| 9 | AI Semptom Kontrolcüsü, QR Kod, Reçete PDF, Serilog, Testler | [📄 Hafta 9 Raporu](Reports/Hafta9_Raporu.html) |
-| **10** | **Final: Eczane GPS Sistemi, Çift Katmanlı Değerlendirme, Güvenlik Zırhı** | [📄 Final Raporu](Reports/Hafta10_Raporu.html) |
+| 1 | Model sınıfları, Data Annotation, Ana sayfa UI/UX | [📄 HTML](Reports/Hafta1_Raporu.html) - [📥 PDF](Reports/Hafta1_Raporu.pdf) |
+| 2 | Hasta paneli, Profil güncelleme, Bildirim altyapısı | [📄 HTML](Reports/Hafta2_Raporu.html) - [📥 PDF](Reports/Hafta2_Raporu.pdf) |
+| 3 | Doktor paneli, Çalışma takvimi, Reçete temel yapısı | [📄 HTML](Reports/Hafta3_Raporu.html) - [📥 PDF](Reports/Hafta3_Raporu.pdf) |
+| 4 | Admin grafik/istatistik ekranları, Raporlama sistemi | [📄 HTML](Reports/Hafta4_Raporu.html) - [📥 PDF](Reports/Hafta4_Raporu.pdf) |
+| 5 | Gelişmiş arama/filtreleme, UX iyileştirmeleri | [📄 HTML](Reports/Hafta5_Raporu.html) - [📥 PDF](Reports/Hafta5_Raporu.pdf) |
+| 6 | API katmanı, Tahsilat sayfası, Randevu fiyat alanı | [📄 HTML](Reports/Hafta6_Raporu.html) - [📥 PDF](Reports/Hafta6_Raporu.pdf) |
+| 7 | Dosya yükleme, Tıbbi geçmiş modülü, Dijital reçete | [📄 HTML](Reports/Hafta7_Raporu.html) - [📥 PDF](Reports/Hafta7_Raporu.pdf) |
+| 8 | Güvenlik (CSRF/XSS), Caching, Dark Mode | [📄 HTML](Reports/Hafta8_Raporu.html) - [📥 PDF](Reports/Hafta8_Raporu.pdf) |
+| 9 | AI Semptom Kontrolcüsü, QR Kod, Reçete PDF, Serilog, Testler | [📄 HTML](Reports/Hafta9_Raporu.html) - [📥 PDF](Reports/Hafta9_Raporu.pdf) |
+| **10** | **Final: Eczane GPS Sistemi, Çift Katmanlı Değerlendirme, Güvenlik Zırhı** | [📄 Final HTML](Reports/Hafta10_Raporu.html) - [📥 Final PDF](Reports/Hafta10_Raporu.pdf) |
 
 - [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
 
