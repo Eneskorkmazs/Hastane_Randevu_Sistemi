@@ -63,8 +63,6 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 - **Çift Katmanlı Hastane Değerlendirme Modülü**: Hastaların hastane hakkında tek seferlik yorum ve puan bırakabileceği, adminin yanıtlayabileceği, hem uygulama hem de UNIQUE constraint ile korunan sistem eklendi.
 - **Navbar Güvenlik Zırhı ve Cache Fix**: Çıkış sonrası linklerin ve sayfaların temizlenmesini garanti altına alan `isAuthenticated` kontrolleri ve NoStore politikaları uygulandı.
 - **Yerelleştirme ve Kodlama Revizyonu**: Sistem genelinde (Muhasebe tahsilat tabloları, bölüm adları, durum etiketleri) görülen tüm Türkçe karakter bozulmaları (mojibake) temizlendi.
-
-### Hafta 11
 - **Çift Destek Talebi Hatası Giderildi**: Hasta tarafından tek destek talebi gönderildiğinde admin panelinde iki aynı bildirimin düşmesine neden olan hata tespit edildi ve düzeltildi.
   - `PatientController.SubmitSupportRequest` metodunda `HashSet<string>` kullanılarak admin ID'leri tekilleştirildi.
   - DB'de iki farklı Admin hesabının (`admin@havatakip.com.tr`, `admin@hastane.com`) aynı anda Admin rolünde olduğu tespit edildi; `admin@hastane.com` Admin rolünden çıkarıldı.
