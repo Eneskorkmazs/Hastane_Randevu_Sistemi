@@ -87,7 +87,6 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 ### 📊 Özet / Genel Raporlar
 
 - [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
-- [📄 Son 5 Hafta Genel Rapor (PDF)](Reports/Son5Hafta_Genel_Rapor.pdf)
 
 ## 🔐 Sistem Rolleri
 - `Admin`
