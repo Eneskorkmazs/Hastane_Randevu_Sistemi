@@ -107,9 +107,12 @@
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <div>
-                            <h5 class="fw-bold mb-1">Son Bildirimler</h5>
+                            <h5 class="fw-bold mb-1">Son Bildirimler & Destek Talepleri</h5>
                             <p class="text-muted small mb-0">Sadece hızlı takip için son sistem hareketleri.</p>
                         </div>
+                        <a asp-action="AdminNotifications" class="btn btn-sm btn-outline-primary rounded-pill fw-bold px-3">
+                            Tümünü Yönet
+                        </a>
                     </div>
 
                     @if (!Model.LatestNotifications.Any())
@@ -121,19 +124,34 @@
                         <div class="list-group list-group-flush">
                             @foreach (var item in Model.LatestNotifications.Take(5))
                             {
-                                <div class="list-group-item px-0 py-3 d-flex justify-content-between align-items-start gap-3">
+                                var isUnread = !item.IsRead;
+                                var badgeBg = item.Type == "Destek" ? "bg-danger" : item.Type == "Duyuru" ? "bg-info" : item.Type == "Uyarı" ? "bg-warning" : "bg-primary";
+
+                                <div id="dash-notification-@item.Id" class="list-group-item px-0 py-3 d-flex justify-content-between align-items-start gap-3 @(isUnread ? "bg-primary-soft px-3 rounded-3 mb-1" : "")">
                                     <div>
-                                        <div class="d-flex gap-2 align-items-center">
-                                            <span class="badge bg-light text-dark border">@item.Type</span>
-                                            <strong>@item.Title</strong>
+                                        <div class="d-flex gap-2 align-items-center mb-1">
+                                            <span class="badge @badgeBg text-white border">@item.Type</span>
+                                            <strong class="text-dark">@item.Title</strong>
+                                            @if (isUnread)
+                                            {
+                                                <span class="badge bg-danger rounded-circle p-1" title="Okunmadı"><span class="visually-hidden">Okunmadı</span></span>
+                                            }
                                         </div>
-                                        <p class="mb-1 text-muted small">@item.Message</p>
-                                        <small class="text-secondary">@item.CreatedDate.ToString("dd.MM.yyyy HH:mm")</small>
+                                        <p class="mb-1 text-muted small" style="white-space: pre-line;">@item.Message</p>
+                                        <small class="text-secondary"><i class="fa-solid fa-calendar-days me-1"></i> @item.CreatedDate.ToString("dd.MM.yyyy HH:mm")</small>
                                     </div>
-                                    @if (!string.IsNullOrWhiteSpace(item.Link))
-                                    {
-                                        <a href="@item.Link" class="btn btn-sm btn-light rounded-pill">Git</a>
-                                    }
+                                    <div class="d-flex gap-2 flex-shrink-0 align-items-center">
+                                        @if (isUnread)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 fw-bold dash-mark-read-btn" data-id="@item.Id">
+                                                <i class="fa-solid fa-check me-1"></i> Okundu
+                                            </button>
+                                        }
+                                        @if (!string.IsNullOrWhiteSpace(item.Link))
+                                        {
+                                            <a href="@item.Link" class="btn btn-sm btn-light rounded-pill px-3 fw-bold"><i class="fa-solid fa-link me-1"></i> Git</a>
+                                        }
+                                    </div>
                                 </div>
                             }
                         </div>
@@ -306,3 +324,43 @@
         line-height: 1.35;
     }
 </style>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+
+            document.querySelectorAll('.dash-mark-read-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const row = document.getElementById('dash-notification-' + id);
+
+                    fetch('@Url.Action("MarkAdminNotificationRead", "Home")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'RequestVerificationToken': token
+                        },
+                        body: new URLSearchParams({ id: id })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (row) { row.classList.remove('bg-primary-soft', 'px-3', 'rounded-3', 'mb-1'); }
+                            this.remove();
+                            const badge = document.getElementById('adminNotificationBadge');
+                            if (badge) {
+                                let count = parseInt(badge.textContent || '0') - 1;
+                                if (count <= 0) { badge.style.display = 'none'; }
+                                else { badge.textContent = count; }
+                            }
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+}

@@ -49,7 +49,7 @@ namespace HastaneRandevuSistemi.Controllers
             _userManager = userManager;
         }
 
-        // 1. ANA SAYFA (VÄ°TRÄ°N) - Herkes GÃ¶rebilir
+        // 1. ANA SAYFA (VİTRİN) - Herkes Görebilir
         [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
         public async Task<IActionResult> Index()
         {
@@ -235,6 +235,118 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> AdminNotifications()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Challenge();
+
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == user.Id || n.Type == "Destek")
+                .OrderByDescending(n => n.CreatedDate)
+                .ToListAsync();
+
+            return View(notifications);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAdminNotificationRead(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && (n.UserId == user.Id || n.Type == "Destek"));
+            if (notification != null && !notification.IsRead)
+            {
+                notification.IsRead = true;
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteAdminNotification(int id)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && (n.UserId == user.Id || n.Type == "Destek"));
+            if (notification != null)
+            {
+                _context.Notifications.Remove(notification);
+                await _context.SaveChangesAsync();
+            }
+
+            return Json(new { success = true });
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReplySupportRequest(int id, string replyMessage, [FromServices] EmailService emailService)
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Unauthorized();
+
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && (n.UserId == user.Id || n.Type == "Destek"));
+            if (notification == null)
+            {
+                return Json(new { success = false, message = "Bildirim bulunamadı." });
+            }
+
+            var trimmedReply = (replyMessage ?? string.Empty).Trim();
+            if (string.IsNullOrWhiteSpace(trimmedReply))
+            {
+                return Json(new { success = false, message = "Yanıt mesajı boş olamaz." });
+            }
+
+            string? patientEmail = null;
+            var match = System.Text.RegularExpressions.Regex.Match(notification.Message, @"\(([^)]+@[^)]+)\)");
+            if (match.Success)
+            {
+                patientEmail = match.Groups[1].Value.Trim();
+            }
+
+            if (!string.IsNullOrWhiteSpace(patientEmail))
+            {
+                var patient = await _userManager.FindByEmailAsync(patientEmail);
+                if (patient != null)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId = patient.Id,
+                        Title = $"Destek Talebi Yanıtı: {notification.Title.Replace("Destek Talebi: ", "")}",
+                        Message = $"Destek ekibimiz talebinizi yanıtladı:\n\n{trimmedReply}",
+                        Type = "Bilgi",
+                        CreatedDate = DateTime.Now,
+                        IsRead = false
+                    });
+                }
+
+                var emailBody = $"<p>Merhaba,</p><p><b>{notification.Title}</b> konulu destek talebiniz yanıtlandı:</p><blockquote style='border-left: 3px solid #0d6efd; padding-left: 10px; margin: 10px 0;'>{trimmedReply}</blockquote><p>Sağlıklı günler dileriz.</p>";
+                await emailService.SendEmailAsync(patientEmail, $"Destek Talebi Yanıtı: {notification.Title}", emailBody);
+            }
+            else
+            {
+                return Json(new { success = false, message = "Hasta e-posta adresi bildirim detayından çıkarılamadı." });
+            }
+
+            if (!notification.IsRead)
+            {
+                notification.IsRead = true;
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
+
+
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> AdminAnalytics()
         {
             await AppointmentStatusSync.CompleteExpiredAppointmentsAsync(_context);
@@ -373,7 +485,7 @@ namespace HastaneRandevuSistemi.Controllers
             var review = await _context.HospitalReviews.FirstOrDefaultAsync(r => r.Id == id);
             if (review == null)
             {
-                TempData["ErrorMessage"] = "Silinecek yorum bulunamadÄ±.";
+                TempData["ErrorMessage"] = "Silinecek yorum bulunamadı.";
                 return RedirectToAction(nameof(AdminHospitalReviews));
             }
 
@@ -391,20 +503,20 @@ namespace HastaneRandevuSistemi.Controllers
             var review = await _context.HospitalReviews.FirstOrDefaultAsync(r => r.Id == id);
             if (review == null)
             {
-                TempData["ErrorMessage"] = "YanÄ±tlanacak yorum bulunamadÄ±.";
+                TempData["ErrorMessage"] = "Yanıtlanacak yorum bulunamadı.";
                 return RedirectToAction(nameof(AdminHospitalReviews));
             }
 
             var trimmedReply = (reply ?? string.Empty).Trim();
             if (string.IsNullOrWhiteSpace(trimmedReply))
             {
-                TempData["ErrorMessage"] = "YanÄ±t boÅŸ olamaz.";
+                TempData["ErrorMessage"] = "Yanıt boş olamaz.";
                 return RedirectToAction(nameof(AdminHospitalReviews));
             }
 
             if (trimmedReply.Length > 1000)
             {
-                TempData["ErrorMessage"] = "YanÄ±t en fazla 1000 karakter olabilir.";
+                TempData["ErrorMessage"] = "Yanıt en fazla 1000 karakter olabilir.";
                 return RedirectToAction(nameof(AdminHospitalReviews));
             }
 
@@ -412,7 +524,7 @@ namespace HastaneRandevuSistemi.Controllers
             review.AdminReplyDate = DateTime.Now;
 
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "YanÄ±t baÅŸarÄ±yla gÃ¶nderildi.";
+            TempData["SuccessMessage"] = "Yanıt başarıyla gönderildi.";
             return RedirectToAction(nameof(AdminHospitalReviews));
         }
 

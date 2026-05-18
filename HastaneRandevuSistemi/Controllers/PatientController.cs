@@ -583,6 +583,75 @@ namespace HastaneRandevuSistemi.Controllers
             }
         }
 
+        [HttpGet]
+        public IActionResult Help()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SubmitSupportRequest(string subject, string message)
+        {
+            var trimmedSubject = (subject ?? string.Empty).Trim();
+            var trimmedMessage = (message ?? string.Empty).Trim();
+
+            if (string.IsNullOrWhiteSpace(trimmedSubject) || string.IsNullOrWhiteSpace(trimmedMessage))
+            {
+                TempData["ErrorMessage"] = "Lütfen konu başlığı ve mesaj alanlarını eksiksiz doldurun.";
+                return RedirectToAction(nameof(Help));
+            }
+
+            var currentUser = await _userManager.GetUserAsync(User);
+            var senderInfo = currentUser != null ? $"{currentUser.Name} {currentUser.Surname} ({currentUser.Email})" : "Kayıtlı Hasta";
+
+            var admins = await _userManager.GetUsersInRoleAsync("Admin");
+            // Tekrarlı kayıt oluşmaması için benzersiz admin ID'leri kullan
+            var seenAdminIds = new HashSet<string>();
+            var adminList = admins
+                .Where(a => seenAdminIds.Add(a.Id))
+                .ToList();
+
+            if (!adminList.Any())
+            {
+                var defaultAdmin = await _userManager.FindByEmailAsync("admin@havatakip.com.tr");
+                if (defaultAdmin != null)
+                {
+                    adminList.Add(defaultAdmin);
+                }
+            }
+
+            foreach (var admin in adminList)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = admin.Id,
+                    Title = $"Destek Talebi: {trimmedSubject}",
+                    Message = $"{senderInfo}: {trimmedMessage}",
+                    Type = "Destek",
+                    CreatedDate = DateTime.Now,
+                    IsRead = false
+                });
+            }
+
+            if (currentUser != null)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId = currentUser.Id,
+                    Title = $"Destek Talebiniz Alındı: {trimmedSubject}",
+                    Message = $"Mesajınız destek ekibimize ulaştı. En kısa sürede sizinle iletişime geçilecektir. Mesajınız: {trimmedMessage}",
+                    Type = "Bilgi",
+                    CreatedDate = DateTime.Now,
+                    IsRead = false
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["SuccessMessage"] = "Destek talebiniz başarıyla alındı. İlgili birimlerimiz en kısa sürede sizinle iletişime geçecektir.";
+            return RedirectToAction(nameof(Help));
+        }
+
         private bool IsValidFile(IFormFile file)
         {
             var extension = Path.GetExtension(file.FileName).ToLowerInvariant();

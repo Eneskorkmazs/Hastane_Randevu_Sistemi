@@ -1,0 +1,657 @@
+@{
+    ViewData["Title"] = "Yardım & Rehber";
+}
+
+<div class="container-fluid px-md-4 py-4">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm p-4 mb-4 text-center" role="alert">
+            <i class="fa-solid fa-circle-check fa-2x text-success mb-2"></i>
+            <h5 class="fw-bold text-dark">İşlem Başarılı</h5>
+            <p class="text-muted small mb-0">@TempData["SuccessMessage"]</p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm p-4 mb-4 text-center" role="alert">
+            <i class="fa-solid fa-triangle-exclamation fa-2x text-danger mb-2"></i>
+            <h5 class="fw-bold text-dark">Hata Oluştu</h5>
+            <p class="text-muted small mb-0">@TempData["ErrorMessage"]</p>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Kapat"></button>
+        </div>
+    }
+    <!-- Hero Section with Search -->
+    <div class="card border-0 rounded-4 shadow-sm overflow-hidden mb-5" style="background: linear-gradient(135deg, #0d6efd 0%, #052c65 100%);">
+        <div class="card-body p-4 p-md-5 position-relative text-center">
+            <div class="max-w-3xl mx-auto position-relative z-1">
+                <span class="badge bg-white bg-opacity-10 text-white rounded-pill px-3 py-2 fw-normal mb-3 shadow-sm" style="backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1);">
+                    <i class="fa-solid fa-circle-question me-2 text-warning"></i> Hasta Yardım Merkezi & Kullanım Rehberi
+                </span>
+                <h1 class="fw-bold text-white mb-3 display-5">Size Nasıl Yardımcı Olabiliriz?</h1>
+                <p class="text-white opacity-75 mb-4 lead fw-light">
+                    Uygulamamızın nasıl çalıştığını öğrenin, sıkça sorulan sorulara göz atın veya aradığınız konuyu hızlıca bulun.
+                </p>
+                
+                <!-- Live Search Box -->
+                <div class="row justify-content-center">
+                    <div class="col-md-9 col-lg-8">
+                        <div class="input-group input-group-lg shadow-lg rounded-pill overflow-hidden bg-white p-1">
+                            <span class="input-group-text bg-transparent border-0 text-primary ps-4">
+                                <i class="fa-solid fa-magnifying-glass"></i>
+                            </span>
+                            <input type="text" id="helpSearchInput" class="form-control border-0 shadow-none ps-2" placeholder="Randevu alma, muayene ücreti, şifre sıfırlama, eczane...">
+                            <button class="btn btn-primary rounded-pill px-4 fw-bold m-1" type="button" onclick="focusSearch()">Ara</button>
+                        </div>
+                        <div class="text-white-50 x-small mt-2 text-center">
+                            <span class="fw-semibold text-white">Popüler aramalar:</span> Randevu İptali, Akıllı Asistan ENS, Nöbetçi Eczane, SGK Geçerliliği
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- No Results Alert -->
+    <div id="noResultsAlert" class="alert alert-warning rounded-4 shadow-sm p-4 text-center mb-5" style="display: none;">
+        <i class="fa-solid fa-triangle-exclamation fa-2x text-warning mb-2"></i>
+        <h5 class="fw-bold text-dark">Aramanızla Eşleşen Sonuç Bulunamadı</h5>
+        <p class="text-muted small mb-0">Lütfen farklı anahtar kelimeler deneyin veya aşağıdaki iletişim kanallarından bize ulaşın.</p>
+    </div>
+
+    <!-- SECTION 1: Uygulama Nasıl Çalışır? (Hızlı Rehber Kartları) -->
+    <div class="mb-5 help-section" id="guideSection">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <div class="bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                <i class="fa-solid fa-wand-magic-sparkles fa-lg"></i>
+            </div>
+            <div>
+                <h3 class="fw-bold mb-0">Uygulama Nasıl Çalışır?</h3>
+                <p class="text-muted small mb-0">Sistemimizi en verimli şekilde kullanmanız için adım adım rehber</p>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Card 1: Randevu Alma -->
+            <div class="col-md-6 col-lg-3 help-item" data-tags="randevu al yeni muayene doktor bölüm takvim tarih saat">
+                <div class="card border-0 shadow-sm rounded-4 h-100 p-4 guide-card transition-all hover-shadow bg-white position-relative overflow-hidden">
+                    <div class="position-absolute top-0 end-0 p-3 opacity-10">
+                        <i class="fa-solid fa-calendar-check fa-4x text-primary"></i>
+                    </div>
+                    <div class="icon-box bg-primary-soft text-primary rounded-4 mb-3" style="width: 55px; height: 55px; font-size: 1.5rem;">
+                        <i class="fa-solid fa-calendar-plus"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">1. Kolay Randevu Alma</h5>
+                    <p class="text-muted small mb-3 flex-grow-1">
+                        <strong>"Randevu Al"</strong> menüsünden istediğiniz bölümü ve uzman doktoru seçin. Size en uygun tarih ve saati belirleyerek saniyeler içinde randevunuzu oluşturun.
+                    </p>
+                    <div class="pt-2 border-top border-light mt-auto">
+                        <a asp-controller="Appointment" asp-action="Create" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold w-100">
+                            Randevu Al <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Akıllı Asistan ENS -->
+            <div class="col-md-6 col-lg-3 help-item" data-tags="ens yapay zeka ai akıllı asistan semptom şikayet hastalık branş öneri robot">
+                <div class="card border-0 shadow-sm rounded-4 h-100 p-4 guide-card transition-all hover-shadow bg-white position-relative overflow-hidden">
+                    <div class="position-absolute top-0 end-0 p-3 opacity-10">
+                        <i class="fa-solid fa-robot fa-4x text-success"></i>
+                    </div>
+                    <div class="icon-box bg-success-soft text-success rounded-4 mb-3" style="width: 55px; height: 55px; font-size: 1.5rem;">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">2. Akıllı Asistan ENS</h5>
+                    <p class="text-muted small mb-3 flex-grow-1">
+                        Hangi bölüme gitmeniz gerektiğinden emin değil misiniz? <strong>Akıllı Asistan ENS</strong>'ye şikayetinizi yazın, yapay zeka size en uygun branşı anında önersin.
+                    </p>
+                    <div class="pt-2 border-top border-light mt-auto">
+                        <a asp-controller="Symptom" asp-action="Index" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold w-100">
+                            ENS'yi Dene <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3: Nöbetçi Eczaneler -->
+            <div class="col-md-6 col-lg-3 help-item" data-tags="eczane nöbetçi ilaç konum harita gps il ilçe arama bulma">
+                <div class="card border-0 shadow-sm rounded-4 h-100 p-4 guide-card transition-all hover-shadow bg-white position-relative overflow-hidden">
+                    <div class="position-absolute top-0 end-0 p-3 opacity-10">
+                        <i class="fa-solid fa-staff-snake fa-4x text-warning"></i>
+                    </div>
+                    <div class="icon-box bg-warning-soft text-warning rounded-4 mb-3" style="width: 55px; height: 55px; font-size: 1.5rem;">
+                        <i class="fa-solid fa-staff-snake"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">3. Nöbetçi Eczaneler</h5>
+                    <p class="text-muted small mb-3 flex-grow-1">
+                        Acil ilaç ihtiyaçlarınız için <strong>"Eczaneler"</strong> sayfasına göz atın. Konumunuza en yakın veya seçtiğiniz il/ilçedeki nöbetçi eczaneleri harita üzerinde anında görün.
+                    </p>
+                    <div class="pt-2 border-top border-light mt-auto">
+                        <a asp-controller="Patient" asp-action="Pharmacies" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-bold w-100">
+                            Eczaneleri Gör <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 4: Sağlık Geçmişi & Reçeteler -->
+            <div class="col-md-6 col-lg-3 help-item" data-tags="sağlık geçmişi tıbbi kayıt reçete pdf tahlil tanı teşhis rapor inceleme">
+                <div class="card border-0 shadow-sm rounded-4 h-100 p-4 guide-card transition-all hover-shadow bg-white position-relative overflow-hidden">
+                    <div class="position-absolute top-0 end-0 p-3 opacity-10">
+                        <i class="fa-solid fa-file-medical fa-4x text-info"></i>
+                    </div>
+                    <div class="icon-box bg-info-soft text-info rounded-4 mb-3" style="width: 55px; height: 55px; font-size: 1.5rem;">
+                        <i class="fa-solid fa-file-prescription"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2">4. Sağlık Geçmişi & Reçeteler</h5>
+                    <p class="text-muted small mb-3 flex-grow-1">
+                        Geçmiş muayeneleriniz, doktor notları, konulan tanılar ve adınıza yazılan e-reçeteler tek tıkla elinizin altında. Reçetelerinizi PDF olarak indirebilirsiniz.
+                    </p>
+                    <div class="pt-2 border-top border-light mt-auto">
+                        <a asp-controller="Patient" asp-action="MedicalHistory" class="btn btn-sm btn-outline-info rounded-pill px-3 fw-bold w-100">
+                            Geçmişimi İncele <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 2: Sıkça Sorulan Sorular (SSS) -->
+    <div class="mb-5 help-section" id="faqSection">
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <div class="bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 42px; height: 42px;">
+                <i class="fa-solid fa-comments-question fa-lg"></i>
+            </div>
+            <div>
+                <h3 class="fw-bold mb-0">Sıkça Sorulan Sorular</h3>
+                <p class="text-muted small mb-0">Aklınıza takılan tüm soruların detaylı yanıtları</p>
+            </div>
+        </div>
+
+        <!-- FAQ Category Tabs -->
+        <ul class="nav nav-pills mb-4 gap-2 faq-tabs" id="faqTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active rounded-pill px-4 fw-bold shadow-sm" id="all-tab" data-bs-toggle="pill" data-bs-target="#faq-all" type="button" role="tab">
+                    <i class="fa-solid fa-layer-group me-1"></i> Tüm Sorular
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 fw-bold shadow-sm" id="randevu-tab" data-bs-toggle="pill" data-bs-target="#faq-randevu" type="button" role="tab">
+                    <i class="fa-solid fa-calendar-days me-1"></i> Randevu İşlemleri
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 fw-bold shadow-sm" id="ucret-tab" data-bs-toggle="pill" data-bs-target="#faq-ucret" type="button" role="tab">
+                    <i class="fa-solid fa-turkish-lira-sign me-1"></i> Ücretler & SGK
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link rounded-pill px-4 fw-bold shadow-sm" id="hesap-tab" data-bs-toggle="pill" data-bs-target="#faq-hesap" type="button" role="tab">
+                    <i class="fa-solid fa-user-gear me-1"></i> Hesap & Teknik
+                </button>
+            </li>
+        </ul>
+
+        <!-- FAQ Tab Contents -->
+        <div class="tab-content" id="faqTabContent">
+            <!-- TAB 1: Tüm Sorular -->
+            <div class="tab-pane fade show active" id="faq-all" role="tabpanel">
+                <div class="accordion shadow-sm rounded-4 overflow-hidden" id="accordionAll">
+                    
+                    <!-- SSS 1 -->
+                    <div class="accordion-item border-0 border-bottom help-item" data-tags="randevu iptal silme değiştirme saat tarih vazgeçme">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAll1">
+                                <i class="fa-solid fa-circle-question text-primary me-2"></i> Randevumu nasıl iptal edebilirim veya değiştirebilirim?
+                            </button>
+                        </h2>
+                        <div id="collapseAll1" class="accordion-collapse collapse show" data-bs-parent="#accordionAll">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Randevunuzu iptal etmek için üst menüden veya kullanıcı menüsünden <strong>"Randevularım"</strong> sayfasına gidin. İlgili randevunun yanındaki <strong>"İptal Et"</strong> butonuna tıklamanız yeterlidir. Randevu saatinize en geç 1 saat kala iptal işlemini gerçekleştirmeniz gerekmektedir. Değişiklik yapmak için mevcut randevunuzu iptal edip yeni bir randevu oluşturabilirsiniz.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SSS 2 -->
+                    <div class="accordion-item border-0 border-bottom help-item" data-tags="muayene ücreti sgk sigorta para fiyat ödeme tahlil">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAll2">
+                                <i class="fa-solid fa-circle-question text-primary me-2"></i> Muayene ücretleri ne kadar? SGK geçerli mi?
+                            </button>
+                        </h2>
+                        <div id="collapseAll2" class="accordion-collapse collapse" data-bs-parent="#accordionAll">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Hastanemizde SGK (SSK, Bağ-Kur, Emekli Sandığı) ve anlaşmalı özel sağlık sigortaları geçerlidir. Panelinizdeki <strong>"Bölüm Muayene Ücretleri"</strong> tablosunda belirtilen tutarlar yaklaşık özel muayene taban ücretleridir. SGK güvenceniz varsa yasalarca belirlenen katılım payı uygulanır. Yapılacak ek tahlil, röntgen ve tetkikler ücrete tabidir.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SSS 3 -->
+                    <div class="accordion-item border-0 border-bottom help-item" data-tags="aynı gün kaç randevu sınır limit kural">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAll3">
+                                <i class="fa-solid fa-circle-question text-primary me-2"></i> Aynı gün içinde kaç farklı bölüme randevu alabilirim?
+                            </button>
+                        </h2>
+                        <div id="collapseAll3" class="accordion-collapse collapse" data-bs-parent="#accordionAll">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Hastane kurallarımız ve yoğunluğun önlenmesi amacıyla bir hasta aynı gün içinde en fazla <strong>2 farklı bölüme</strong> randevu alabilir. Aynı bölüme ise günde yalnızca 1 kez randevu oluşturulabilir.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SSS 4 -->
+                    <div class="accordion-item border-0 border-bottom help-item" data-tags="şifre unuttum sıfırlama değiştirme email eposta parola">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAll4">
+                                <i class="fa-solid fa-circle-question text-primary me-2"></i> Şifremi unuttum veya değiştirmek istiyorum, ne yapmalıyım?
+                            </button>
+                        </h2>
+                        <div id="collapseAll4" class="accordion-collapse collapse" data-bs-parent="#accordionAll">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Şifrenizi unuttuysanız giriş sayfasındaki <strong>"Şifremi Unuttum"</strong> bağlantısına tıklayarak e-posta adresinize sıfırlama linki gönderebilirsiniz. Sisteme giriş yaptıktan sonra şifrenizi değiştirmek isterseniz <strong>Profilim > Şifre Değiştir</strong> menüsünü kullanabilirsiniz.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SSS 5 -->
+                    <div class="accordion-item border-0 border-bottom help-item" data-tags="reçete pdf indirme ilaç barkod e-reçete çıktı">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAll5">
+                                <i class="fa-solid fa-circle-question text-primary me-2"></i> Reçetelerimi ve tahlil sonuçlarımı nasıl görebilirim?
+                            </button>
+                        </h2>
+                        <div id="collapseAll5" class="accordion-collapse collapse" data-bs-parent="#accordionAll">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Doktorunuzun muayene sonrasında oluşturduğu reçetelere <strong>"Sağlık Geçmişim"</strong> veya <strong>"Reçeteler"</strong> sayfasından ulaşabilirsiniz. İlgili reçetenin yanındaki <strong>"PDF İndir"</strong> butonuna tıklayarak reçetenizi cihazınıza kaydedebilir veya eczaneye doğrudan bu belgeyi gösterebilirsiniz.
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SSS 6 -->
+                    <div class="accordion-item border-0 help-item" data-tags="ens akıllı asistan yapay zeka yanlış bölüm branş tavsiye">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseAll6">
+                                <i class="fa-solid fa-circle-question text-primary me-2"></i> Akıllı Asistan ENS'nin önerdiği bölüm dışında başka bir bölüme randevu alabilir miyim?
+                            </button>
+                        </h2>
+                        <div id="collapseAll6" class="accordion-collapse collapse" data-bs-parent="#accordionAll">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Evet, kesinlikle. Akıllı Asistan ENS, şikayetlerinize göre size en uygun branşları önceliklendirerek rehberlik eder. Ancak nihai karar tamamen size aittir; dilediğiniz zaman <strong>"Randevu Al"</strong> menüsünden istediğiniz bölüm ve doktora randevu alabilirsiniz.
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB 2: Randevu İşlemleri -->
+            <div class="tab-pane fade" id="faq-randevu" role="tabpanel">
+                <div class="accordion shadow-sm rounded-4 overflow-hidden" id="accordionRandevu">
+                    <div class="accordion-item border-0 border-bottom help-item" data-tags="randevu iptal silme değiştirme saat tarih vazgeçme">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRandevu1">
+                                <i class="fa-solid fa-calendar-check text-primary me-2"></i> Randevumu nasıl iptal edebilirim veya değiştirebilirim?
+                            </button>
+                        </h2>
+                        <div id="collapseRandevu1" class="accordion-collapse collapse show" data-bs-parent="#accordionRandevu">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Randevunuzu iptal etmek için üst menüden veya kullanıcı menüsünden <strong>"Randevularım"</strong> sayfasına gidin. İlgili randevunun yanındaki <strong>"İptal Et"</strong> butonuna tıklamanız yeterlidir. Randevu saatinize en geç 1 saat kala iptal işlemini gerçekleştirmeniz gerekmektedir.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 border-bottom help-item" data-tags="aynı gün kaç randevu sınır limit kural">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRandevu2">
+                                <i class="fa-solid fa-calendar-check text-primary me-2"></i> Aynı gün içinde kaç farklı bölüme randevu alabilirim?
+                            </button>
+                        </h2>
+                        <div id="collapseRandevu2" class="accordion-collapse collapse" data-bs-parent="#accordionRandevu">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Hastane kurallarımız ve yoğunluğun önlenmesi amacıyla bir hasta aynı gün içinde en fazla <strong>2 farklı bölüme</strong> randevu alabilir. Aynı bölüme ise günde yalnızca 1 kez randevu oluşturulabilir.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 help-item" data-tags="hastanede bulunma saati erken gelme kayıt banko">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRandevu3">
+                                <i class="fa-solid fa-calendar-check text-primary me-2"></i> Randevu saatimden ne kadar önce hastanede olmalıyım?
+                            </button>
+                        </h2>
+                        <div id="collapseRandevu3" class="accordion-collapse collapse" data-bs-parent="#accordionRandevu">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Randevu saatinizden en az <strong>15 dakika önce</strong> hastanemizde olmanız ve hasta kabul bankolarından giriş işleminizi yaptırmanız tavsiye edilir.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 3: Ücretler & SGK -->
+            <div class="tab-pane fade" id="faq-ucret" role="tabpanel">
+                <div class="accordion shadow-sm rounded-4 overflow-hidden" id="accordionUcret">
+                    <div class="accordion-item border-0 border-bottom help-item" data-tags="muayene ücreti sgk sigorta para fiyat ödeme tahlil">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUcret1">
+                                <i class="fa-solid fa-turkish-lira-sign text-primary me-2"></i> Muayene ücretleri ne kadar? SGK geçerli mi?
+                            </button>
+                        </h2>
+                        <div id="collapseUcret1" class="accordion-collapse collapse show" data-bs-parent="#accordionUcret">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Hastanemizde SGK (SSK, Bağ-Kur, Emekli Sandığı) ve anlaşmalı özel sağlık sigortaları geçerlidir. Panelinizdeki <strong>"Bölüm Muayene Ücretleri"</strong> tablosunda belirtilen tutarlar yaklaşık özel muayene taban ücretleridir.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 help-item" data-tags="tahlil tetkik röntgen ultrason ek ücret ödeme">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUcret2">
+                                <i class="fa-solid fa-turkish-lira-sign text-primary me-2"></i> Tahlil ve röntgen işlemleri için ayrıca ücret ödenir mi?
+                            </button>
+                        </h2>
+                        <div id="collapseUcret2" class="accordion-collapse collapse" data-bs-parent="#accordionUcret">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Evet, muayene sonrasında doktorunuzun isteyeceği kan tahlili, röntgen, MR, ultrason gibi tetkikler SGK kapsamı dışında veya ek ücrete tabi olabilir. İlgili ücretlendirmeyi veznelerimizden öğrenebilirsiniz.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: Hesap & Teknik -->
+            <div class="tab-pane fade" id="faq-hesap" role="tabpanel">
+                <div class="accordion shadow-sm rounded-4 overflow-hidden" id="accordionHesap">
+                    <div class="accordion-item border-0 border-bottom help-item" data-tags="şifre unuttum sıfırlama değiştirme email eposta parola">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHesap1">
+                                <i class="fa-solid fa-user-gear text-primary me-2"></i> Şifremi unuttum veya değiştirmek istiyorum, ne yapmalıyım?
+                            </button>
+                        </h2>
+                        <div id="collapseHesap1" class="accordion-collapse collapse show" data-bs-parent="#accordionHesap">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Şifrenizi unuttuysanız giriş sayfasındaki <strong>"Şifremi Unuttum"</strong> bağlantısına tıklayarak e-posta adresinize sıfırlama linki gönderebilirsiniz. Sisteme giriş yaptıktan sonra şifrenizi değiştirmek isterseniz <strong>Profilim > Şifre Değiştir</strong> menüsünü kullanabilirsiniz.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item border-0 help-item" data-tags="telefon adres güncelleme profil tc kimlik">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button collapsed fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse" data-bs-target="#collapseHesap2">
+                                <i class="fa-solid fa-user-gear text-primary me-2"></i> Telefon numaramı ve adresimi nasıl güncelleyebilirim?
+                            </button>
+                        </h2>
+                        <div id="collapseHesap2" class="accordion-collapse collapse" data-bs-parent="#accordionHesap">
+                            <div class="accordion-body text-muted small bg-light-soft p-4">
+                                Panelinizdeki <strong>"Profilim"</strong> menüsüne giderek telefon numarası, adres, kan grubu, alerjiler ve acil durum kişisi gibi tüm kişisel bilgilerinizi güncelleyebilirsiniz.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SECTION 3: Canlı Destek & İletişim Kutusu -->
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+        <div class="card-body p-4 p-md-5">
+            <div class="row align-items-center g-4">
+                <div class="col-lg-7">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="bg-primary-soft text-primary rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 50px; height: 50px; font-size: 1.5rem;">
+                            <i class="fa-solid fa-headset"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-1">Aradığınız Cevabı Bulamadınız mı?</h4>
+                            <p class="text-muted small mb-0">Destek ekibimiz sorularınızı yanıtlamak için 7/24 yanınızda.</p>
+                        </div>
+                    </div>
+                    <p class="text-muted small mb-4">
+                        Hastanemizle ilgili her türlü soru, görüş, öneri veya teknik destek talebiniz için aşağıdaki iletişim kanallarını kullanabilir veya doğrudan çağrı merkezimizi arayabilirsiniz.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3">
+                        <a href="tel:+905438709657" class="btn btn-primary rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-phone-volume"></i> +90 543 870 96 57
+                        </a>
+                        <button type="button" class="btn-success rounded-pill px-4 py-2 fw-bold shadow-sm d-flex align-items-center gap-2 border-0 text-white" onclick="openLiveChatSim()">
+                            <i class="fa-brands fa-whatsapp fa-lg"></i> Canlı Destek / WhatsApp
+                        </button>
+                    </div>
+                </div>
+                <div class="col-lg-5 border-start border-light ps-lg-5">
+                    <h5 class="fw-bold mb-3"><i class="fa-solid fa-envelope-open-text text-primary me-2"></i>Hızlı Destek Talebi</h5>
+                    <form asp-controller="Patient" asp-action="SubmitSupportRequest" method="post" onsubmit="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').innerHTML='<i class=\'fa-solid fa-spinner fa-spin me-2\'></i>Gönderiliyor...';">
+                        <div class="mb-3">
+                            <input type="text" name="subject" class="form-control rounded-pill bg-light border-0 px-3 py-2 small" placeholder="Konu Başlığı (Örn: Randevu Hatası, E-Reçete Sorunu)" required maxlength="100">
+                        </div>
+                        <div class="mb-3">
+                            <textarea name="message" class="form-control rounded-4 bg-light border-0 p-3 small" rows="3" placeholder="Mesajınız ve detaylar..." required maxlength="400"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-bold w-100 shadow-sm hover-up">
+                            <i class="fa-solid fa-paper-plane me-2"></i> Talebi Gönder
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Support Simulation Modal -->
+<div class="modal fade" id="liveSupportModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
+            <div class="modal-header bg-success text-white p-4 border-0 d-flex align-items-center justify-content-between">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-white text-success rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width: 42px; height: 42px; font-size: 1.2rem;">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0 text-white">HRS Canlı Destek Hattı</h6>
+                        <span class="x-small text-white-50 d-flex align-items-center gap-1">
+                            <span class="rounded-circle bg-white d-inline-block" style="width: 8px; height: 8px;"></span> Çevrimiçi Uzman
+                        </span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4 bg-light-soft" style="min-height: 280px; max-height: 380px; overflow-y: auto;" id="liveSupportChatBox">
+                <div class="d-flex gap-2 mb-3">
+                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                        <i class="fa-solid fa-headset x-small"></i>
+                    </div>
+                    <div class="bg-white p-3 rounded-4 shadow-sm border border-light small max-w-75 text-dark">
+                        Merhaba! HRS Hastanesi Canlı Destek hattına hoş geldiniz. Size randevu işlemleri, muayene ücretleri, tahlil sonuçları, nöbetçi eczaneler veya sistem kullanımı hakkında nasıl yardımcı olabilirim?
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer p-3 bg-white border-top border-light">
+                <form class="w-100 d-flex gap-2" onsubmit="sendLiveChatMessage(event)">
+                    <input type="text" id="liveSupportInput" class="form-control rounded-pill border-0 bg-light px-4 py-2 small" placeholder="Sorunuzu yazın (Örn: randevu iptal, ücretler, tahlil...)" required>
+                    <button type="submit" class="btn btn-success rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 shadow-sm border-0 text-white" style="width: 42px; height: 42px;">
+                        <i class="fa-solid fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Live Search & Filtering Functionality
+        const searchInput = document.getElementById('helpSearchInput');
+        const noResultsAlert = document.getElementById('noResultsAlert');
+        const helpItems = document.querySelectorAll('.help-item');
+
+        searchInput.addEventListener('input', function() {
+            const query = this.value.trim().toLowerCase();
+            let hasVisibleItems = false;
+
+            if (!query) {
+                helpItems.forEach(item => {
+                    item.style.display = '';
+                    item.classList.remove('highlight-card');
+                });
+                noResultsAlert.style.display = 'none';
+                document.getElementById('faqTabs').style.display = '';
+                return;
+            }
+
+            document.getElementById('faqTabs').style.display = 'none';
+            const allTabBtn = document.getElementById('all-tab');
+            if (allTabBtn) {
+                const tab = new bootstrap.Tab(allTabBtn);
+                tab.show();
+            }
+
+            helpItems.forEach(item => {
+                const textContent = item.textContent.toLowerCase();
+                const tags = (item.getAttribute('data-tags') || '').toLowerCase();
+
+                if (textContent.includes(query) || tags.includes(query)) {
+                    item.style.display = '';
+                    item.classList.add('highlight-card');
+                    hasVisibleItems = true;
+
+                    const collapseElem = item.querySelector('.accordion-collapse');
+                    if (collapseElem) {
+                        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseElem, { toggle: false });
+                        bsCollapse.show();
+                    }
+                } else {
+                    item.style.display = 'none';
+                    item.classList.remove('highlight-card');
+                }
+            });
+
+            noResultsAlert.style.display = hasVisibleItems ? 'none' : 'block';
+        });
+
+        function focusSearch() {
+            searchInput.focus();
+        }
+
+
+        // Live Chat Simulation with Smart Bot Answers
+        let liveChatModalInstance;
+        function openLiveChatSim() {
+            const modalEl = document.getElementById('liveSupportModal');
+            liveChatModalInstance = bootstrap.Modal.getOrCreateInstance(modalEl);
+            liveChatModalInstance.show();
+            setTimeout(() => document.getElementById('liveSupportInput').focus(), 500);
+        }
+
+        function sendLiveChatMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('liveSupportInput');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            const chatBox = document.getElementById('liveSupportChatBox');
+            input.value = '';
+
+            // User Message
+            chatBox.insertAdjacentHTML('beforeend', `
+                <div class="d-flex gap-2 mb-3 justify-content-end">
+                    <div class="bg-success text-white p-3 rounded-4 shadow-sm border border-success small max-w-75">
+                        ${msg}
+                    </div>
+                    <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                        <i class="fa-solid fa-user x-small"></i>
+                    </div>
+                </div>
+            `);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Typing Indicator
+            const typingId = 'typingIndicator' + Date.now();
+            chatBox.insertAdjacentHTML('beforeend', `
+                <div id="${typingId}" class="d-flex gap-2 mb-3 align-items-center">
+                    <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                        <i class="fa-solid fa-headset x-small"></i>
+                    </div>
+                    <div class="bg-white p-3 rounded-4 shadow-sm border border-light small text-muted d-flex align-items-center gap-1">
+                        <span class="rounded-circle bg-secondary d-inline-block" style="width: 6px; height: 6px; animation: bounce 1.2s infinite;"></span>
+                        <span class="rounded-circle bg-secondary d-inline-block" style="width: 6px; height: 6px; animation: bounce 1.2s infinite 0.2s;"></span>
+                        <span class="rounded-circle bg-secondary d-inline-block" style="width: 6px; height: 6px; animation: bounce 1.2s infinite 0.4s;"></span>
+                    </div>
+                </div>
+            `);
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            // Advanced Smart Bot Logic
+            setTimeout(() => {
+                document.getElementById(typingId)?.remove();
+                
+                const lowerMsg = msg.toLowerCase();
+                let reply = "Sorunuzu anladım. Konuyla ilgili en doğru ve hızlı yardımı alabilmek için lütfen **+90 543 870 96 57** numaralı çağrı merkezimizi arayın veya yandaki 'Hızlı Destek Talebi' formunu doldurun.";
+
+                if (lowerMsg.includes("randevu") && (lowerMsg.includes("al") || lowerMsg.includes("nasıl"))) {
+                    reply = "Randevu almak çok kolay! Üst menüdeki **'Randevu Al'** bağlantısına tıklayarak dilediğiniz bölüm ve doktordan saniyeler içinde randevu oluşturabilirsiniz.";
+                } else if (lowerMsg.includes("randevu") && (lowerMsg.includes("iptal") || lowerMsg.includes("sil") || lowerMsg.includes("değiştir"))) {
+                    reply = "Randevunuzu iptal etmek için üst menüden **'Randevularım'** sayfasına gidip ilgili randevunun yanındaki 'İptal Et' butonuna tıklamanız yeterlidir. (En geç 1 saat kala iptal edebilirsiniz).";
+                } else if (lowerMsg.includes("ücret") || lowerMsg.includes("fiyat") || lowerMsg.includes("para") || lowerMsg.includes("muayene")) {
+                    reply = "Hastanemizde SGK ve özel sağlık sigortaları geçerlidir. Özel muayene taban ücretlerimiz bölüm bazlı değişiklik göstermektedir (Ortalama 150 TL - 300 TL arası). Detayları panelinizdeki 'Bölüm Muayene Ücretleri' tablosundan inceleyebilirsiniz.";
+                } else if (lowerMsg.includes("sgk") || lowerMsg.includes("sigorta") || lowerMsg.includes("bağkur") || lowerMsg.includes("emekli")) {
+                    reply = "Evet, hastanemizin SGK (SSK, Bağ-Kur, Emekli Sandığı) ile tüm bölümlerde anlaşması bulunmaktadır. Yasal katılım payı haricinde ek bir muayene fark ücreti çıkmamaktadır.";
+                } else if (lowerMsg.includes("tahlil") || lowerMsg.includes("sonuç") || lowerMsg.includes("röntgen") || lowerMsg.includes("kan")) {
+                    reply = "Doktorunuzun muayene sırasında istediği tahlil, röntgen ve tetkik sonuçlarınızı **'Sağlık Geçmişim'** menüsünden görüntüleyebilir ve PDF olarak indirebilirsiniz.";
+                } else if (lowerMsg.includes("reçete") || lowerMsg.includes("ilaç") || lowerMsg.includes("pdf")) {
+                    reply = "Yazılan e-reçetelerinize **'Sağlık Geçmişim'** veya **'Reçeteler'** menüsünden ulaşabilirsiniz. Reçetenizin yanındaki 'PDF İndir' butonuna tıklayarak eczaneden ilaçlarınızı hemen alabilirsiniz.";
+                } else if (lowerMsg.includes("eczane") || lowerMsg.includes("nöbetçi")) {
+                    reply = "Acil ilaç ihtiyaçlarınız için üst menüdeki **'Eczaneler'** sayfasına tıklayarak konumunuza en yakın nöbetçi eczaneleri harita üzerinde anında görebilirsiniz.";
+                } else if (lowerMsg.includes("şifre") || lowerMsg.includes("parola") || lowerMsg.includes("unuttum") || lowerMsg.includes("giriş")) {
+                    reply = "Şifrenizi unuttuysanız giriş sayfasındaki 'Şifremi Unuttum' bağlantısına tıklayarak e-posta adresinize sıfırlama linki isteyebilirsiniz. Giriş yaptıktan sonra değiştirmek için Profilim > Şifre Değiştir menüsünü kullanabilirsiniz.";
+                } else if (lowerMsg.includes("ens") || lowerMsg.includes("asistan") || lowerMsg.includes("yapay zeka") || lowerMsg.includes("robot")) {
+                    reply = "Akıllı Asistan ENS, şikayetinize göre size en uygun hastane bölümünü öneren yapay zeka aracımızdır. Sayfadaki **'ENS'yi Dene'** butonuna tıklayarak hemen kullanmaya başlayabilirsiniz.";
+                } else if (lowerMsg.includes("saat") || lowerMsg.includes("çalışma") || lowerMsg.includes("açılış") || lowerMsg.includes("mesai")) {
+                    reply = "Hastanemiz ve Acil Servisimiz **7 gün 24 saat** kesintisiz hizmet vermektedir. Poliklinik muayenelerimiz ise hafta içi 08:30 - 17:30 saatleri arasında yapılmaktadır.";
+                } else if (lowerMsg.includes("iletişim") || lowerMsg.includes("telefon") || lowerMsg.includes("adres") || lowerMsg.includes("nerede")) {
+                    reply = "Hastanemiz Şanlıurfa merkezde yer almaktadır. Bize 7/24 **+90 543 870 96 57** numaralı telefondan veya info@havatakip.com.tr adresinden ulaşabilirsiniz.";
+                } else if (lowerMsg.includes("selam") || lowerMsg.includes("merhaba") || lowerMsg.includes("naber") || lowerMsg.includes("iyi günler")) {
+                    reply = "Merhaba! Size randevu alma, iptal işlemleri, muayene ücretleri, tahlil sonuçları veya nöbetçi eczaneler konusunda nasıl yardımcı olabilirim?";
+                } else if (lowerMsg.includes("teşekkür") || lowerMsg.includes("sağol") || lowerMsg.includes("tşk")) {
+                    reply = "Rica ederim, ne demek! Sağlıklı ve mutlu günler dileriz. Başka bir sorunuz olursa buradayım.";
+                }
+
+                chatBox.insertAdjacentHTML('beforeend', `
+                    <div class="d-flex gap-2 mb-3">
+                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 32px; height: 32px;">
+                            <i class="fa-solid fa-headset x-small"></i>
+                        </div>
+                        <div class="bg-white p-3 rounded-4 shadow-sm border border-light small max-w-75 text-dark">
+                            ${reply}
+                        </div>
+                    </div>
+                `);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 1000);
+        }
+    </script>
+}
+
+<style>
+    .transition-all { transition: all 0.3s ease; }
+    .hover-shadow:hover { transform: translateY(-3px); box-shadow: 0 0.75rem 1.5rem rgba(0,0,0,0.1) !important; cursor: pointer; }
+    .bg-primary-soft { background-color: rgba(13, 110, 253, 0.08); }
+    .bg-success-soft { background-color: rgba(25, 135, 84, 0.08); }
+    .bg-warning-soft { background-color: rgba(255, 193, 7, 0.08); }
+    .bg-info-soft { background-color: rgba(13, 202, 240, 0.08); }
+    .bg-danger-soft { background-color: rgba(220, 53, 69, 0.08); }
+    .bg-light-soft { background-color: #f8f9fa; }
+    .icon-box { display: flex; align-items: center; justify-content: center; }
+    .guide-card { border: 1px solid rgba(0,0,0,0.05); }
+    .highlight-card { border-color: #0d6efd !important; box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.2) !important; }
+    .max-w-3xl { max-width: 48rem; }
+    .max-w-75 { max-width: 75%; }
+    .rounded-5 { border-radius: 1.5rem !important; }
+    .faq-tabs .nav-link { color: #495057; background-color: #f8f9fa; border: 1px solid #dee2e6; transition: all 0.2s ease; }
+    .faq-tabs .nav-link:hover { background-color: #e9ecef; color: #0d6efd; }
+    .faq-tabs .nav-link.active { background-color: #0d6efd; color: #fff; border-color: #0d6efd; box-shadow: 0 4px 10px rgba(13,110,253,0.3); }
+    .accordion-button:not(.collapsed) { background-color: #f8f9fa; color: #0d6efd; box-shadow: inset 0 -1px 0 rgba(0,0,0,0.125); }
+    .accordion-button:focus { box-shadow: none; border-color: rgba(0,0,0,0.125); }
+    @@keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+    }
+</style>

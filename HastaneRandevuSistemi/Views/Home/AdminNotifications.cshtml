@@ -1,0 +1,279 @@
+@model IEnumerable<HastaneRandevuSistemi.Models.Notification>
+
+@{
+    ViewData["Title"] = "Sistem Bildirimleri & Destek Talepleri";
+}
+
+<div class="container-fluid px-md-5 py-4 admin-notifications">
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-4 border-bottom pb-4">
+        <div>
+            <h6 class="text-primary fw-bold text-uppercase small mb-1">Yönetim Paneli</h6>
+            <h1 class="display-6 fw-bold text-dark mb-1">Sistem Bildirimleri & Destek Talepleri</h1>
+            <p class="text-muted mb-0">Hastaların gönderdiği hızlı destek taleplerini ve sistem hareketlerini buradan yönetin.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="AdminDashboard" class="btn btn-outline-dark rounded-pill px-4">
+                <i class="fa-solid fa-arrow-left me-2"></i> Yönetim Merkezine Dön
+            </a>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4 text-center p-5">
+            <div class="card-body py-5">
+                <i class="fa-regular fa-bell-slash fa-4x text-muted mb-3 opacity-50"></i>
+                <h4 class="fw-bold text-dark mb-2">Henüz Bildirim Bulunmuyor</h4>
+                <p class="text-muted small mb-0">Sisteme düşen yeni bir destek talebi veya bildirim olduğunda burada listelenecektir.</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    @foreach (var item in Model)
+                    {
+                        var isUnread = !item.IsRead;
+                        var bgClass = isUnread ? "bg-primary-soft border-start border-primary border-4" : "bg-white";
+                        var badgeBg = item.Type == "Destek" ? "bg-danger" : item.Type == "Duyuru" ? "bg-info" : item.Type == "Uyarı" ? "bg-warning" : "bg-primary";
+
+                        <div id="notification-@item.Id" class="list-group-item p-4 @bgClass transition-all">
+                            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center gap-3">
+                                <div class="d-flex gap-3 align-items-start">
+                                    <div class="bg-white p-3 rounded-circle shadow-sm text-center flex-shrink-0" style="width: 52px; height: 52px;">
+                                        @if (item.Type == "Destek")
+                                        {
+                                            <i class="fa-solid fa-headset text-danger fs-5"></i>
+                                        }
+                                        else if (item.Type == "Duyuru")
+                                        {
+                                            <i class="fa-solid fa-bullhorn text-info fs-5"></i>
+                                        }
+                                        else if (item.Type == "Uyarı")
+                                        {
+                                            <i class="fa-solid fa-triangle-exclamation text-warning fs-5"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fa-solid fa-bell text-primary fs-5"></i>
+                                        }
+                                    </div>
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2 mb-1">
+                                            <span class="badge @badgeBg rounded-pill px-3 py-1 fw-normal small">@item.Type</span>
+                                            <h5 class="fw-bold text-dark mb-0 d-inline-block">@item.Title</h5>
+                                            @if (isUnread)
+                                            {
+                                                <span class="badge bg-danger rounded-circle p-1" title="Okunmadı"><span class="visually-hidden">Okunmadı</span></span>
+                                            }
+                                        </div>
+                                        <p class="text-muted small mb-2" style="white-space: pre-line;">@item.Message</p>
+                                        <div class="text-secondary x-small d-flex align-items-center gap-3">
+                                            <span><i class="fa-solid fa-calendar-days me-1"></i> @item.CreatedDate.ToString("dd.MM.yyyy HH:mm")</span>
+                                            @if (!string.IsNullOrWhiteSpace(item.Link))
+                                            {
+                                                <a href="@item.Link" class="text-primary text-decoration-none fw-bold"><i class="fa-solid fa-link me-1"></i> İlgili Bağlantıya Git</a>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 flex-shrink-0 align-self-end align-self-md-center mt-3 mt-md-0">
+                                    @if (item.Type == "Destek")
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-success rounded-pill px-3 fw-bold reply-btn" data-id="@item.Id" data-title="@item.Title">
+                                            <i class="fa-solid fa-reply me-1"></i> Cevapla
+                                        </button>
+                                    }
+                                    @if (isUnread)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-bold mark-read-btn" data-id="@item.Id">
+                                            <i class="fa-solid fa-check me-1"></i> Okundu İşaretle
+                                        </button>
+                                    }
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold delete-btn" data-id="@item.Id">
+                                        <i class="fa-solid fa-trash me-1"></i> Sil
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Cevaplama Modalı -->
+<div class="modal fade" id="replyModal" tabindex="-1" aria-labelledby="replyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark" id="replyModalLabel">Destek Talebini Yanıtla</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Kapat"></button>
+            </div>
+            <div class="modal-body py-4">
+                <p class="text-muted small mb-3" id="replyModalSubTitle"></p>
+                <div class="mb-3">
+                    <label for="replyMessageText" class="form-label fw-bold small text-dark">Yanıtınız</label>
+                    <textarea class="form-control rounded-3" id="replyMessageText" rows="5" placeholder="Hastaya iletilecek yanıtı buraya yazın..."></textarea>
+                    <div class="invalid-feedback">Lütfen bir yanıt mesajı yazın.</div>
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">İptal</button>
+                <button type="button" class="btn btn-success rounded-pill px-4 fw-bold" id="sendReplyBtn">
+                    <i class="fa-solid fa-paper-plane me-1"></i> Gönder
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const tokenInput = document.querySelector('input[name="__RequestVerificationToken"]');
+            const token = tokenInput ? tokenInput.value : '';
+
+            document.querySelectorAll('.mark-read-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.getAttribute('data-id');
+                    const row = document.getElementById('notification-' + id);
+
+                    fetch('@Url.Action("MarkAdminNotificationRead", "Home")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: new URLSearchParams({ id: id })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (row) {
+                                row.classList.remove('bg-primary-soft', 'border-start', 'border-primary', 'border-4');
+                                row.classList.add('bg-white');
+                                const unreadBadge = row.querySelector('.bg-danger.rounded-circle');
+                                if (unreadBadge) unreadBadge.remove();
+                            }
+                            this.remove();
+                            
+                            const badge = document.getElementById('adminNotificationBadge');
+                            if (badge) {
+                                let count = parseInt(badge.textContent || '0') - 1;
+                                if (count <= 0) { badge.style.display = 'none'; }
+                                else { badge.textContent = count; }
+                            }
+                        }
+                    })
+                    .catch(err => console.error("Okundu isaretleme hatasi:", err));
+                });
+            });
+
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (!confirm('Bu bildirimi silmek istediğinize emin misiniz?')) return;
+
+                    const id = this.getAttribute('data-id');
+                    const row = document.getElementById('notification-' + id);
+
+                    fetch('@Url.Action("DeleteAdminNotification", "Home")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: new URLSearchParams({ id: id })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (row) row.remove();
+                            const listGroup = document.querySelector('.list-group');
+                            if (listGroup && !listGroup.children.length) {
+                                location.reload();
+                            }
+                        }
+                    })
+                    .catch(err => console.error("Silme hatasi:", err));
+                });
+            });
+
+            let currentReplyId = null;
+            const replyModalEl = document.getElementById('replyModal');
+            const replyModal = replyModalEl ? new bootstrap.Modal(replyModalEl) : null;
+            const replyMessageText = document.getElementById('replyMessageText');
+            const sendReplyBtn = document.getElementById('sendReplyBtn');
+
+            document.querySelectorAll('.reply-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentReplyId = this.getAttribute('data-id');
+                    const title = this.getAttribute('data-title');
+                    document.getElementById('replyModalSubTitle').textContent = title + " talebine yanıt veriyorsunuz.";
+                    replyMessageText.value = '';
+                    replyMessageText.classList.remove('is-invalid');
+                    if (replyModal) replyModal.show();
+                });
+            });
+
+            if (sendReplyBtn) {
+                sendReplyBtn.addEventListener('click', function() {
+                    const msg = replyMessageText.value.trim();
+                    if (!msg) {
+                        replyMessageText.classList.add('is-invalid');
+                        return;
+                    }
+
+                    sendReplyBtn.disabled = true;
+                    sendReplyBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Gönderiliyor...';
+
+                    fetch('@Url.Action("ReplySupportRequest", "Home")', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: new URLSearchParams({ id: currentReplyId, replyMessage: msg })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        sendReplyBtn.disabled = false;
+                        sendReplyBtn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Gönder';
+
+                        if (data.success) {
+                            if (replyModal) replyModal.hide();
+                            const row = document.getElementById('notification-' + currentReplyId);
+                            if (row) {
+                                row.classList.remove('bg-primary-soft', 'border-start', 'border-primary', 'border-4');
+                                row.classList.add('bg-white');
+                                const unreadBadge = row.querySelector('.bg-danger.rounded-circle');
+                                if (unreadBadge) unreadBadge.remove();
+                                const markReadBtn = row.querySelector('.mark-read-btn');
+                                if (markReadBtn) markReadBtn.remove();
+                            }
+                            alert('Yanıt başarıyla gönderildi ve hasta bilgilendirildi.');
+                        } else {
+                            alert('Hata: ' + (data.message || 'Yanıt gönderilemedi.'));
+                        }
+                    })
+                    .catch(err => {
+                        console.error("Cevaplama hatası:", err);
+                        sendReplyBtn.disabled = false;
+                        sendReplyBtn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Gönder';
+                        alert('Bir iletişim hatası oluştu.');
+                    });
+                });
+            }
+        });
+    </script>
+}
+
+<style>
+    .admin-notifications .transition-all { transition: all 0.3s ease; }
+    .admin-notifications .bg-primary-soft { background-color: rgba(13, 110, 253, 0.05); }
+</style>
