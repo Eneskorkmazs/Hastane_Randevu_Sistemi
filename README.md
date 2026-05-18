@@ -57,7 +57,7 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 - xUnit integration testleri genişletildi.
 
 ### Hafta 10 (Final Sürümü)
--ens asistan eklendi kolayca hangi bölüme randevu alabileceğini gördü kullanıcı
+-ens asistan eklendi, kolayca hangi bölüme randevu alabileceğini gördü kullanıcı
 - **Eczane Keşif ve Mesafe Sistemi**: Şanlıurfa  eczane verileri eklendi.
 - **Canlı GPS ve Akıllı Sıralama**: Tarayıcı konumu üzerinden Haversine formülü ile kullanıcının mevcut konumuna göre en yakın eczaneyi hesaplayan ve anlık sıralayan sistem eklendi.
 - **Çift Katmanlı Hastane Değerlendirme Modülü**: Hastaların hastane hakkında tek seferlik yorum ve puan bırakabileceği, adminin yanıtlayabileceği, hem uygulama hem de UNIQUE constraint ile korunan sistem eklendi.
