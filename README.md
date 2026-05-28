@@ -105,3 +105,31 @@ Hafta  7 ──> Dosya Yönetimi & Tıbbi Kayıt Sistemi
 Hafta  8 ──> Güvenlik, Caching & Dark Mode
 Hafta  9 ──> Sekreter Paneli & Muhasebe & Bildirimler
 Hafta 10 ──> Yapay Zeka, Eczane Yönetimi & Final
+---
+
+## 🛠️ Teknik Özellikler ve Öne Çıkan Teknolojiler
+
+Proje, modern yazılım mimarisi prensiplerine (Clean Code) uygun, performanslı ve güvenli bir altyapı üzerine kurulmuştur.
+
+* **Katmanlı Mimari & Validasyon:** İş mantığı ve veri doğrulama süreçleri `FluentValidation` ile tamamen ayrıştırılarak güvenli hale getirilmiştir.
+* **Gelişmiş Güvenlik Zırhı:** XSS ve CSRF/XSRF ataklarına karşı koruma, filtre tabanlı `isAuthenticated` navbar kontrolleri ve oturum güvenliği için tarayıcı bazlı `NoStore` cache politikaları uygulanmıştır.
+* **Akıllı Entegrasyonlar:** 
+  * **ENS Asistan:** Yapay zeka destekli kural tabanlı semptom analizörü ve poliklinik yönlendirme asistanı.
+  * **Canlı GPS & Konum Sıralama:** Tarayıcı konum verilerini alarak Şanlıurfa'daki eczaneleri `Haversine` formülü ile en yakından en uzağa anlık hesaplayan ve sıralayan akıllı konum servisi.
+  * **QR Kod Doğrulama:** Randevu detayları için dinamik QR kod bilet üretimi ve doğrulaması.
+* **Arka Plan Görevleri & Günlükleme:** `Serilog` entegrasyonu ile dosya tabanlı hata loglama sistemi ve `AppointmentReminderService` ile arka planda çalışan zamanlanmış bildirim görevleri.
+
+---
+
+## 🚀 Proje Kurulumu ve Çalıştırma
+
+Projeyi yerel bilgisayarınızda ayağa kaldırmak için aşağıdaki adımları takip edebilirsiniz:
+
+### 1. Ön Gereksinimler
+* .NET 8.0 SDK installed
+* IDE (VS Code, Visual Studio 2022 veya Rider)
+
+### 2. Projeyi Klonlayın ve Klasöre Geçin
+```bash
+git clone [https://github.com/kullanici-adi/Hastane_Randevu_Sistemi.git](https://github.com/kullanici-adi/Hastane_Randevu_Sistemi.git)
+cd Hastane_Randevu_Sistemi
