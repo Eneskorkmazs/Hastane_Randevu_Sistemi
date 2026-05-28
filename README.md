@@ -86,8 +86,9 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 | **10** | **Final: Eczane GPS Sistemi, Çift Katmanlı Değerlendirme, Güvenlik Zırhı** | [📄 Final PDF](Reports/Hafta10_Raporu.pdf) |
 
 ### 📝 Özet / Genel Raporlar
+[genel 1den 10. hafta rapor.pdf](https://github.com/user-attachments/files/28368796/genel.1den.10.hafta.rapor.pdf)
+](Reports/Ilk5Hafta_Genel_Rapor.pdf)[HASTANE RANDEVU SİSTEMİ GENEL RAPORU.pdf](https://github.com/user-attachments/files/28368832/HASTANE.RANDEVU.SISTEMI.GENEL.RAPORU.pdf)
 
-- [📄 İlk 5 Hafta Genel Rapor (PDF)](Reports/Ilk5Hafta_Genel_Rapor.pdf)
 
 ---
 
