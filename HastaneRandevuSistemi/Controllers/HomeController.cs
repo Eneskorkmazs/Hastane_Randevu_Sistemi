@@ -37,6 +37,15 @@ namespace HastaneRandevuSistemi.Controllers
             };
 
         private const decimal DefaultAppointmentFee = 1350m;
+        private static readonly string[] AppointmentNotificationTypes =
+        [
+            "Randevu",
+            "Hatırlatma",
+            "Hatirlatma",
+            "Durum",
+            "Ödeme",
+            "Odeme"
+        ];
 
         private readonly ILogger<HomeController> _logger;
         private readonly ApplicationDbContext _context;
@@ -57,7 +66,7 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         [HttpPost]
-        [AllowAnonymous]
+        [Authorize]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SubmitHospitalReview(HomeIndexViewModel model)
         {
@@ -185,6 +194,8 @@ namespace HastaneRandevuSistemi.Controllers
                     IsAppointmentFinished = true
                 }).ToList();
 
+            var adminUser = await _userManager.GetUserAsync(User);
+
             var model = new DashboardViewModel
             {
                 TotalDoctors = await _context.Doctors.CountAsync(),
@@ -207,6 +218,10 @@ namespace HastaneRandevuSistemi.Controllers
                     !a.IsCollected),
                 UniquePatientCount = registeredPatientCount + guestPatientCount,
                 LatestNotifications = await _context.Notifications
+                    .Where(n => n.Type == "Destek" || (adminUser != null && n.UserId == adminUser.Id))
+                    .Where(n => !n.Type.StartsWith("Duyuru")
+                        && !AppointmentNotificationTypes.Contains(n.Type)
+                        && (n.Link == null || !n.Link.StartsWith("/Appointment")))
                     .OrderByDescending(n => n.CreatedDate)
                     .Take(7)
                     .ToListAsync(),
@@ -242,6 +257,9 @@ namespace HastaneRandevuSistemi.Controllers
 
             var notifications = await _context.Notifications
                 .Where(n => n.UserId == user.Id || n.Type == "Destek")
+                .Where(n => !n.Type.StartsWith("Duyuru")
+                    && !AppointmentNotificationTypes.Contains(n.Type)
+                    && (n.Link == null || !n.Link.StartsWith("/Appointment")))
                 .OrderByDescending(n => n.CreatedDate)
                 .ToListAsync();
 
@@ -256,7 +274,12 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && (n.UserId == user.Id || n.Type == "Destek"));
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n =>
+                n.Id == id &&
+                (n.UserId == user.Id || n.Type == "Destek") &&
+                !n.Type.StartsWith("Duyuru") &&
+                !AppointmentNotificationTypes.Contains(n.Type) &&
+                (n.Link == null || !n.Link.StartsWith("/Appointment")));
             if (notification != null && !notification.IsRead)
             {
                 notification.IsRead = true;
@@ -274,7 +297,12 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && (n.UserId == user.Id || n.Type == "Destek"));
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n =>
+                n.Id == id &&
+                (n.UserId == user.Id || n.Type == "Destek") &&
+                !n.Type.StartsWith("Duyuru") &&
+                !AppointmentNotificationTypes.Contains(n.Type) &&
+                (n.Link == null || !n.Link.StartsWith("/Appointment")));
             if (notification != null)
             {
                 _context.Notifications.Remove(notification);
@@ -292,7 +320,11 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && (n.UserId == user.Id || n.Type == "Destek"));
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n =>
+                n.Id == id &&
+                (n.UserId == user.Id || n.Type == "Destek") &&
+                !AppointmentNotificationTypes.Contains(n.Type) &&
+                (n.Link == null || !n.Link.StartsWith("/Appointment")));
             if (notification == null)
             {
                 return Json(new { success = false, message = "Bildirim bulunamadı." });
@@ -1203,34 +1235,62 @@ namespace HastaneRandevuSistemi.Controllers
                 return View(model);
             }
 
-            var usersQuery = _context.Users.AsQueryable();
-            if (!string.Equals(model.TargetRole, "All", StringComparison.OrdinalIgnoreCase))
+            var adminUser = await _userManager.GetUserAsync(User);
+            if (adminUser == null)
             {
-                var usersInRole = await _userManager.GetUsersInRoleAsync(model.TargetRole);
-                var userIds = usersInRole.Select(u => u.Id).ToHashSet();
-                usersQuery = usersQuery.Where(u => userIds.Contains(u.Id));
+                ModelState.AddModelError(string.Empty, "Oturum bilgisi alınamadı.");
+                return View(model);
             }
 
-            var users = await usersQuery.ToListAsync();
-            if (users.Count == 0)
+            string notifType = model.TargetRole switch
             {
-                ModelState.AddModelError(string.Empty, "Seçilen hedef için kullanıcı bulunamadı.");
+                "Doktor"   => "DuyuruDoktor",
+                "Hasta"    => "DuyuruHasta",
+                "Sekreter" => "DuyuruSekreter",
+                _          => "Duyuru"   // "All" → herkes görsün
+            };
+
+            var targetUsers = new List<AppUser>();
+            if (string.Equals(model.TargetRole, "All", StringComparison.OrdinalIgnoreCase))
+            {
+                foreach (var role in new[] { "Hasta", "Doktor", "Sekreter" })
+                {
+                    targetUsers.AddRange(await _userManager.GetUsersInRoleAsync(role));
+                }
+
+                targetUsers = targetUsers
+                    .GroupBy(u => u.Id)
+                    .Select(g => g.First())
+                    .ToList();
+            }
+            else
+            {
+                targetUsers = (await _userManager.GetUsersInRoleAsync(model.TargetRole)).ToList();
+            }
+
+            targetUsers = targetUsers
+                .Where(u => u.Id != adminUser.Id)
+                .ToList();
+
+            if (targetUsers.Count == 0)
+            {
+                ModelState.AddModelError(string.Empty, "Seçilen hedef için duyuru gönderilecek kullanıcı bulunamadı.");
                 return View(model);
             }
 
             var createdDate = DateTime.Now;
-            await _context.Notifications.AddRangeAsync(users.Select(user => new Notification
+            await _context.Notifications.AddRangeAsync(targetUsers.Select(user => new Notification
             {
                 UserId = user.Id,
                 Title = model.Title,
                 Message = model.Message,
-                Type = "Duyuru",
+                Type = notifType,
                 Link = model.Link,
                 CreatedDate = createdDate
             }));
 
             await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = $"{users.Count} kullanıcıya duyuru gönderildi.";
+            TempData["SuccessMessage"] = "Duyuru başarıyla yayınlandı.";
             return RedirectToAction(nameof(AdminDashboard));
         }
 
@@ -1290,6 +1350,16 @@ namespace HastaneRandevuSistemi.Controllers
                 }
             }
 
+            var latestNotifications = new List<Notification>();
+            if (user != null)
+            {
+                latestNotifications = await _context.Notifications
+                    .Where(n => n.UserId == user.Id)
+                    .OrderByDescending(n => n.CreatedDate)
+                    .Take(5)
+                    .ToListAsync();
+            }
+
             var model = new DashboardViewModel
             {
                 TotalAppointments = myAppointments,
@@ -1302,7 +1372,8 @@ namespace HastaneRandevuSistemi.Controllers
                 PendingAccessRequestCount = pendingAccessRequestCount,
                 UpcomingAppointments = upcomingAppointments,
                 TotalDoctors = 0,
-                TotalDepartments = 0
+                TotalDepartments = 0,
+                LatestNotifications = latestNotifications
             };
 
             return View(model);
@@ -1473,7 +1544,7 @@ namespace HastaneRandevuSistemi.Controllers
                 new() { Value = "All", Text = "Tüm kullanıcılar" },
                 new() { Value = "Hasta", Text = "Hastalar" },
                 new() { Value = "Doktor", Text = "Doktorlar" },
-                new() { Value = "Admin", Text = "Adminler" }
+                new() { Value = "Sekreter", Text = "Sekreter" }
             };
         }
 

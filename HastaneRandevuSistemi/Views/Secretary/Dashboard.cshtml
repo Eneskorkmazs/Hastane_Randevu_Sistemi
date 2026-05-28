@@ -277,9 +277,16 @@
                         <div class="col-md-5">
                             <div class="card border-0 shadow-sm rounded-4 h-100">
                                 <div class="card-header bg-white p-4 border-0">
-                                    <h6 class="fw-bold mb-0 text-info">Sistem Duyuruları</h6>
+                                    <h6 class="fw-bold mb-0 text-info">Duyurular</h6>
                                 </div>
                                 <div class="card-body p-4 pt-0">
+                                    @if (!Model.SystemAnnouncements.Any())
+                                    {
+                                        <div class="text-center text-muted py-4">
+                                            <i class="fa-regular fa-bell-slash fs-4 mb-2 d-block"></i>
+                                            <div class="x-small">Henüz sekreter duyurusu bulunmuyor.</div>
+                                        </div>
+                                    }
                                     @foreach (var ann in Model.SystemAnnouncements)
                                     {
                                         <div class="d-flex gap-3 mb-3 pb-3 border-bottom border-light position-relative announcement-item">

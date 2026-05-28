@@ -13,6 +13,30 @@ namespace HastaneRandevuSistemi.Controllers
     [Authorize(Roles = "Hasta")]
     public class PatientController : Controller
     {
+        private static readonly IReadOnlyDictionary<string, decimal> DepartmentPriceMap =
+            new Dictionary<string, decimal>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["DiÅŸ SaÄŸlÄ±ÄŸÄ± ve HastalÄ±klarÄ±"] = 1250m,
+                ["Dahiliye (Ä°Ã§ HastalÄ±klarÄ±)"] = 1100m,
+                ["Kardiyoloji"] = 2200m,
+                ["NÃ¶roloji"] = 2100m,
+                ["Ortopedi ve Travmatoloji"] = 1850m,
+                ["GÃ¶z HastalÄ±klarÄ±"] = 1450m,
+                ["Kulak Burun BoÄŸaz"] = 1400m,
+                ["Genel Cerrahi"] = 2300m,
+                ["Dermatoloji"] = 1200m,
+                ["Pediatri"] = 1150m,
+                ["Psikiyatri"] = 1600m,
+                ["Ãœroloji"] = 1750m,
+                ["Fizik Tedavi ve Rehabilitasyon"] = 1350m,
+                ["KadÄ±n HastalÄ±klarÄ± ve DoÄŸum"] = 1900m,
+                ["GÃ¶ÄŸÃ¼s HastalÄ±klarÄ±"] = 1550m,
+                ["Enfeksiyon HastalÄ±klarÄ±"] = 1300m,
+                ["Beyin ve Sinir Cerrahisi"] = 2750m
+            };
+
+        private const decimal DefaultAppointmentFee = 1350m;
+
         private readonly ApplicationDbContext _context;
         private readonly UserManager<AppUser> _userManager;
         private readonly ISymptomCheckerService _symptomCheckerService;
@@ -37,19 +61,34 @@ namespace HastaneRandevuSistemi.Controllers
 
             var pendingAppointments = appointments.Where(a => a.Status != AppointmentStatus.Tamamlandi && a.Status != AppointmentStatus.Iptal).ToList();
             
-            var notifications = await _context.Notifications
-                .Where(n => n.UserId == user.Id || n.Type == "Duyuru")
+            var notifications = DeduplicateNotifications(await _context.Notifications
+                .Where(n => n.UserId == user.Id)
                 .OrderByDescending(n => n.CreatedDate)
+                .Take(20)
+                .ToListAsync())
                 .Take(5)
-                .ToListAsync();
+                .ToList();
 
             var prescriptionCount = appointments.Count(a => a.PrescriptionCreatedAt != null);
             var medicalHistoryCount = await _context.MedicalHistories.CountAsync(m => m.UserId == user.Id);
-            var unreadNotificationsCount = await _context.Notifications.CountAsync(n => (n.UserId == user.Id || n.Type == "Duyuru") && !n.IsRead);
+            var unreadNotificationsCount = DeduplicateNotifications(await _context.Notifications
+                .Where(n => n.UserId == user.Id && !n.IsRead)
+                .ToListAsync())
+                .Count;
 
-            var departmentFees = await _context.Departments
-                .Select(d => new DepartmentFeeItem { DepartmentName = d.Name, Fee = 150.00m }) 
+            var departments = await _context.Departments
+                .AsNoTracking()
+                .OrderBy(d => d.Name)
+                .Select(d => d.Name)
                 .ToListAsync();
+
+            var departmentFees = departments
+                .Select(name => new DepartmentFeeItem
+                {
+                    DepartmentName = name,
+                    Fee = DepartmentPriceMap.TryGetValue(name, out var fee) ? fee : DefaultAppointmentFee
+                })
+                .ToList();
 
             var userReview = await _context.HospitalReviews
                 .AsNoTracking()
@@ -351,10 +390,10 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Challenge();
 
-            var notifications = await _context.Notifications
+            var notifications = DeduplicateNotifications(await _context.Notifications
                 .Where(n => n.UserId == user.Id)
                 .OrderByDescending(n => n.CreatedDate)
-                .ToListAsync();
+                .ToListAsync());
 
             return View(notifications);
         }
@@ -365,7 +404,10 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Json(new { count = 0 });
 
-            var count = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
+            var count = DeduplicateNotifications(await _context.Notifications
+                .Where(n => n.UserId == user.Id && !n.IsRead)
+                .ToListAsync())
+                .Count;
             return Json(new { count });
         }
 
@@ -376,14 +418,17 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == user.Id);
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && (n.UserId == user.Id));
             if (notification != null && !notification.IsRead)
             {
                 notification.IsRead = true;
                 await _context.SaveChangesAsync();
             }
 
-            var unreadCount = await _context.Notifications.CountAsync(n => n.UserId == user.Id && !n.IsRead);
+            var unreadCount = DeduplicateNotifications(await _context.Notifications
+                .Where(n => n.UserId == user.Id && !n.IsRead)
+                .ToListAsync())
+                .Count;
             return Json(new { success = true, unreadCount });
         }
 
@@ -394,7 +439,7 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var unread = await _context.Notifications.Where(n => n.UserId == user.Id && !n.IsRead).ToListAsync();
+            var unread = await _context.Notifications.Where(n => (n.UserId == user.Id) && !n.IsRead).ToListAsync();
             if (unread.Any())
             {
                 unread.ForEach(n => n.IsRead = true);
@@ -411,7 +456,7 @@ namespace HastaneRandevuSistemi.Controllers
             var user = await _userManager.GetUserAsync(User);
             if (user == null) return Unauthorized();
 
-            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && n.UserId == user.Id);
+            var notification = await _context.Notifications.FirstOrDefaultAsync(n => n.Id == id && (n.UserId == user.Id));
             if (notification != null)
             {
                 _context.Notifications.Remove(notification);
@@ -449,7 +494,7 @@ namespace HastaneRandevuSistemi.Controllers
             if (ids != null && ids.Length > 0)
             {
                 var toDelete = await _context.Notifications
-                    .Where(n => n.UserId == user.Id && ids.Contains(n.Id))
+                    .Where(n => (n.UserId == user.Id) && ids.Contains(n.Id))
                     .ToListAsync();
 
                 if (toDelete.Any())
@@ -650,6 +695,22 @@ namespace HastaneRandevuSistemi.Controllers
             await _context.SaveChangesAsync();
             TempData["SuccessMessage"] = "Destek talebiniz başarıyla alındı. İlgili birimlerimiz en kısa sürede sizinle iletişime geçecektir.";
             return RedirectToAction(nameof(Help));
+        }
+
+        private static List<Notification> DeduplicateNotifications(IEnumerable<Notification> notifications)
+        {
+            return notifications
+                .GroupBy(n => new
+                {
+                    n.Type,
+                    Title = (n.Title ?? string.Empty).Trim(),
+                    Message = (n.Message ?? string.Empty).Trim(),
+                    Link = n.Link ?? string.Empty,
+                    Minute = new DateTime(n.CreatedDate.Year, n.CreatedDate.Month, n.CreatedDate.Day, n.CreatedDate.Hour, n.CreatedDate.Minute, 0)
+                })
+                .Select(g => g.OrderByDescending(n => n.Id).First())
+                .OrderByDescending(n => n.CreatedDate)
+                .ToList();
         }
 
         private bool IsValidFile(IFormFile file)

@@ -74,35 +74,7 @@
     </div>
 
     <div class="row g-4 mb-4">
-        <div class="col-12 col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body p-4">
-                    <h5 class="fw-bold mb-3">Randevu Özeti</h5>
-                    <div class="d-flex justify-content-between py-2 border-bottom">
-                        <span>Toplam</span>
-                        <strong>@Model.TotalAppointments</strong>
-                    </div>
-                    <div class="d-flex justify-content-between py-2 border-bottom">
-                        <span>Bekleyen</span>
-                        <strong class="text-warning">@Model.PendingAppointments</strong>
-                    </div>
-                    <div class="d-flex justify-content-between py-2 border-bottom">
-                        <span>Onaylanan</span>
-                        <strong class="text-success">@Model.ApprovedAppointments</strong>
-                    </div>
-                    <div class="d-flex justify-content-between py-2 border-bottom">
-                        <span>Tamamlanan</span>
-                        <strong class="text-primary">@Model.CompletedAppointments</strong>
-                    </div>
-                    <div class="d-flex justify-content-between py-2">
-                        <span>İptal</span>
-                        <strong class="text-danger">@Model.CancelledAppointments</strong>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="col-12 col-lg-8">
+        <div class="col-12">
             <div class="card border-0 shadow-sm rounded-4 h-100">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -275,7 +247,6 @@
         <div class="d-flex flex-wrap gap-2">
             <a asp-controller="Doctor" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">Doktor Ekle</a>
             <a asp-controller="Department" asp-action="Create" class="btn btn-outline-dark rounded-pill fw-bold px-4">Bölüm Ekle</a>
-            <a asp-controller="Appointment" asp-action="Create" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm">Yeni Randevu</a>
         </div>
     </div>
 </div>

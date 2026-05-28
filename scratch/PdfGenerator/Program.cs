@@ -71,7 +71,7 @@ public class Program {
         sb.AppendLine("ET");
         string stream = sb.ToString();
         string content = "<< /Length " + stream.Length + " >>\nstream\n" + stream + "\nendstream";
-        
+
         string[] objects = {
             "<< /Type /Catalog /Pages 2 0 R >>",
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",

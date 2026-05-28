@@ -106,12 +106,15 @@ namespace HastaneRandevuSistemi.Controllers
                 .Take(5)
                 .ToListAsync();
 
-            // System Announcements (Recent global notifications)
-            model.SystemAnnouncements = await _context.Notifications
-                .Where(n => n.Type == "Duyuru")
-                .OrderByDescending(n => n.CreatedDate)
-                .Take(5)
-                .ToListAsync();
+            var secretaryUser = await _userManager.GetUserAsync(User);
+
+            model.SystemAnnouncements = secretaryUser == null
+                ? new List<Notification>()
+                : await _context.Notifications
+                    .Where(n => n.UserId == secretaryUser.Id && (n.Type == "Duyuru" || n.Type == "DuyuruSekreter"))
+                    .OrderByDescending(n => n.CreatedDate)
+                    .Take(5)
+                    .ToListAsync();
 
             model.Pharmacies = await _context.Pharmacies.OrderBy(p => p.Name).ToListAsync();
 
@@ -166,21 +169,22 @@ namespace HastaneRandevuSistemi.Controllers
             if (string.IsNullOrWhiteSpace(Title) || string.IsNullOrWhiteSpace(Message))
                 return Json(new { success = false, message = "Başlık ve mesaj zorunludur." });
 
-            var actor = await GetCurrentActorAsync();
-            // Eğer UserId bulunamazsa (oturum düşmüşse vb.), veritabanı hatası almamak için sistem ID'si veya sabit bir değer kullanıyoruz.
-            string targetUserId = actor.UserId ?? _userManager.GetUserId(User) ?? "system_secretary";
-
-            var notification = new Notification
+            var patients = await _userManager.GetUsersInRoleAsync("Hasta");
+            if (patients.Count == 0)
             {
-                UserId = targetUserId,
+                return Json(new { success = false, message = "Duyuru gönderilecek hasta kullanıcısı bulunamadı." });
+            }
+
+            var createdDate = DateTime.Now;
+            await _context.Notifications.AddRangeAsync(patients.Select(patient => new Notification
+            {
+                UserId = patient.Id,
                 Title = Title.Trim(),
                 Message = Message.Trim(),
-                Type = "Duyuru",
-                CreatedDate = DateTime.Now,
-                Link = "/Patient/Dashboard"
-            };
-
-            _context.Notifications.Add(notification);
+                Type = "DuyuruHasta",
+                CreatedDate = createdDate,
+                Link = null
+            }));
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Duyuru başarıyla yayınlandı.";
@@ -192,6 +196,19 @@ namespace HastaneRandevuSistemi.Controllers
         {
             var count = await _context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Bekliyor);
             return Json(new { count });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> UnreadNotificationCount()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return Json(new { count = 0 });
+
+            var announcementCount = await _context.Notifications.CountAsync(n =>
+                n.UserId == user.Id && (n.Type == "Duyuru" || n.Type == "DuyuruSekreter") && !n.IsRead);
+            var pendingAppointmentCount = await _context.Appointments.CountAsync(a => a.Status == AppointmentStatus.Bekliyor);
+
+            return Json(new { count = announcementCount + pendingAppointmentCount });
         }
 
         [HttpGet]

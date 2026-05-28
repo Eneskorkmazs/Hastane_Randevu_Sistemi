@@ -1,4 +1,4 @@
-﻿@model IEnumerable<HastaneRandevuSistemi.Models.Notification>
+@model IEnumerable<HastaneRandevuSistemi.Models.Notification>
 
 @{
     ViewData["Title"] = "Bildirimler";
@@ -63,7 +63,7 @@
                     <button type="submit" class="btn btn-outline-danger rounded-pill px-3" id="btnDeleteSelected" disabled>
                         <i class="fa-solid fa-trash-can me-2"></i>Seçilenleri Sil
                     </button>
-                    <button type="submit" formaction="@Url.Action("DeleteAll","Patient")" class="btn btn-danger rounded-pill px-3" onclick="return confirm('Tüm bildirimler silinsin mi?');">
+                    <button type="submit" formaction="@Url.Action("DeleteAll")" class="btn btn-danger rounded-pill px-3" onclick="return confirm('Tüm bildirimler silinsin mi?');">
                         <i class="fa-solid fa-trash me-2"></i>Tümünü Sil
                     </button>
                 </div>
@@ -118,15 +118,15 @@
     }
 </div>
 
-<form id="markReadForm" method="post" asp-action="MarkAsReadAjax" asp-controller="Patient" class="d-none">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="id" id="markReadId" />
-</form>
+    <form id="markReadForm" method="post" asp-action="MarkAsReadAjax" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="markReadId" />
+    </form>
 
-<form id="deleteNotifForm" method="post" asp-action="DeleteNotificationAjax" asp-controller="Patient" class="d-none">
-    @Html.AntiForgeryToken()
-    <input type="hidden" name="id" id="deleteNotifId" />
-</form>
+    <form id="deleteNotifForm" method="post" asp-action="DeleteNotificationAjax" class="d-none">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="deleteNotifId" />
+    </form>
 
 @section Scripts {
     <script>

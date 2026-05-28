@@ -105,121 +105,128 @@
         </div>
     }
 
-    <div class="row g-4">
-        <div class="col-lg-5">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <span class="eyebrow text-primary">Hasta Deneyimi</span>
-                <h3 class="fw-bold mb-3">Genel Hastane Değerlendirmesi</h3>
-                <p class="text-muted mb-4">Hizmet kalitemizi geliştirmek için puan ve yorum bırakabilirsiniz.</p>
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                    <span class="eyebrow text-primary">Hasta Deneyimi</span>
+                    <h3 class="fw-bold mb-3">Genel Hastane Değerlendirmesi</h3>
+                    <p class="text-muted mb-4">Hizmet kalitemizi geliştirmek için puan ve yorum bırakabilirsiniz.</p>
 
-                <div class="d-flex align-items-center gap-3 mb-2">
-                    <div class="display-6 fw-bold text-primary">@Model.AverageRating.ToString("0.0")</div>
-                    <div class="text-muted">/ 5 ortalama puan</div>
-                </div>
-                <div class="text-muted mb-3">@Model.TotalReviewCount değerlendirme</div>
-
-                <form asp-action="SubmitHospitalReview" method="post" class="row g-3">
-                    <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-0" role="alert"></div>
-                    @if (Model.HasCurrentUserReview)
-                    {
-                        <div class="alert alert-info small mb-0" role="alert">
-                            Bu hesap ile daha önce değerlendirme yaptınız. Her hesap yalnızca bir yorum bırakabilir.
-                        </div>
-                    }
-
-                    <div class="col-12">
-                        <label asp-for="Rating" class="form-label fw-semibold">Puan</label>
-                        <input asp-for="Rating" type="hidden" id="RatingInput" />
-                        <div id="ratingStars" class="trendyol-stars" role="radiogroup" aria-label="Puan">
-                            <button type="button" class="star-btn" data-value="1" aria-label="1 yıldız"><i class="fa-solid fa-star"></i></button>
-                            <button type="button" class="star-btn" data-value="2" aria-label="2 yıldız"><i class="fa-solid fa-star"></i></button>
-                            <button type="button" class="star-btn" data-value="3" aria-label="3 yıldız"><i class="fa-solid fa-star"></i></button>
-                            <button type="button" class="star-btn" data-value="4" aria-label="4 yıldız"><i class="fa-solid fa-star"></i></button>
-                            <button type="button" class="star-btn" data-value="5" aria-label="5 yıldız"><i class="fa-solid fa-star"></i></button>
-                        </div>
-                        <small id="ratingText" class="text-muted d-block mt-1">Puanınızı seçin</small>
-                        <span asp-validation-for="Rating" class="text-danger small"></span>
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <div class="display-6 fw-bold text-primary">@Model.AverageRating.ToString("0.0")</div>
+                        <div class="text-muted">/ 5 ortalama puan</div>
                     </div>
+                    <div class="text-muted mb-3">@Model.TotalReviewCount değerlendirme</div>
 
-                    <div class="col-12">
-                        <label asp-for="ReviewerName" class="form-label fw-semibold">Ad Soyad</label>
-                        <input asp-for="ReviewerName" class="form-control" placeholder="Örnek: Ali Yılmaz" />
-                        <span asp-validation-for="ReviewerName" class="text-danger small"></span>
-                    </div>
-
-                    <div class="col-12">
-                        <label asp-for="Comment" class="form-label fw-semibold">Yorum (Opsiyonel)</label>
-                        <textarea asp-for="Comment" class="form-control" rows="4" placeholder="Deneyiminizi kısaca yazabilirsiniz"></textarea>
-                        <span asp-validation-for="Comment" class="text-danger small"></span>
-                    </div>
-
-                    <div class="col-12 d-grid">
+                    <form asp-action="SubmitHospitalReview" method="post" class="row g-3">
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger small mb-0" role="alert"></div>
                         @if (Model.HasCurrentUserReview)
                         {
-                            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold" disabled>
-                                <i class="fa-solid fa-star me-2"></i>Değerlendirmeyi Gönder
-                            </button>
+                            <div class="alert alert-info small mb-0" role="alert">
+                                Bu hesap ile daha önce değerlendirme yaptınız. Her hesap yalnızca bir yorum bırakabilir.
+                            </div>
                         }
-                        else
-                        {
-                            <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold">
-                                <i class="fa-solid fa-star me-2"></i>Değerlendirmeyi Gönder
-                            </button>
-                        }
+
+                        <div class="col-12">
+                            <label asp-for="Rating" class="form-label fw-semibold">Puan</label>
+                            <input asp-for="Rating" type="hidden" id="RatingInput" />
+                            <div id="ratingStars" class="trendyol-stars" role="radiogroup" aria-label="Puan">
+                                <button type="button" class="star-btn" data-value="1" aria-label="1 yıldız"><i class="fa-solid fa-star"></i></button>
+                                <button type="button" class="star-btn" data-value="2" aria-label="2 yıldız"><i class="fa-solid fa-star"></i></button>
+                                <button type="button" class="star-btn" data-value="3" aria-label="3 yıldız"><i class="fa-solid fa-star"></i></button>
+                                <button type="button" class="star-btn" data-value="4" aria-label="4 yıldız"><i class="fa-solid fa-star"></i></button>
+                                <button type="button" class="star-btn" data-value="5" aria-label="5 yıldız"><i class="fa-solid fa-star"></i></button>
+                            </div>
+                            <small id="ratingText" class="text-muted d-block mt-1">Puanınızı seçin</small>
+                            <span asp-validation-for="Rating" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="ReviewerName" class="form-label fw-semibold">Ad Soyad (İsteğe Bağlı)</label>
+                            <input asp-for="ReviewerName" class="form-control" placeholder="Varsayılan: Hesap adınız" />
+                            <span asp-validation-for="ReviewerName" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12">
+                            <label asp-for="Comment" class="form-label fw-semibold">Yorum (Opsiyonel)</label>
+                            <textarea asp-for="Comment" class="form-control" rows="4" placeholder="Deneyiminizi kısaca yazabilirsiniz"></textarea>
+                            <span asp-validation-for="Comment" class="text-danger small"></span>
+                        </div>
+
+                        <div class="col-12 d-grid">
+                            @if (Model.HasCurrentUserReview)
+                            {
+                                <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold" disabled>
+                                    <i class="fa-solid fa-star me-2"></i>Değerlendirmeyi Gönder
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="submit" class="btn btn-primary rounded-pill py-2 fw-semibold">
+                                    <i class="fa-solid fa-star me-2"></i>Değerlendirmeyi Gönder
+                                </button>
+                            }
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h4 class="fw-bold mb-1">Son Değerlendirmeler</h4>
+                        </div>
                     </div>
-                </form>
-            </div>
-        </div>
 
-        <div class="col-lg-7">
-            <div class="card border-0 shadow-sm rounded-4 p-4 h-100">
-                <h4 class="fw-bold mb-3">Son Değerlendirmeler</h4>
-
-                @if (!Model.RecentReviews.Any())
-                {
-                    <div class="text-muted">Henüz değerlendirme bulunmuyor.</div>
-                }
-                else
-                {
-                    @for (var idx = 0; idx < Model.RecentReviews.Count; idx++)
+                    @if (!Model.RecentReviews.Any())
                     {
-                        var review = Model.RecentReviews[idx];
-                        <article class="review-item py-3 @(idx < Model.RecentReviews.Count - 1 ? "border-bottom" : "")">
-                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
-                                <strong>@review.ReviewerName</strong>
-                                <small class="text-muted">@review.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
-                            </div>
-                            <div class="rating-stars mb-2">
-                                @for (var i = 1; i <= 5; i++)
-                                {
-                                    <i class="fa-solid fa-star @(i <= review.Rating ? "text-warning" : "text-secondary opacity-25")"></i>
-                                }
-                                <span class="ms-2 small text-muted">(@review.Rating/5)</span>
-                            </div>
-                            @if (!string.IsNullOrWhiteSpace(review.Comment))
-                            {
-                                <p class="mb-2 text-muted">@review.Comment</p>
-                            }
-                            @if (!string.IsNullOrWhiteSpace(review.AdminReply))
-                            {
-                                <div class="mt-2 p-3 bg-light rounded-3 border-start border-4 border-primary">
-                                    <div class="d-flex align-items-center mb-1">
-                                        <i class="fa-solid fa-hospital text-primary me-2"></i>
-                                        <strong class="text-dark small">Hastane Yönetimi</strong>
-                                        @if (review.AdminReplyDate.HasValue)
-                                        {
-                                            <span class="text-muted small ms-auto">@review.AdminReplyDate.Value.ToString("dd.MM.yyyy")</span>
-                                        }
-                                    </div>
-                                    <p class="mb-0 small text-muted">@review.AdminReply</p>
-                                </div>
-                            }
-                        </article>
+                        <div class="text-muted">Henüz değerlendirme bulunmuyor.</div>
                     }
-                }
+                    else
+                    {
+                        @for (var idx = 0; idx < Model.RecentReviews.Count; idx++)
+                        {
+                            var review = Model.RecentReviews[idx];
+                            <article class="review-item py-3 @(idx < Model.RecentReviews.Count - 1 ? "border-bottom" : "")">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+                                    <strong>@review.ReviewerName</strong>
+                                    <small class="text-muted">@review.CreatedAt.ToString("dd.MM.yyyy HH:mm")</small>
+                                </div>
+                                <div class="rating-stars mb-2">
+                                    @for (var i = 1; i <= 5; i++)
+                                    {
+                                        <i class="fa-solid fa-star @(i <= review.Rating ? "text-warning" : "text-secondary opacity-25")"></i>
+                                    }
+                                    <span class="ms-2 small text-muted">(@review.Rating/5)</span>
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(review.Comment))
+                                {
+                                    <p class="mb-2 text-muted">@review.Comment</p>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(review.AdminReply))
+                                {
+                                    <div class="mt-2 p-3 bg-light rounded-3 border-start border-4 border-primary">
+                                        <div class="d-flex align-items-center mb-1">
+                                            <i class="fa-solid fa-hospital text-primary me-2"></i>
+                                            <strong class="text-dark small">Hastane Yönetimi</strong>
+                                            @if (review.AdminReplyDate.HasValue)
+                                            {
+                                                <span class="text-muted small ms-auto">@review.AdminReplyDate.Value.ToString("dd.MM.yyyy")</span>
+                                            }
+                                        </div>
+                                        <p class="mb-0 small text-muted">@review.AdminReply</p>
+                                    </div>
+                                }
+                            </article>
+                        }
+                    }
+                </div>
             </div>
         </div>
-    </div>
+    }
 </div>
 
 <style>

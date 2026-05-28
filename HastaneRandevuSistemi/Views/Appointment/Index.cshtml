@@ -4,6 +4,7 @@
     bool isHasta = User.IsInRole("Hasta");
     bool isAdmin = User.IsInRole("Admin");
     bool isDoctor = User.IsInRole("Doktor");
+    bool isSecretary = User.IsInRole("Sekreter");
     ViewData["Title"] = isHasta ? "Randevu Geçmişim" : "Randevu Listesi";
     var statusOptions = ViewData["StatusOptions"] as IEnumerable<SelectListItem>;
     var doctorOptions = ViewData["DoctorOptions"] as IEnumerable<SelectListItem>;
@@ -59,9 +60,12 @@
             {
                 <a asp-controller="Patient" asp-action="Dashboard" class="btn btn-outline-primary rounded-pill px-4">Panele Dön</a>
             }
-            <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
-                <i class="fa fa-plus me-2"></i>Yeni Randevu
-            </a>
+            @if (isHasta || isSecretary)
+            {
+                <a asp-action="Create" class="btn btn-primary rounded-pill px-4 shadow-sm">
+                    <i class="fa fa-plus me-2"></i>Yeni Randevu
+                </a>
+            }
         </div>
     </div>
 

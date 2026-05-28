@@ -103,6 +103,11 @@ namespace HastaneRandevuSistemi.Controllers
             string? sortBy = null,
             bool onlyUpcoming = false)
         {
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("AdminDashboard", "Home");
+            }
+
             await AppointmentStatusSync.CompleteExpiredAppointmentsAsync(_context);
 
             var normalizedFrom = fromDate?.Date;
@@ -123,10 +128,13 @@ namespace HastaneRandevuSistemi.Controllers
             if (User.IsInRole("Doktor"))
             {
                 var user = await _userManager.GetUserAsync(User);
-                var doctor = await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == user!.Id);
+                var doctor = user == null
+                    ? null
+                    : await _context.Doctors.FirstOrDefaultAsync(d => d.UserId == user.Id)
+                        ?? await _context.Doctors.FirstOrDefaultAsync(d => d.Name == user.Name && d.Surname == user.Surname);
                 if (doctor != null)
                 {
-                    appointmentsQuery = appointmentsQuery.Where(a => a.Doctor != null && a.Doctor.DepartmentId == doctor.DepartmentId);
+                    appointmentsQuery = appointmentsQuery.Where(a => a.DoctorId == doctor.Id);
                 }
                 else
                 {
@@ -1004,7 +1012,7 @@ namespace HastaneRandevuSistemi.Controllers
         }
 
         [HttpGet]
-        [Authorize(Roles = "Admin,Doktor,Hasta")]
+        [Authorize(Roles = "Admin,Doktor,Hasta,Sekreter")]
         public async Task<IActionResult> GetQrTicket(int id)
         {
             var appointment = await _context.Appointments
@@ -1013,6 +1021,24 @@ namespace HastaneRandevuSistemi.Controllers
                 .FirstOrDefaultAsync(a => a.Id == id);
                 
             if (appointment == null) return NotFound();
+
+            if (User.IsInRole("Doktor") && !await IsCurrentDoctorOwnerAsync(appointment.DoctorId))
+            {
+                return Forbid();
+            }
+
+            if (User.IsInRole("Hasta"))
+            {
+                var user = await _userManager.GetUserAsync(User);
+                var isOwner = user != null && (
+                    appointment.PatientUserId == user.Id ||
+                    (appointment.PatientUserId == null && appointment.PatientName == user.Name && appointment.PatientSurname == user.Surname));
+
+                if (!isOwner)
+                {
+                    return Forbid();
+                }
+            }
             
             var deptName = appointment.Doctor?.Department?.Name ?? "Belirtilmemiş";
             var qrText = $"Randevu No: {appointment.Id}\nHasta: {appointment.PatientName} {appointment.PatientSurname}\nTarih: {appointment.AppointmentDate:dd.MM.yyyy HH:mm}\nPoliklinik: {deptName}\nDurum: {appointment.Status}";
@@ -1052,7 +1078,7 @@ namespace HastaneRandevuSistemi.Controllers
             return View(appointment);
         }
         [HttpGet]
-        [Authorize(Roles = "Admin,Doktor,Hasta")]
+        [Authorize(Roles = "Admin,Doktor,Hasta,Sekreter")]
         public async Task<IActionResult> Details(int id)
         {
             var appointment = await _context.Appointments

@@ -47,6 +47,7 @@ namespace HastaneRandevuSistemi.Data
             await NormalizeDepartmentsAsync(context);
             await SeedDepartmentsAndDoctorsAsync(context, userManager, configuration, environment, logger);
             await SeedDemoAppointmentsAsync(context, environment, logger);
+            await EnsureMehmetKorkmazPrescriptionDemoAsync(context, userManager);
             await SeedTodayQueueAppointmentsAsync(context, environment, logger);
             await EnsurePharmaciesAsync(context);
 
@@ -215,6 +216,111 @@ namespace HastaneRandevuSistemi.Data
             await context.SaveChangesAsync();
         }
         private static Task SeedTodayQueueAppointmentsAsync(ApplicationDbContext context, IHostEnvironment environment, ILogger logger) => Task.CompletedTask;
+
+        private static async Task EnsureMehmetKorkmazPrescriptionDemoAsync(ApplicationDbContext context, UserManager<AppUser> userManager)
+        {
+            var doctor = await context.Doctors
+                .Include(d => d.Department)
+                .FirstOrDefaultAsync(d => d.Name == "Mehmet" && d.Surname == "Korkmaz");
+
+            if (doctor == null)
+            {
+                var department = await context.Departments.FirstOrDefaultAsync(d => d.Name == "Kardiyoloji")
+                    ?? await context.Departments.OrderBy(d => d.Id).FirstOrDefaultAsync();
+
+                if (department == null)
+                {
+                    department = new Department { Name = "Kardiyoloji", Description = "Kalp Hastalıkları" };
+                    context.Departments.Add(department);
+                    await context.SaveChangesAsync();
+                }
+
+                const string doctorEmail = "mehmet.korkmaz@hastane.com";
+                var doctorUser = await userManager.FindByEmailAsync(doctorEmail);
+                if (doctorUser == null)
+                {
+                    doctorUser = new AppUser
+                    {
+                        UserName = doctorEmail,
+                        Email = doctorEmail,
+                        Name = "Mehmet",
+                        Surname = "Korkmaz",
+                        EmailConfirmed = true
+                    };
+
+                    await userManager.CreateAsync(doctorUser, "Doktor123!");
+                    await userManager.AddToRoleAsync(doctorUser, "Doktor");
+                }
+
+                doctor = new Doctor
+                {
+                    UserId = doctorUser.Id,
+                    Name = "Mehmet",
+                    Surname = "Korkmaz",
+                    DepartmentId = department.Id,
+                    Title = "Uzm. Dr."
+                };
+
+                context.Doctors.Add(doctor);
+                await context.SaveChangesAsync();
+            }
+
+            const string demoPhonePrefix = "05000009";
+            var existingDemoCount = await context.Appointments
+                .CountAsync(a => a.DoctorId == doctor.Id
+                    && a.PatientPhone != null
+                    && a.PatientPhone.StartsWith(demoPhonePrefix));
+
+            if (existingDemoCount >= 5)
+            {
+                return;
+            }
+
+            var demoPatients = new[]
+            {
+                ("Ahmet", "Yildirim"),
+                ("Elif", "Arslan"),
+                ("Merve", "Kaya"),
+                ("Burak", "Acar"),
+                ("Seda", "Ozturk")
+            };
+
+            var appointments = new List<Appointment>();
+            for (var i = existingDemoCount; i < 5; i++)
+            {
+                var patient = demoPatients[i];
+                var appointmentDate = DateTime.Today
+                    .AddDays(-(i + 1))
+                    .AddHours(10 + i);
+
+                appointments.Add(new Appointment
+                {
+                    AppointmentDate = appointmentDate,
+                    PatientName = patient.Item1,
+                    PatientSurname = patient.Item2,
+                    PatientPhone = $"{demoPhonePrefix}{i:D2}",
+                    DoctorId = doctor.Id,
+                    Status = AppointmentStatus.Tamamlandi,
+                    CreatedDate = DateTime.Now.AddMinutes(-i),
+                    ApprovedDate = appointmentDate.AddDays(-1),
+                    ApprovedByName = "Demo Sekreter",
+                    IsCollected = true,
+                    CollectedDate = appointmentDate.AddMinutes(20),
+                    Price = 2200m,
+                    PrescriptionDiagnosis = null,
+                    PrescriptionMedications = null,
+                    PrescriptionNotes = null,
+                    PrescriptionCreatedAt = null,
+                    PrescriptionSentAt = null,
+                    PrescriptionSentByName = null,
+                    PharmacyId = null,
+                    PharmacyStatus = PrescriptionPharmacyStatus.Yok
+                });
+            }
+
+            await context.Appointments.AddRangeAsync(appointments);
+            await context.SaveChangesAsync();
+        }
 
         private static async Task EnsurePharmaciesAsync(ApplicationDbContext context)
         {

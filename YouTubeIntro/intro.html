@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Enes Korkmaz - YouTube Intro</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --blue: #0a7cff;
+      --cyan: #65d7ff;
+      --ink: #030712;
+      --panel: rgba(4, 12, 31, 0.84);
+      --line: rgba(95, 183, 255, 0.42);
+      --text: #f8fbff;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      gap: 18px;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 22% 18%, rgba(10, 124, 255, 0.22), transparent 28%),
+        radial-gradient(circle at 78% 72%, rgba(101, 215, 255, 0.16), transparent 32%),
+        #02050d;
+      font-family: Inter, Arial, Helvetica, sans-serif;
+      color: var(--text);
+    }
+
+    .stage {
+      width: min(100%, 1280px);
+      aspect-ratio: 16 / 9;
+      position: relative;
+      overflow: hidden;
+      background: var(--ink);
+      border: 1px solid rgba(101, 215, 255, 0.22);
+      box-shadow: 0 26px 90px rgba(0, 0, 0, 0.55), 0 0 70px rgba(10, 124, 255, 0.22);
+    }
+
+    .scene {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      opacity: 0;
+      animation: show 16s linear infinite both;
+      isolation: isolate;
+    }
+
+    .scene::before,
+    .scene::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+    }
+
+    .scene::before {
+      background:
+        linear-gradient(90deg, rgba(3, 7, 18, 0.95), rgba(3, 7, 18, 0.35), rgba(3, 7, 18, 0.95)),
+        repeating-linear-gradient(0deg, rgba(101, 215, 255, 0.08) 0 1px, transparent 1px 44px),
+        repeating-linear-gradient(90deg, rgba(10, 124, 255, 0.08) 0 1px, transparent 1px 58px);
+    }
+
+    .scene::after {
+      background: linear-gradient(120deg, transparent 0 24%, rgba(101, 215, 255, 0.16) 26%, transparent 31% 100%);
+      transform: translateX(-130%);
+      animation: sweep 2s ease-in-out infinite;
+    }
+
+    .s1 { animation-delay: 0s; }
+    .s2 { animation-delay: 2s; }
+    .s3 { animation-delay: 4s; }
+    .s4 { animation-delay: 6s; }
+    .s5 { animation-delay: 8s; }
+    .s6 { animation-delay: 10s; }
+    .s7 { animation-delay: 12s; }
+    .s8 { animation-delay: 14s; }
+
+    .content {
+      width: min(86%, 980px);
+      text-align: center;
+      transform: translateY(18px) scale(0.98);
+      animation: lift 2s cubic-bezier(.2,.8,.2,1) infinite;
+    }
+
+    .code-mark {
+      width: clamp(82px, 11vw, 140px);
+      height: clamp(82px, 11vw, 140px);
+      margin: 0 auto 26px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      box-shadow: inset 0 0 22px rgba(10, 124, 255, 0.36), 0 0 44px rgba(10, 124, 255, 0.42);
+      clip-path: polygon(50% 0, 94% 25%, 94% 75%, 50% 100%, 6% 75%, 6% 25%);
+      color: var(--cyan);
+      font-weight: 900;
+      font-size: clamp(30px, 5vw, 62px);
+    }
+
+    .eyebrow {
+      font-size: clamp(12px, 1.5vw, 18px);
+      letter-spacing: 5px;
+      text-transform: uppercase;
+      color: #d7ecff;
+    }
+
+    h1,
+    h2 {
+      margin: 0;
+      line-height: 0.92;
+      text-transform: uppercase;
+      font-style: italic;
+      font-weight: 950;
+    }
+
+    h1 {
+      font-size: clamp(60px, 12vw, 180px);
+      text-shadow: 0 0 30px rgba(10, 124, 255, 0.42);
+    }
+
+    h2 {
+      font-size: clamp(44px, 8vw, 118px);
+    }
+
+    .blue {
+      color: var(--blue);
+    }
+
+    .handle,
+    .tagline {
+      margin-top: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 0 28px;
+      background: linear-gradient(90deg, rgba(10, 124, 255, 0.96), rgba(0, 77, 205, 0.94));
+      box-shadow: 0 0 34px rgba(10, 124, 255, 0.46);
+      font-size: clamp(18px, 3vw, 34px);
+      font-weight: 850;
+      transform: skewX(-10deg);
+    }
+
+    .tagline {
+      background: transparent;
+      box-shadow: none;
+      transform: none;
+      letter-spacing: 4px;
+      font-size: clamp(14px, 1.8vw, 24px);
+    }
+
+    .split {
+      width: min(88%, 1050px);
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: clamp(24px, 5vw, 70px);
+      align-items: center;
+    }
+
+    .laptop {
+      height: clamp(210px, 28vw, 360px);
+      border: 1px solid var(--line);
+      background:
+        linear-gradient(120deg, rgba(6, 19, 49, 0.92), rgba(1, 6, 16, 0.94)),
+        repeating-linear-gradient(0deg, transparent 0 20px, rgba(101, 215, 255, 0.09) 20px 21px);
+      box-shadow: inset 0 0 38px rgba(10, 124, 255, 0.18), 0 0 44px rgba(10, 124, 255, 0.22);
+      transform: perspective(620px) rotateY(-10deg) rotateX(3deg);
+      padding: 28px;
+      text-align: left;
+    }
+
+    .code-line {
+      height: 12px;
+      margin: 12px 0;
+      background: linear-gradient(90deg, var(--cyan), transparent);
+      opacity: 0.76;
+    }
+
+    .mock-site {
+      padding: clamp(28px, 4vw, 54px);
+      border: 1px solid var(--line);
+      background: linear-gradient(135deg, rgba(4, 12, 31, 0.95), rgba(1, 13, 35, 0.68));
+      box-shadow: 0 0 56px rgba(10, 124, 255, 0.28);
+      text-align: left;
+    }
+
+    .mock-site h3 {
+      margin: 0 0 14px;
+      font-size: clamp(30px, 5vw, 66px);
+      line-height: 1;
+    }
+
+    .mock-site p,
+    .tech-label {
+      margin: 0;
+      color: #c7dcf4;
+      font-size: clamp(16px, 2vw, 24px);
+      line-height: 1.45;
+    }
+
+    .techs {
+      display: flex;
+      justify-content: center;
+      gap: clamp(14px, 2vw, 28px);
+      flex-wrap: wrap;
+      margin-bottom: 34px;
+    }
+
+    .tech {
+      width: clamp(92px, 11vw, 142px);
+      aspect-ratio: 1;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: inset 0 0 24px rgba(10, 124, 255, 0.22), 0 0 34px rgba(10, 124, 255, 0.2);
+      font-size: clamp(26px, 4vw, 54px);
+      font-weight: 950;
+    }
+
+    .ring {
+      width: clamp(260px, 34vw, 480px);
+      aspect-ratio: 1;
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      border: 2px solid rgba(101, 215, 255, 0.36);
+      border-radius: 50%;
+      box-shadow: inset 0 0 44px rgba(10, 124, 255, 0.24), 0 0 52px rgba(10, 124, 255, 0.24);
+      animation: rotate 8s linear infinite;
+    }
+
+    .ring span {
+      display: block;
+      transform: rotate(0deg);
+      animation: rotateBack 8s linear infinite;
+      font-size: clamp(28px, 4vw, 58px);
+      line-height: 1.4;
+      text-transform: uppercase;
+      font-weight: 900;
+      letter-spacing: 4px;
+    }
+
+    .subscribe {
+      display: inline-flex;
+      margin-top: 28px;
+      padding: 18px 42px;
+      background: linear-gradient(90deg, #087bff, #0155d6);
+      box-shadow: 0 0 38px rgba(10, 124, 255, 0.54);
+      font-size: clamp(24px, 4vw, 52px);
+      font-weight: 950;
+      text-transform: uppercase;
+    }
+
+    .controls {
+      width: min(100%, 1280px);
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    button,
+    a.button {
+      border: 1px solid rgba(101, 215, 255, 0.38);
+      background: rgba(5, 18, 45, 0.88);
+      color: var(--text);
+      min-height: 42px;
+      padding: 0 16px;
+      font: 800 14px/1 Inter, Arial, sans-serif;
+      cursor: pointer;
+      text-decoration: none;
+    }
+
+    canvas {
+      display: none;
+    }
+
+    @keyframes show {
+      0%, 100% { opacity: 0; }
+      1.2%, 10.8% { opacity: 1; }
+      12.5% { opacity: 0; }
+    }
+
+    @keyframes lift {
+      0% { transform: translateY(22px) scale(0.98); opacity: 0.7; }
+      22%, 78% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-16px) scale(1.02); opacity: 0.68; }
+    }
+
+    @keyframes sweep {
+      0%, 30% { transform: translateX(-130%); }
+      74%, 100% { transform: translateX(130%); }
+    }
+
+    @keyframes rotate {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes rotateBack {
+      to { transform: rotate(-360deg); }
+    }
+
+    @media (max-width: 760px) {
+      body {
+        padding: 12px;
+      }
+
+      .split {
+        grid-template-columns: 1fr;
+      }
+
+      .laptop {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="stage" id="stage" aria-label="Enes Korkmaz YouTube intro animasyonu">
+    <section class="scene s1">
+      <div class="content">
+        <div class="code-mark">&lt;/&gt;</div>
+        <div class="tagline">HER FIKIR BIR SATIR KOD ILE BASLAR.</div>
+      </div>
+    </section>
+
+    <section class="scene s2">
+      <div class="content">
+        <div class="eyebrow">@enes_korkmazs_</div>
+        <h1>ENES</h1>
+        <h2 class="blue">KORKMAZ</h2>
+      </div>
+    </section>
+
+    <section class="scene s3">
+      <div class="content">
+        <h1>ENES</h1>
+        <h2>KORKMAZ</h2>
+        <div class="handle">@enes_korkmazs_</div>
+      </div>
+    </section>
+
+    <section class="scene s4">
+      <div class="split">
+        <div>
+          <h2>HASTANE</h2>
+          <h2 class="blue">RANDEVU</h2>
+          <div class="tagline">WEB PROJEM</div>
+        </div>
+        <div class="laptop" aria-hidden="true">
+          <div class="code-line" style="width:72%"></div>
+          <div class="code-line" style="width:48%"></div>
+          <div class="code-line" style="width:84%"></div>
+          <div class="code-line" style="width:54%"></div>
+          <div class="code-line" style="width:66%"></div>
+          <div class="code-line" style="width:39%"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="scene s5">
+      <div class="mock-site">
+        <h3>Modern Cozumler<br><span class="blue">Kolay Randevu</span></h3>
+        <p>Doktor, poliklinik ve hasta randevularini tek panelde yoneten web uygulamasi.</p>
+      </div>
+    </section>
+
+    <section class="scene s6">
+      <div class="content">
+        <div class="techs">
+          <div class="tech">C#</div>
+          <div class="tech">SQL</div>
+          <div class="tech">MVC</div>
+          <div class="tech">UI</div>
+        </div>
+        <div class="eyebrow">MODERN TEKNOLOJILER</div>
+      </div>
+    </section>
+
+    <section class="scene s7">
+      <div class="ring">
+        <span><span class="blue">HEDEFIM</span><br>DAHA IYISINI<br>URETMEK</span>
+      </div>
+    </section>
+
+    <section class="scene s8">
+      <div class="content">
+        <div class="code-mark">&lt;/&gt;</div>
+        <h2>ENES <span class="blue">KORKMAZ</span></h2>
+        <div class="eyebrow">YENI PROJELER VE VIDEOLAR ICIN</div>
+        <div class="subscribe">ABONE OL</div>
+      </div>
+    </section>
+  </main>
+
+  <div class="controls">
+    <button id="restart" type="button">Bastan Oynat</button>
+    <button id="export" type="button">WebM Video Indir</button>
+    <a class="button" href="youtube-kapak.jpeg" download>Kapak Gorselini Indir</a>
+  </div>
+
+  <canvas id="render" width="1280" height="720"></canvas>
+
+  <script>
+    const restart = document.getElementById("restart");
+    const exportButton = document.getElementById("export");
+    const stage = document.getElementById("stage");
+    const canvas = document.getElementById("render");
+    const ctx = canvas.getContext("2d");
+    const duration = 16000;
+    const fps = 30;
+
+    restart.addEventListener("click", () => {
+      stage.style.animation = "none";
+      for (const scene of document.querySelectorAll(".scene, .content")) {
+        scene.style.animation = "none";
+      }
+      void stage.offsetWidth;
+      for (const scene of document.querySelectorAll(".scene, .content")) {
+        scene.style.animation = "";
+      }
+    });
+
+    const ease = (x) => x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+
+    function drawBackground(t) {
+      const g = ctx.createLinearGradient(0, 0, 1280, 720);
+      g.addColorStop(0, "#02050d");
+      g.addColorStop(0.5, "#061738");
+      g.addColorStop(1, "#01030a");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, 1280, 720);
+
+      ctx.strokeStyle = "rgba(87, 190, 255, 0.12)";
+      ctx.lineWidth = 1;
+      for (let x = -120; x < 1400; x += 72) {
+        ctx.beginPath();
+        ctx.moveTo(x + (t * 80) % 72, 0);
+        ctx.lineTo(x - 220 + (t * 80) % 72, 720);
+        ctx.stroke();
+      }
+
+      const glow = ctx.createRadialGradient(640, 360, 60, 640, 360, 580);
+      glow.addColorStop(0, "rgba(10, 124, 255, 0.34)");
+      glow.addColorStop(1, "rgba(10, 124, 255, 0)");
+      ctx.fillStyle = glow;
+      ctx.fillRect(0, 0, 1280, 720);
+    }
+
+    function text(txt, x, y, size, color = "#f8fbff", weight = "900", align = "center") {
+      ctx.font = `italic ${weight} ${size}px Arial Black, Impact, Arial`;
+      ctx.textAlign = align;
+      ctx.textBaseline = "middle";
+      ctx.shadowColor = "rgba(10, 124, 255, 0.65)";
+      ctx.shadowBlur = 22;
+      ctx.fillStyle = color;
+      ctx.fillText(txt, x, y);
+      ctx.shadowBlur = 0;
+    }
+
+    function label(txt, x, y, size = 24) {
+      ctx.font = `800 ${size}px Arial`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillStyle = "#d7ecff";
+      ctx.fillText(txt, x, y);
+    }
+
+    function codeMark(x, y, r) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.strokeStyle = "rgba(101, 215, 255, 0.72)";
+      ctx.lineWidth = 3;
+      ctx.shadowColor = "rgba(10, 124, 255, 0.9)";
+      ctx.shadowBlur = 22;
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = Math.PI / 6 + i * Math.PI / 3;
+        const px = Math.cos(a) * r;
+        const py = Math.sin(a) * r;
+        if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+      }
+      ctx.closePath();
+      ctx.stroke();
+      text("</>", 0, 4, r * 0.6, "#65d7ff");
+      ctx.restore();
+    }
+
+    function drawScene(index, local) {
+      const p = ease(Math.min(1, Math.max(0, local)));
+      const y = 28 - p * 28;
+      ctx.save();
+      ctx.translate(0, y);
+      if (index === 0) {
+        codeMark(640, 280, 76);
+        label("HER FIKIR BIR SATIR KOD ILE BASLAR.", 640, 445, 28);
+      } else if (index === 1) {
+        label("@enes_korkmazs_", 640, 155, 26);
+        text("ENES", 640, 320, 142);
+        text("KORKMAZ", 640, 455, 92, "#0a7cff");
+      } else if (index === 2) {
+        text("ENES", 640, 280, 130);
+        text("KORKMAZ", 640, 398, 86);
+        ctx.fillStyle = "#0a7cff";
+        ctx.fillRect(455, 482, 370, 58);
+        label("@enes_korkmazs_", 640, 512, 28);
+      } else if (index === 3) {
+        text("HASTANE", 330, 290, 74);
+        text("RANDEVU", 330, 370, 74, "#0a7cff");
+        label("WEB PROJEM", 330, 455, 31);
+        ctx.strokeStyle = "rgba(101, 215, 255, 0.6)";
+        ctx.strokeRect(690, 190, 390, 260);
+        for (let i = 0; i < 8; i++) {
+          ctx.fillStyle = i % 2 ? "#65d7ff" : "#0a7cff";
+          ctx.fillRect(730, 230 + i * 24, 230 - i * 10, 8);
+        }
+      } else if (index === 4) {
+        ctx.strokeStyle = "rgba(101, 215, 255, 0.62)";
+        ctx.strokeRect(250, 190, 780, 340);
+        text("Modern Cozumler", 640, 300, 56);
+        text("Kolay Randevu", 640, 374, 56, "#0a7cff");
+        label("Doktor, poliklinik ve hasta randevularini tek panelde yoneten web uygulamasi.", 640, 456, 26);
+      } else if (index === 5) {
+        ["C#", "SQL", "MVC", "UI"].forEach((item, i) => {
+          const x = 394 + i * 164;
+          ctx.strokeStyle = "rgba(101, 215, 255, 0.65)";
+          ctx.strokeRect(x - 58, 258, 116, 116);
+          text(item, x, 318, item.length > 2 ? 40 : 52, i === 0 ? "#65d7ff" : "#f8fbff");
+        });
+        label("MODERN TEKNOLOJILER", 640, 475, 34);
+      } else if (index === 6) {
+        ctx.strokeStyle = "rgba(101, 215, 255, 0.72)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(640, 360, 170, 0, Math.PI * 2);
+        ctx.stroke();
+        label("HEDEFIM", 640, 295, 34);
+        text("DAHA IYISINI", 640, 360, 48);
+        text("URETMEK", 640, 425, 48);
+      } else {
+        codeMark(640, 185, 58);
+        text("ENES KORKMAZ", 640, 320, 70);
+        label("YENI PROJELER VE VIDEOLAR ICIN", 640, 410, 24);
+        ctx.fillStyle = "#0a7cff";
+        ctx.fillRect(505, 460, 270, 70);
+        text("ABONE OL", 640, 497, 40);
+      }
+      ctx.restore();
+    }
+
+    async function exportVideo() {
+      exportButton.disabled = true;
+      exportButton.textContent = "Hazirlaniyor...";
+      const stream = canvas.captureStream(fps);
+      const recorder = new MediaRecorder(stream, { mimeType: "video/webm;codecs=vp9" });
+      const chunks = [];
+      recorder.ondataavailable = (event) => chunks.push(event.data);
+      recorder.start();
+
+      const frames = Math.ceil((duration / 1000) * fps);
+      for (let frame = 0; frame < frames; frame++) {
+        const ms = frame / fps * 1000;
+        const scene = Math.min(7, Math.floor(ms / 2000));
+        const local = (ms - scene * 2000) / 2000;
+        drawBackground(ms / 1000);
+        drawScene(scene, local);
+        await new Promise((resolve) => setTimeout(resolve, 1000 / fps));
+      }
+
+      recorder.stop();
+      await new Promise((resolve) => recorder.onstop = resolve);
+      const blob = new Blob(chunks, { type: "video/webm" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "enes-korkmaz-hastane-randevu-intro.webm";
+      link.click();
+      URL.revokeObjectURL(url);
+      exportButton.disabled = false;
+      exportButton.textContent = "WebM Video Indir";
+    }
+
+    exportButton.addEventListener("click", exportVideo);
+  </script>
+</body>
+</html>

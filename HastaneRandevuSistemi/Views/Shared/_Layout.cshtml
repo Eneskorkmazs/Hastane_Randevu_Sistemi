@@ -26,6 +26,7 @@
     var isAdmin = isAuthenticated && User.IsInRole("Admin");
     var isSecretary = isAuthenticated && User.IsInRole("Sekreter");
     var isSignedIn = !isAccountAuthScreen && SignInManager.IsSignedIn(User);
+    var appointmentNotificationTypes = new[] { "Randevu", "Hatırlatma", "Hatirlatma", "Durum", "Ödeme", "Odeme" };
 
     string GetNavLinkClass(string controller, params string[] actions)
     {
@@ -42,7 +43,7 @@
         if (currentUserForCount != null)
         {
             unreadNotificationCount = await DbContext.Notifications
-                .CountAsync(n => n.UserId == currentUserForCount.Id && !n.IsRead);
+                .CountAsync(n => (n.UserId == currentUserForCount.Id) && !n.IsRead);
             recentAppointments = await DbContext.Appointments
                 .Where(a => a.PatientUserId == currentUserForCount.Id
                          && a.Status == HastaneRandevuSistemi.Models.AppointmentStatus.Bekliyor
@@ -56,7 +57,12 @@
 
     if (isSignedIn && isDoctor)
     {
-        // Doktor için ek badge hesaplaması gerekirse buraya eklenebilir
+        var currentUserForCount = await UserManager.GetUserAsync(User);
+        if (currentUserForCount != null)
+        {
+            unreadNotificationCount = await DbContext.Notifications
+                .CountAsync(n => (n.UserId == currentUserForCount.Id) && !n.IsRead);
+        }
     }
     else if (isSignedIn && isAdmin)
     {
@@ -64,13 +70,22 @@
         if (currentUserForCount != null)
         {
             unreadNotificationCount = await DbContext.Notifications
-                .CountAsync(n => (n.UserId == currentUserForCount.Id || n.Type == "Destek") && !n.IsRead);
+                .CountAsync(n => (n.UserId == currentUserForCount.Id || n.Type == "Destek")
+                    && !n.IsRead
+                    && !n.Type.StartsWith("Duyuru")
+                    && !appointmentNotificationTypes.Contains(n.Type)
+                    && (n.Link == null || !n.Link.StartsWith("/Appointment")));
         }
         newReviewBadgeCount = await DbContext.HospitalReviews.CountAsync(r => r.AdminReply == null);
     }
     else if (isSignedIn && isSecretary)
     {
-        unreadNotificationCount = await DbContext.Appointments.CountAsync(a => a.Status == AppointmentStatus.Bekliyor);
+        var currentUserForCount = await UserManager.GetUserAsync(User);
+        var announcementCount = currentUserForCount == null
+            ? 0
+            : await DbContext.Notifications.CountAsync(n => (n.UserId == currentUserForCount.Id) && !n.IsRead);
+        var pendingAppointmentCount = await DbContext.Appointments.CountAsync(a => a.Status == AppointmentStatus.Bekliyor);
+        unreadNotificationCount = announcementCount + pendingAppointmentCount;
     }
 }
 
@@ -269,6 +284,18 @@
                             </li>
                         }
 
+                        @if (isDoctor)
+                        {
+                            <li class="nav-item">
+                                <a class="@GetNavLinkClass("DoctorTools", "Notifications")" asp-controller="DoctorTools" asp-action="Notifications">
+                                    <i class="fa-solid fa-bell me-1"></i> Duyuru ve Bildirimler
+                                    <span id="unreadNotificationBadge" class="badge rounded-pill bg-danger text-white ms-1 nav-badge-premium" style="@(unreadNotificationCount > 0 ? "display:inline-flex;" : "display:none;")">
+                                        @unreadNotificationCount
+                                    </span>
+                                </a>
+                            </li>
+                        }
+
                         @if (isAdmin)
                         {
                             <li class="nav-item">
@@ -419,6 +446,14 @@
                                                 <i class="fa-solid fa-calendar-days me-2"></i> Çalışma Takvimi
                                             </a>
                                         </li>
+                                        <li>
+                                            <a class="dropdown-item" asp-controller="DoctorTools" asp-action="Notifications">
+                                                <i class="fa-solid fa-bell me-2"></i> Bildirimler
+                                                <span class="badge rounded-pill bg-danger text-white ms-2" style="@(unreadNotificationCount > 0 ? "display:inline-flex;" : "display:none;")">
+                                                    @unreadNotificationCount
+                                                </span>
+                                            </a>
+                                        </li>
                                         <li><hr class="dropdown-divider"></li>
                                     }
                                     @if (isAdmin)
@@ -545,7 +580,16 @@
 
                 if (unreadBadge) {
                     try {
-                        const response = await fetch("@Url.Action("UnreadNotificationCount", "Patient")", {
+                        @if (isDoctor)
+                        {
+                            <text>const fetchUrl = "@Url.Action("UnreadNotificationCount", "DoctorTools")";</text>
+                        }
+                        else
+                        {
+                            <text>const fetchUrl = "@Url.Action("UnreadNotificationCount", "Patient")";</text>
+                        }
+
+                        const response = await fetch(fetchUrl, {
                             method: 'GET',
                             cache: 'no-store'
                         });
@@ -559,7 +603,7 @@
 
                 if (secretaryBadge) {
                     try {
-                        const response = await fetch("@Url.Action("PendingAppointmentCount", "Secretary")", {
+                        const response = await fetch("@Url.Action("UnreadNotificationCount", "Secretary")", {
                             method: 'GET',
                             cache: 'no-store'
                         });
