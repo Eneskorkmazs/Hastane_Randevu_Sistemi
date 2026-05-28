@@ -96,14 +96,23 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 
 ### 🗺️ Proje Yol Haritası
 Hafta  1 ──> Model Standartları & Proje Altyapısı
+
 Hafta  2 ──> Hasta Paneli & Profil Yönetimi
+
 Hafta  3 ──> Doktor Paneli & Atama Takvimi
+
 Hafta  4 ──> Admin Panel & Grafik / İstatistik Ekranları
+
 Hafta  5 ──> Gelişmiş Arama / Filtreleme & UX İyileştirmeleri
+
 Hafta  6 ──> API Katmanı & Finansal Altyapı
+
 Hafta  7 ──> Dosya Yönetimi & Tıbbi Kayıt Sistemi
+
 Hafta  8 ──> Güvenlik, Caching & Dark Mode
+
 Hafta  9 ──> Sekreter Paneli & Muhasebe & Bildirimler
+
 Hafta 10 ──> Yapay Zeka, Eczane Yönetimi & Final
 ---
 
@@ -121,15 +130,3 @@ Proje, modern yazılım mimarisi prensiplerine (Clean Code) uygun, performanslı
 
 ---
 
-## 🚀 Proje Kurulumu ve Çalıştırma
-
-Projeyi yerel bilgisayarınızda ayağa kaldırmak için aşağıdaki adımları takip edebilirsiniz:
-
-### 1. Ön Gereksinimler
-* .NET 8.0 SDK installed
-* IDE (VS Code, Visual Studio 2022 veya Rider)
-
-### 2. Projeyi Klonlayın ve Klasöre Geçin
-```bash
-git clone [https://github.com/kullanici-adi/Hastane_Randevu_Sistemi.git](https://github.com/kullanici-adi/Hastane_Randevu_Sistemi.git)
-cd Hastane_Randevu_Sistemi
