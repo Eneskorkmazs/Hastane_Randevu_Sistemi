@@ -95,3 +95,13 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 > **Hazırlayan:** Enes | **Teknoloji:** ASP.NET Core 8.0 MVC / EF Core | **Veritabanı:** SQLite
 
 ### 🗺️ Proje Yol Haritası
+Hafta  1 ──> Model Standartları & Proje Altyapısı
+Hafta  2 ──> Hasta Paneli & Profil Yönetimi
+Hafta  3 ──> Doktor Paneli & Atama Takvimi
+Hafta  4 ──> Admin Panel & Grafik / İstatistik Ekranları
+Hafta  5 ──> Gelişmiş Arama / Filtreleme & UX İyileştirmeleri
+Hafta  6 ──> API Katmanı & Finansal Altyapı
+Hafta  7 ──> Dosya Yönetimi & Tıbbi Kayıt Sistemi
+Hafta  8 ──> Güvenlik, Caching & Dark Mode
+Hafta  9 ──> Sekreter Paneli & Muhasebe & Bildirimler
+Hafta 10 ──> Yapay Zeka, Eczane Yönetimi & Final
