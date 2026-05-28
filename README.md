@@ -91,6 +91,8 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 
 ---
 
+##---
+
 ## 📝 Genel Geliştirme Raporu – 1. Haftadan 10. Haftaya
 
 > **Hazırlayan:** Enes | **Teknoloji:** ASP.NET Core 8.0 MVC / EF Core | **Veritabanı:** SQLite
