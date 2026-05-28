@@ -90,7 +90,7 @@ ASP.NET Core MVC, Entity Framework Core ve ASP.NET Identity kullanılarak geliş
 
 
 
-[genel 1den 10. hafta rapor.pdf](https://github.com/user-attachments/files/28368796/genel.1den.10.hafta.rapor.pdf)
+(Genel_Rapor.pdf) (https://github.com/user-attachments/files/28368796/genel.1den.10.hafta.rapor.pdf)
 
 > **Hazırlayan:** Enes | **Teknoloji:** ASP.NET Core 8.0 MVC / EF Core | **Veritabanı:** SQLite
 
